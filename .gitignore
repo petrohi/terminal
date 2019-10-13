@@ -5,3 +5,5 @@
 fp-info-cache
 fp-lib-table
 sym-lib-table
+src/Terminal/dist
+src/Terminal/build
