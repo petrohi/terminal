@@ -7,3 +7,4 @@ fp-lib-table
 sym-lib-table
 firmware/Terminal.X/dist
 firmware/Terminal.X/build
+firmware/Terminal.X/nbproject/private
