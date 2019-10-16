@@ -1,5 +1,5 @@
 /****************************************************************************************
- Video.h
+    video.h
 
 	Header file for the video driver for the VT100 Terminal program
 

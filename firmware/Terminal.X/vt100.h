@@ -1,5 +1,5 @@
 /****************************************************************************************
- vt100.h
+    vt100.h
 
 	Header file for the vt100 decoder for the VT100 Terminal program
 

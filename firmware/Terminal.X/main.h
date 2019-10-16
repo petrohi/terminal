@@ -1,5 +1,5 @@
 /****************************************************************************************
-	Tracker.h
+	main.h
 
 	Include file for the VT100 Terminal program
 
@@ -44,7 +44,7 @@
 ****************************************************************************************/
 
 #define VERSION                 "1.3"                               // define the version number
-#define YEAR			"2014"			            // and the year
+#define YEAR			"2019"			            // and the year
 
 
 // The main clock frequency for the chip
@@ -54,7 +54,7 @@
 #define BUSFREQ			(CLOCKFREQ/1)			    // This is set in in Configuration Bits.h
 
 // grab as much memory as possible for video and Rx buffers
-#define BUFFER_SIZE             (29820)                             // this should be the largest possible size allowed by the compiler/linker
+#define BUFFER_SIZE             (29120)                             // this should be the largest possible size allowed by the compiler/linker
 
 
 // General defines

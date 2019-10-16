@@ -1,6 +1,6 @@
 /*****************************************************************************************************************************
 
-Main.c
+    main.c
 
 	Copyright (C) 2014 Geoff Graham (projects@geoffg.net)
 	All rights reserved.
@@ -46,8 +46,8 @@ Main.c
 #include <plib.h>									// peripheral libraries
 #include <string.h>
 #include <ctype.h>
-#include "Configuration Bits.h"                     // config pragmas
-#include "Terminal.h"
+#include "config.h"                     // config pragmas
+#include "main.h"
 #include "video.h"
 #include "vt100.h"
 
@@ -104,7 +104,7 @@ volatile int CursorTimer = 0;
 volatile int GeneralTimer;
 
 #define MES_SIGNON  "\rASCII Video Terminal Ver " VERSION "\r\n"\
-					"Copyright " YEAR " Geoff Graham\r\n\r\n"
+					"Copyright 2014-" YEAR " Geoff Graham\r\n\r\n"
 
 int main(int argc, char* argv[]) {
     int ch;

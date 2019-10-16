@@ -1,5 +1,5 @@
 /****************************************************************************************
-	Keyboard.c
+	keyboard.c
 
 	Keyboard processing for the VT100 Terminal program
 
@@ -56,7 +56,7 @@ the non US keyboard layouts
 
 #include <p32xxxx.h>
 #include <plib.h>
-#include "Terminal.h"
+#include "main.h"
 
 void setLEDs(int num, int caps, int scroll);
 volatile char CapsLock;

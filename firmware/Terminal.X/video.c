@@ -1,5 +1,5 @@
 /****************************************************************************************
- Video.c
+    video.c
 
 	Video driver for the VT100 Terminal program
 
@@ -48,9 +48,9 @@
 #include <p32xxxx.h>
 #include <plib.h>
 #include <string.h>
-#include "Terminal.h"
+#include "main.h"
 #include "video.h"
-#include "Fonts.h"
+#include "fonts.h"
 #include "vt100.h"
 
 /*   The video generator is based on an idea and code by Lucio Di Jasio presented in his excellent book

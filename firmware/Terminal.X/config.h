@@ -1,6 +1,6 @@
 /***********************************************************************************************************************
 
-Configuration Bitss.h
+    config.h
 
 	Copyright (C) 2014 Geoff Graham (projects@geoffg.net)
 	All rights reserved.

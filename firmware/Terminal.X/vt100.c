@@ -1,5 +1,5 @@
 /****************************************************************************************
- vt100.c
+    vt100.c
 
 	vt100 decoder for the VT100 Terminal program
 
@@ -49,7 +49,7 @@
 #include <plib.h>
 #include <string.h>
 #include <ctype.h>
-#include "Terminal.h"
+#include "main.h"
 #include "video.h"
 #include "vt100.h"
 

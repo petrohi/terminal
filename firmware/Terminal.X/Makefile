@@ -65,6 +65,11 @@ clean: .clean-post
 
 .clean-pre:
 # Add your pre 'clean' code here...
+# WARNING: the IDE does not call this target since it takes a long time to
+# simply run make. Instead, the IDE removes the configuration directories
+# under build and dist directly without calling make.
+# This target is left here so people can do a clean when running a clean
+# outside the IDE.
 
 .clean-post: .clean-impl
 # Add your post 'clean' code here...
