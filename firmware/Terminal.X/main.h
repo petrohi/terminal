@@ -54,7 +54,7 @@
 #define BUSFREQ			(CLOCKFREQ/1)			    // This is set in in Configuration Bits.h
 
 // grab as much memory as possible for video and Rx buffers
-#define BUFFER_SIZE             (29120)                             // this should be the largest possible size allowed by the compiler/linker
+#define BUFFER_SIZE             (29600)                             // this should be the largest possible size allowed by the compiler/linker
 
 
 // General defines
