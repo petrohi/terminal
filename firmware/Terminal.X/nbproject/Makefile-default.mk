@@ -57,17 +57,17 @@ OBJECTDIR=build/${CND_CONF}/${IMAGE_TYPE}
 DISTDIR=dist/${CND_CONF}/${IMAGE_TYPE}
 
 # Source Files Quoted if spaced
-SOURCEFILES_QUOTED_IF_SPACED=keyboard.c main.c video.c vt100.c USB/usb_descriptors.c USB/Microchip/USB/usb_device.c "USB/Microchip/USB/CDC Device Driver/usb_function_cdc.c"
+SOURCEFILES_QUOTED_IF_SPACED=keyboard.c main.c video.c vt100.c "USB/Microchip/USB/CDC Device Driver/usb_function_cdc.c" USB/Microchip/USB/usb_device.c USB/usb_descriptors.c
 
 # Object Files Quoted if spaced
-OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/keyboard.o ${OBJECTDIR}/main.o ${OBJECTDIR}/video.o ${OBJECTDIR}/vt100.o ${OBJECTDIR}/USB/usb_descriptors.o ${OBJECTDIR}/USB/Microchip/USB/usb_device.o "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver/usb_function_cdc.o"
-POSSIBLE_DEPFILES=${OBJECTDIR}/keyboard.o.d ${OBJECTDIR}/main.o.d ${OBJECTDIR}/video.o.d ${OBJECTDIR}/vt100.o.d ${OBJECTDIR}/USB/usb_descriptors.o.d ${OBJECTDIR}/USB/Microchip/USB/usb_device.o.d "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver/usb_function_cdc.o.d"
+OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/keyboard.o ${OBJECTDIR}/main.o ${OBJECTDIR}/video.o ${OBJECTDIR}/vt100.o "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver/usb_function_cdc.o" ${OBJECTDIR}/USB/Microchip/USB/usb_device.o ${OBJECTDIR}/USB/usb_descriptors.o
+POSSIBLE_DEPFILES=${OBJECTDIR}/keyboard.o.d ${OBJECTDIR}/main.o.d ${OBJECTDIR}/video.o.d ${OBJECTDIR}/vt100.o.d "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver/usb_function_cdc.o.d" ${OBJECTDIR}/USB/Microchip/USB/usb_device.o.d ${OBJECTDIR}/USB/usb_descriptors.o.d
 
 # Object Files
-OBJECTFILES=${OBJECTDIR}/keyboard.o ${OBJECTDIR}/main.o ${OBJECTDIR}/video.o ${OBJECTDIR}/vt100.o ${OBJECTDIR}/USB/usb_descriptors.o ${OBJECTDIR}/USB/Microchip/USB/usb_device.o ${OBJECTDIR}/USB/Microchip/USB/CDC\ Device\ Driver/usb_function_cdc.o
+OBJECTFILES=${OBJECTDIR}/keyboard.o ${OBJECTDIR}/main.o ${OBJECTDIR}/video.o ${OBJECTDIR}/vt100.o ${OBJECTDIR}/USB/Microchip/USB/CDC\ Device\ Driver/usb_function_cdc.o ${OBJECTDIR}/USB/Microchip/USB/usb_device.o ${OBJECTDIR}/USB/usb_descriptors.o
 
 # Source Files
-SOURCEFILES=keyboard.c main.c video.c vt100.c USB/usb_descriptors.c USB/Microchip/USB/usb_device.c USB/Microchip/USB/CDC Device Driver/usb_function_cdc.c
+SOURCEFILES=keyboard.c main.c video.c vt100.c USB/Microchip/USB/CDC Device Driver/usb_function_cdc.c USB/Microchip/USB/usb_device.c USB/usb_descriptors.c
 
 
 
@@ -111,43 +111,43 @@ ${OBJECTDIR}/keyboard.o: keyboard.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} "${OBJECTDIR}" 
 	@${RM} ${OBJECTDIR}/keyboard.o.d 
 	@${RM} ${OBJECTDIR}/keyboard.o 
-	@${FIXDEPS} "${OBJECTDIR}/keyboard.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1  -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/keyboard.o.d" -o ${OBJECTDIR}/keyboard.o keyboard.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
+	@${FIXDEPS} "${OBJECTDIR}/keyboard.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/keyboard.o.d" -o ${OBJECTDIR}/keyboard.o keyboard.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
 	
 ${OBJECTDIR}/main.o: main.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} "${OBJECTDIR}" 
 	@${RM} ${OBJECTDIR}/main.o.d 
 	@${RM} ${OBJECTDIR}/main.o 
-	@${FIXDEPS} "${OBJECTDIR}/main.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1  -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/main.o.d" -o ${OBJECTDIR}/main.o main.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
+	@${FIXDEPS} "${OBJECTDIR}/main.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/main.o.d" -o ${OBJECTDIR}/main.o main.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
 	
 ${OBJECTDIR}/video.o: video.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} "${OBJECTDIR}" 
 	@${RM} ${OBJECTDIR}/video.o.d 
 	@${RM} ${OBJECTDIR}/video.o 
-	@${FIXDEPS} "${OBJECTDIR}/video.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1  -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/video.o.d" -o ${OBJECTDIR}/video.o video.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
+	@${FIXDEPS} "${OBJECTDIR}/video.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/video.o.d" -o ${OBJECTDIR}/video.o video.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
 	
 ${OBJECTDIR}/vt100.o: vt100.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} "${OBJECTDIR}" 
 	@${RM} ${OBJECTDIR}/vt100.o.d 
 	@${RM} ${OBJECTDIR}/vt100.o 
-	@${FIXDEPS} "${OBJECTDIR}/vt100.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1  -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/vt100.o.d" -o ${OBJECTDIR}/vt100.o vt100.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
-	
-${OBJECTDIR}/USB/usb_descriptors.o: USB/usb_descriptors.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} "${OBJECTDIR}/USB" 
-	@${RM} ${OBJECTDIR}/USB/usb_descriptors.o.d 
-	@${RM} ${OBJECTDIR}/USB/usb_descriptors.o 
-	@${FIXDEPS} "${OBJECTDIR}/USB/usb_descriptors.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1  -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/USB/usb_descriptors.o.d" -o ${OBJECTDIR}/USB/usb_descriptors.o USB/usb_descriptors.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
-	
-${OBJECTDIR}/USB/Microchip/USB/usb_device.o: USB/Microchip/USB/usb_device.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} "${OBJECTDIR}/USB/Microchip/USB" 
-	@${RM} ${OBJECTDIR}/USB/Microchip/USB/usb_device.o.d 
-	@${RM} ${OBJECTDIR}/USB/Microchip/USB/usb_device.o 
-	@${FIXDEPS} "${OBJECTDIR}/USB/Microchip/USB/usb_device.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1  -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/USB/Microchip/USB/usb_device.o.d" -o ${OBJECTDIR}/USB/Microchip/USB/usb_device.o USB/Microchip/USB/usb_device.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
+	@${FIXDEPS} "${OBJECTDIR}/vt100.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/vt100.o.d" -o ${OBJECTDIR}/vt100.o vt100.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
 	
 ${OBJECTDIR}/USB/Microchip/USB/CDC\ Device\ Driver/usb_function_cdc.o: USB/Microchip/USB/CDC\ Device\ Driver/usb_function_cdc.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver" 
 	@${RM} "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver/usb_function_cdc.o".d 
 	@${RM} "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver/usb_function_cdc.o" 
-	@${FIXDEPS} "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver/usb_function_cdc.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1  -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver/usb_function_cdc.o.d" -o "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver/usb_function_cdc.o" "USB/Microchip/USB/CDC Device Driver/usb_function_cdc.c"    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
+	@${FIXDEPS} "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver/usb_function_cdc.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver/usb_function_cdc.o.d" -o "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver/usb_function_cdc.o" "USB/Microchip/USB/CDC Device Driver/usb_function_cdc.c"    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
+	
+${OBJECTDIR}/USB/Microchip/USB/usb_device.o: USB/Microchip/USB/usb_device.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} "${OBJECTDIR}/USB/Microchip/USB" 
+	@${RM} ${OBJECTDIR}/USB/Microchip/USB/usb_device.o.d 
+	@${RM} ${OBJECTDIR}/USB/Microchip/USB/usb_device.o 
+	@${FIXDEPS} "${OBJECTDIR}/USB/Microchip/USB/usb_device.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/USB/Microchip/USB/usb_device.o.d" -o ${OBJECTDIR}/USB/Microchip/USB/usb_device.o USB/Microchip/USB/usb_device.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
+	
+${OBJECTDIR}/USB/usb_descriptors.o: USB/usb_descriptors.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} "${OBJECTDIR}/USB" 
+	@${RM} ${OBJECTDIR}/USB/usb_descriptors.o.d 
+	@${RM} ${OBJECTDIR}/USB/usb_descriptors.o 
+	@${FIXDEPS} "${OBJECTDIR}/USB/usb_descriptors.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/USB/usb_descriptors.o.d" -o ${OBJECTDIR}/USB/usb_descriptors.o USB/usb_descriptors.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
 	
 else
 ${OBJECTDIR}/keyboard.o: keyboard.c  nbproject/Makefile-${CND_CONF}.mk
@@ -174,11 +174,11 @@ ${OBJECTDIR}/vt100.o: vt100.c  nbproject/Makefile-${CND_CONF}.mk
 	@${RM} ${OBJECTDIR}/vt100.o 
 	@${FIXDEPS} "${OBJECTDIR}/vt100.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/vt100.o.d" -o ${OBJECTDIR}/vt100.o vt100.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
 	
-${OBJECTDIR}/USB/usb_descriptors.o: USB/usb_descriptors.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} "${OBJECTDIR}/USB" 
-	@${RM} ${OBJECTDIR}/USB/usb_descriptors.o.d 
-	@${RM} ${OBJECTDIR}/USB/usb_descriptors.o 
-	@${FIXDEPS} "${OBJECTDIR}/USB/usb_descriptors.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/USB/usb_descriptors.o.d" -o ${OBJECTDIR}/USB/usb_descriptors.o USB/usb_descriptors.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
+${OBJECTDIR}/USB/Microchip/USB/CDC\ Device\ Driver/usb_function_cdc.o: USB/Microchip/USB/CDC\ Device\ Driver/usb_function_cdc.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver" 
+	@${RM} "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver/usb_function_cdc.o".d 
+	@${RM} "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver/usb_function_cdc.o" 
+	@${FIXDEPS} "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver/usb_function_cdc.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver/usb_function_cdc.o.d" -o "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver/usb_function_cdc.o" "USB/Microchip/USB/CDC Device Driver/usb_function_cdc.c"    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
 	
 ${OBJECTDIR}/USB/Microchip/USB/usb_device.o: USB/Microchip/USB/usb_device.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} "${OBJECTDIR}/USB/Microchip/USB" 
@@ -186,11 +186,11 @@ ${OBJECTDIR}/USB/Microchip/USB/usb_device.o: USB/Microchip/USB/usb_device.c  nbp
 	@${RM} ${OBJECTDIR}/USB/Microchip/USB/usb_device.o 
 	@${FIXDEPS} "${OBJECTDIR}/USB/Microchip/USB/usb_device.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/USB/Microchip/USB/usb_device.o.d" -o ${OBJECTDIR}/USB/Microchip/USB/usb_device.o USB/Microchip/USB/usb_device.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
 	
-${OBJECTDIR}/USB/Microchip/USB/CDC\ Device\ Driver/usb_function_cdc.o: USB/Microchip/USB/CDC\ Device\ Driver/usb_function_cdc.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver" 
-	@${RM} "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver/usb_function_cdc.o".d 
-	@${RM} "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver/usb_function_cdc.o" 
-	@${FIXDEPS} "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver/usb_function_cdc.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver/usb_function_cdc.o.d" -o "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver/usb_function_cdc.o" "USB/Microchip/USB/CDC Device Driver/usb_function_cdc.c"    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
+${OBJECTDIR}/USB/usb_descriptors.o: USB/usb_descriptors.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} "${OBJECTDIR}/USB" 
+	@${RM} ${OBJECTDIR}/USB/usb_descriptors.o.d 
+	@${RM} ${OBJECTDIR}/USB/usb_descriptors.o 
+	@${FIXDEPS} "${OBJECTDIR}/USB/usb_descriptors.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/USB/usb_descriptors.o.d" -o ${OBJECTDIR}/USB/usb_descriptors.o USB/usb_descriptors.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
 	
 endif
 
@@ -205,7 +205,7 @@ endif
 ifeq ($(TYPE_IMAGE), DEBUG_RUN)
 dist/${CND_CONF}/${IMAGE_TYPE}/Terminal.X.${IMAGE_TYPE}.${OUTPUT_SUFFIX}: ${OBJECTFILES}  nbproject/Makefile-${CND_CONF}.mk    
 	@${MKDIR} dist/${CND_CONF}/${IMAGE_TYPE} 
-	${MP_CC} $(MP_EXTRA_LD_PRE) -g -mdebugger -D__MPLAB_DEBUGGER_PK3=1 -mprocessor=$(MP_PROCESSOR_OPTION)  -o dist/${CND_CONF}/${IMAGE_TYPE}/Terminal.X.${IMAGE_TYPE}.${OUTPUT_SUFFIX} ${OBJECTFILES_QUOTED_IF_SPACED}          -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD)   -mreserve=data@0x0:0x1FC -mreserve=boot@0x1FC00490:0x1FC00BEF  -Wl,--defsym=__MPLAB_BUILD=1$(MP_EXTRA_LD_POST)$(MP_LINKER_FILE_OPTION),--defsym=__MPLAB_DEBUG=1,--defsym=__DEBUG=1,-D=__DEBUG_D,--defsym=__MPLAB_DEBUGGER_PK3=1,--no-code-in-dinit,--no-dinit-in-serial-mem,-Map="${DISTDIR}/${PROJECTNAME}.${IMAGE_TYPE}.map",--memorysummary,dist/${CND_CONF}/${IMAGE_TYPE}/memoryfile.xml
+	${MP_CC} $(MP_EXTRA_LD_PRE) -g   -mprocessor=$(MP_PROCESSOR_OPTION)  -o dist/${CND_CONF}/${IMAGE_TYPE}/Terminal.X.${IMAGE_TYPE}.${OUTPUT_SUFFIX} ${OBJECTFILES_QUOTED_IF_SPACED}          -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD)   -mreserve=data@0x0:0x1FC -mreserve=boot@0x1FC00490:0x1FC00BEF  -Wl,--defsym=__MPLAB_BUILD=1$(MP_EXTRA_LD_POST)$(MP_LINKER_FILE_OPTION),--defsym=__MPLAB_DEBUG=1,--defsym=__DEBUG=1,-D=__DEBUG_D,--no-code-in-dinit,--no-dinit-in-serial-mem,-Map="${DISTDIR}/${PROJECTNAME}.${IMAGE_TYPE}.map",--memorysummary,dist/${CND_CONF}/${IMAGE_TYPE}/memoryfile.xml
 	
 else
 dist/${CND_CONF}/${IMAGE_TYPE}/Terminal.X.${IMAGE_TYPE}.${OUTPUT_SUFFIX}: ${OBJECTFILES}  nbproject/Makefile-${CND_CONF}.mk   
@@ -226,11 +226,3 @@ endif
 .clean-conf: ${CLEAN_SUBPROJECTS}
 	${RM} -r build/default
 	${RM} -r dist/default
-
-# Enable dependency checking
-.dep.inc: .depcheck-impl
-
-DEPFILES=$(shell "${PATH_TO_IDE_BIN}"mplabwildcard ${POSSIBLE_DEPFILES})
-ifneq (${DEPFILES},)
-include ${DEPFILES}
-endif
