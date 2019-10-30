@@ -612,28 +612,6 @@ USB_VBUS
 Wire Wire Line
 	5750 3050 5850 3050
 $Comp
-L Device:Jumper JP8
-U 1 1 5D71D6EC
-P 10000 3250
-F 0 "JP8" V 9954 3377 50  0000 L CNN
-F 1 "Bootload" V 10045 3377 50  0000 L CNN
-F 2 "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical" H 10000 3250 50  0001 C CNN
-F 3 "~" H 10000 3250 50  0001 C CNN
-	1    10000 3250
-	0    1    1    0   
-$EndComp
-$Comp
-L power:GND #PWR0119
-U 1 1 5D71DF6E
-P 10000 3550
-F 0 "#PWR0119" H 10000 3300 50  0001 C CNN
-F 1 "GND" H 10005 3377 50  0000 C CNN
-F 2 "" H 10000 3550 50  0001 C CNN
-F 3 "" H 10000 3550 50  0001 C CNN
-	1    10000 3550
-	1    0    0    -1  
-$EndComp
-$Comp
 L Device:Jumper JP4
 U 1 1 5D71F97B
 P 1600 5400
@@ -858,9 +836,6 @@ Wire Wire Line
 	9500 4650 9500 4800
 Wire Wire Line
 	9100 4650 9100 4800
-Wire Wire Line
-	10000 2600 10000 2950
-Connection ~ 10000 2600
 Wire Wire Line
 	9100 1200 9100 1650
 Wire Wire Line
