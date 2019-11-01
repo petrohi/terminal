@@ -208,13 +208,13 @@ void USBCheckCDCRequest(void)
             inPipes[0].wCount.Val = dummy_length;
             inPipes[0].info.bits.ctrl_trf_mem = USB_EP0_RAM;
             inPipes[0].info.bits.busy = 1;
-            //VideoPutc('A');
+            //PutChar('A');
             break;
         case GET_ENCAPSULATED_RESPONSE:
             // Populate dummy_encapsulated_cmd_response first.
             inPipes[0].pSrc.bRam = (BYTE*)&dummy_encapsulated_cmd_response;
             inPipes[0].info.bits.busy = 1;
-            //VideoPutc('B');
+            //PutChar('B');
             break;
         //****** End of required commands ******//
 
@@ -224,7 +224,7 @@ void USBCheckCDCRequest(void)
             outPipes[0].pDst.bRam = (BYTE*)LINE_CODING_TARGET;
             outPipes[0].pFunc = LINE_CODING_PFUNC;
             outPipes[0].info.bits.busy = 1;
-            //VideoPutc('C');
+            //PutChar('C');
             break;
             
         case GET_LINE_CODING:
@@ -232,7 +232,7 @@ void USBCheckCDCRequest(void)
                 (BYTE*)&line_coding,
                 LINE_CODING_LENGTH,
                 USB_EP0_INCLUDE_ZERO);
-            //VideoPutc('D');
+            //PutChar('D');
             break;
 
         case SET_CONTROL_LINE_STATE:
@@ -241,7 +241,7 @@ void USBCheckCDCRequest(void)
             CONFIGURE_DTR(control_signal_bitmap.DTE_PRESENT);
             inPipes[0].info.bits.busy = 1;
             break;
-            //VideoPutc('E');
+            //PutChar('E');
         #endif
 
         #if defined(USB_CDC_SUPPORT_ABSTRACT_CONTROL_MANAGEMENT_CAPABILITIES_D2)

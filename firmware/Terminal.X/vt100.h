@@ -51,7 +51,7 @@ void VideoPrintString(char *p);
 void cmd_Reset(void);
 void cmd_ClearEOL(void);
 void cmd_ClearEOS(void);
-void CursorPosition(int x, int y);
+void MoveCursor(int x, int y);
 
 extern int AttribUL, AttribRV, AttribInvis;                         // attributes that can be turned on/off
 

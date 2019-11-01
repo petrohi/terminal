@@ -7,8 +7,8 @@
       <itemPath>config.h</itemPath>
       <itemPath>fonts.h</itemPath>
       <itemPath>main.h</itemPath>
-      <itemPath>video.h</itemPath>
       <itemPath>vt100.h</itemPath>
+      <itemPath>vga.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -19,8 +19,8 @@
                    projectFiles="true">
       <itemPath>keyboard.c</itemPath>
       <itemPath>main.c</itemPath>
-      <itemPath>video.c</itemPath>
       <itemPath>vt100.c</itemPath>
+      <itemPath>vga.c</itemPath>
     </logicalFolder>
     <logicalFolder name="USB" displayName="USB" projectFiles="true">
       <logicalFolder name="Microchip" displayName="Microchip" projectFiles="true">

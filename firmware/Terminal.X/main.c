@@ -48,7 +48,7 @@
 #include <ctype.h>
 #include "config.h"                     // config pragmas
 #include "main.h"
-#include "video.h"
+#include "vga.h"
 #include "vt100.h"
 
 //** USB INCLUDES ***********************************************************
@@ -76,20 +76,20 @@ void BlinkLED(void);
 void SetUp(void);
 
 
-char *SerialRxBuf;
-int RxBufferSize;
+#define SERIAL_RX_BUF_SIZE 4
+char SerialRxBuf[SERIAL_RX_BUF_SIZE];
 volatile int SerialRxBufHead = 0;
 volatile int SerialRxBufTail = 0;
 
-#define SERIAL_TX_BUF_SIZE 256
+#define SERIAL_TX_BUF_SIZE 4
 char SerialTxBuf[SERIAL_TX_BUF_SIZE];
 int SerialTxBufHead = 0;
 int SerialTxBufTail = 0;
 
 // declare the USB buffers
 // these buffers are used by the USB I/O hardware
-#define USB_DEVICE_RX_BUFFER_SIZE	64
-#define USB_DEVICE_TX_BUFFER_SIZE	64
+#define USB_DEVICE_RX_BUFFER_SIZE	4
+#define USB_DEVICE_TX_BUFFER_SIZE	4
 char UsbDeviceRxBuf[USB_DEVICE_RX_BUFFER_SIZE];
 char UsbDeviceTxBuf[USB_DEVICE_TX_BUFFER_SIZE];
 
@@ -98,10 +98,13 @@ char UsbDeviceTxBuf[USB_DEVICE_TX_BUFFER_SIZE];
 // The only pointer that we need is this one which keep track of where we are while reading the serial Rx buffer
 int USBSerialRxBufTail = 0;
 
+#define CURSOR_OFF		350											// cursor off time in mS
+#define CURSOR_ON		650											// cursor on time in mS
+
 volatile int LEDTimer = 0;
-int CursorOff = false;
 volatile int CursorTimer = 0;
 volatile int GeneralTimer;
+int CursorOff = 0;
 
 #define MES_SIGNON  "\rASCII Video Terminal Ver " VERSION "\r\n"\
 					"Copyright 2014-" YEAR " Geoff Graham\r\n\r\n"
@@ -129,9 +132,8 @@ int main(int argc, char* argv[]) {
 
     INTEnableSystemMultiVectoredInt();                              // allow vectored interrupts
     initTimer();                                                    // initialise the millisecond timer
-    initVideo();                                                    // initialise the video and associated interrupt
+    InitVga();                                                    // initialise the video and associated interrupt
     initVT100();                                                    // initialise the vt100/vt52 decoding engine
-    initFont(1);                                                    // set the default font
     initSerial();                                                   // initialise the UART used for the serial I/O
     USBDeviceInit();												// Initialise USB module SFRs and firmware
     initKeyboard();                                                 // initialise the keyboard and associated interrupt
@@ -143,7 +145,7 @@ int main(int argc, char* argv[]) {
 
     while(1) {
         CheckUSB();
-        ShowCursor(true);
+        ShowCursor(CursorOff || CursorTimer > CURSOR_ON);
 
         ch = getSerial();
         if(ch != -1) {
@@ -197,8 +199,6 @@ void initSerial(void) {
     if(Option[O_BAUDRATE] == -1) NVMWriteWord((void *)(&Option[O_BAUDRATE]), 1200); // the configurable baudrate defaults to 1200
     PPSInput(2, U2RX, RPB1); PPSOutput(4, RPB0, U2TX);
 
-    TRISAbits.TRISA1 = 1; CNPUASET = (1 << 1); uSec(10000);         // something changes pin A1 (I wish I knew what) and this puts it back
-
     cfg1 = UART_ENABLE_PINS_TX_RX_ONLY;
     if(baud > 9000) cfg1 |= UART_ENABLE_HIGH_SPEED;
     if(!Option[O_SERIALINV]) cfg1 |= (UART_INVERT_RECEIVE_POLARITY | UART_INVERT_TRANSMIT_POLARITY);
@@ -210,17 +210,7 @@ void initSerial(void) {
         case O_PARITY_EVEN: cfg2 |= UART_PARITY_EVEN;    break;
     }
     cfg2 |= Option[O_1STOPBIT] ? UART_STOP_BITS_1 : UART_STOP_BITS_2;
-
-    switch(PORTBbits.RB4 << 2 | PORTBbits.RB3 << 1 | PORTAbits.RA1) {
-        case 7: baud = Option[O_BAUDRATE]; break;
-        case 6: baud = 2400; break;
-        case 5: baud = 4800; break;
-        case 4: baud = 9600; break;
-        case 3: baud = 19200; break;
-        case 2: baud = 38400; break;
-        case 1: baud = 57600; break;
-        case 0: baud = 115200; break;
-    }
+    baud = Option[O_BAUDRATE];
 
     UARTConfigure(UART2, cfg1);
     UARTSetFifoMode(UART2, UART_INTERRUPT_ON_TX_NOT_FULL | UART_INTERRUPT_ON_RX_NOT_EMPTY);
@@ -246,8 +236,8 @@ void __ISR(_UART2_VECTOR, ipl3) IntUart2Handler(void) {
                 continue;                                           // and try the next char
             }
             SerialRxBuf[SerialRxBufHead++]  = UARTGetDataByte(UART2); // store the byte in the ring buffer
-            if(SerialRxBufHead >= RxBufferSize) SerialRxBufHead = 0;
-            //SerialRxBufHead = SerialRxBufHead % RxBufferSize;
+            if(SerialRxBufHead >= SERIAL_RX_BUF_SIZE) SerialRxBufHead = 0;
+            //SerialRxBufHead = SerialRxBufHead % SERIAL_RX_BUF_SIZE;
         }
         BlinkLED();
         INTClearFlag(INT_SOURCE_UART_RX(UART2));                      // Clear the RX interrupt Flag
@@ -287,7 +277,7 @@ int getSerial(void) {
     char c;
     if(SerialRxBufHead == SerialRxBufTail) return -1;
     c = SerialRxBuf[SerialRxBufTail++];
-    if(SerialRxBufTail >= RxBufferSize) SerialRxBufTail = 0;
+    if(SerialRxBufTail >= SERIAL_RX_BUF_SIZE) SerialRxBufTail = 0;
     return c;
 }
 
@@ -327,8 +317,8 @@ void CheckUSB(void) {
 			if((SerialRxBufHead != USBSerialRxBufTail) && mUSBUSARTIsTxTrfReady()) {		  // next, check for data to be sent
                 for(i = 0; SerialRxBufHead != USBSerialRxBufTail && i < USB_DEVICE_TX_BUFFER_SIZE; i++) {
                     UsbDeviceTxBuf[i] = SerialRxBuf[USBSerialRxBufTail++];                 // copy the char to the device buffer
-                    if(USBSerialRxBufTail >= RxBufferSize) USBSerialRxBufTail = 0;
-                    //SerialRxBufTail = SerialRxBufTail % RxBufferSize;
+                    if(USBSerialRxBufTail >= SERIAL_RX_BUF_SIZE) USBSerialRxBufTail = 0;
+                    //SerialRxBufTail = SerialRxBufTail % SERIAL_RX_BUF_SIZE;
                 }
 				putUSBUSART(UsbDeviceTxBuf,i);	                                  // and send it
 			}
@@ -407,6 +397,7 @@ void initTimer(void) {
 Timer 4 interrupt processor
 This fires every mSec and is responsible for tracking the time and the counts of various timing variables
 *****************************************************************************************************************/
+
 void __ISR( _TIMER_4_VECTOR, ipl1) T4Interrupt(void) {
 
     if(LEDTimer)
@@ -454,24 +445,18 @@ void Prompt(int x, char *msg) {
 
 void PPrompt(char *msg, char *current) {
     int i;
-    if(vga) for(i = 0; i < 14; i++) VT100Putc(' ');
+     for(i = 0; i < 14; i++) VT100Putc(' ');
     VideoPrintString(msg);
-    for(i = 0; i < (vga ? 38:30) - strlen(msg); i++) VT100Putc(' ');
+    for(i = 0; i < 38 - strlen(msg); i++) VT100Putc(' ');
     VideoPrintString("(currently ");
     VideoPrintString(current);
-    if(vga)
-        VideoPrintString(")     \r\n");
-    else {
-        VideoPrintString(")");
-        for(i = 30 + strlen(current) + 13; i <=48; i++) VT100Putc(' ');
-        VideoPrintString("\r\n");
-    }
+    VideoPrintString(")     \r\n");
 }
 
 
 int GetInput(char *msg, int min, int max) {
     int i;
-    if(vga) for(i = 0; i < (74 - strlen(msg))/2; i++) VT100Putc(' ');
+    for(i = 0; i < (74 - strlen(msg))/2; i++) VT100Putc(' ');
     VideoPrintString(msg);
     cmd_ClearEOS();
     while(toupper(KeyDown) < min || toupper(KeyDown) > max) ShowCursor(true);
@@ -482,7 +467,11 @@ int GetInput(char *msg, int min, int max) {
     return i;
 }
 
-
+void ConfigBuffers() {
+    SerialRxBufHead = 0;
+    SerialRxBufTail = 0;
+    USBSerialRxBufTail = 0;
+}
 
 void SetUp(void) {
     const char *kblang[8] = {"US", "FR", "GR", "IT", "BE", "UK", "RS" };
@@ -494,45 +483,40 @@ void SetUp(void) {
     for(i = 0; i < NBR_SAVED; i++) saved[i] = Option[i];
 
     cmd_Reset();
-    ConfigBuffers(true);
+    ConfigBuffers();
     ShowCursor(false);                                              // turn off the cursor to prevent it from getting confused
     ClearScreen();
 
     while(1) {
-        CursorPosition(1, 1);
-        if(vga) Prompt(35, ""); else Prompt(15, "");
+        MoveCursor(1, 1);
+        Prompt(35, "");
         AttribUL = true;
         VideoPrintString("SET-UP MENU\r\n");
         AttribUL = false;
-        if(vga) VideoPrintString("\r\n");
-        PPrompt("A = Number of lines (for VGA)", saved[O_LINES24] ? "24" : "36");
-        PPrompt("B = Composite output", saved[O_PAL] ? "PAL" : "NTSC");
+        VideoPrintString("\r\n");
         PPrompt("C = Keyboard language", (char *)kblang[saved[O_KEYBOARD] + 1]);
-        if(vga) VideoPrintString("\r\n");
+        VideoPrintString("\r\n");
         PPrompt("D = Number of bits and parity", (char *)oparity[saved[O_PARITY] + 1]);
         PPrompt("E = Number of stop bits", saved[O_1STOPBIT] ? "ONE" : "TWO");
         PPrompt("F = Invert Serial (for RS232)", saved[O_SERIALINV] ? "OFF" : "INVERT");
         sprintf(baud, "%d", saved[O_BAUDRATE]);
         PPrompt("G = Configurable baudrate", baud);
-        if(vga) VideoPrintString("\r\n");
+        VideoPrintString("\r\n");
         PPrompt("H = Display start up message", saved[O_STARTUPMSG] ? "ON" : "HIDE");
-        if(vga) VideoPrintString("\r\n");
-        Prompt((vga ? 14:0), "I = Reset to the original defaults\r\n");
-        Prompt((vga ? 14:0), "J = Discard all changes and exit\r\n");
-        Prompt((vga ? 14:0), "K = Save changes and restart terminal\r\n");
+        VideoPrintString("\r\n");
+        Prompt(14, "I = Reset to the original defaults\r\n");
+        Prompt(14, "J = Discard all changes and exit\r\n");
+        Prompt(14, "K = Save changes and restart terminal\r\n");
 
         VideoPrintString("\r\n");
-        if(vga) VideoPrintString("\r\n");
+        VideoPrintString("\r\n");
 
         switch(GetInput("Select item (enter A to K) : ", 'A', 'K')) {
             case 'A': saved[O_LINES24] = GetInput("Enter 1 for 24 lines or 2 for 36 lines : ", '1', '2') - '2';
                       break;
             case 'B': saved[O_PAL] = GetInput("Enter 1 for PAL or 2 for NTSC : ", '1', '2') - '2';
                       break;
-            case 'C': if(vga)
-                          saved[O_KEYBOARD] = GetInput("Language 1=US, 2=FR, 3=GR, 4=IT, 5=BE, 6=UK, 7=RS : ", '1', '7') - '2';
-                      else
-                          saved[O_KEYBOARD] = GetInput("1=US, 2=FR, 3=GR, 4=IT, 5=BE, 6=UK, 7=RS : ", '1', '7') - '2';
+            case 'C': saved[O_KEYBOARD] = GetInput("Language 1=US, 2=FR, 3=GR, 4=IT, 5=BE, 6=UK, 7=RS : ", '1', '7') - '2';
                       break;
             case 'D': saved[O_PARITY] = GetInput("1 = 8bit NONE, 2 = 7bit ODD, 3 = 7bit EVEN : ", '1', '7') - '2';
                       break;
@@ -540,7 +524,7 @@ void SetUp(void) {
                       break;
             case 'F': saved[O_SERIALINV] = GetInput("Enter 1 for normal or 2 for inverted : ", '1', '2') - '2';
                       break;
-            case 'G': if(vga) for(i = 0; i < (74 - strlen("Enter baudrate as a number followed by ENTER : "))/2; i++) VT100Putc(' ');
+            case 'G': for(i = 0; i < (74 - strlen("Enter baudrate as a number followed by ENTER : "))/2; i++) VT100Putc(' ');
                       VideoPrintString("Enter baudrate as a number followed by ENTER : ");
                       cmd_ClearEOS();
                       i = 0;

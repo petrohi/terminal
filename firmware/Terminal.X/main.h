@@ -48,14 +48,10 @@
 
 
 // The main clock frequency for the chip
-#define	CLOCKFREQ		(40000000ul)			    // This is set in in Configuration Bits.h
+#define	CLOCKFREQ		(50000000ul)			    // This is set in in Configuration Bits.h
 
 // The peripheral bus frequency
 #define BUSFREQ			(CLOCKFREQ/1)			    // This is set in in Configuration Bits.h
-
-// grab as much memory as possible for video and Rx buffers
-#define BUFFER_SIZE             (29600)                             // this should be the largest possible size allowed by the compiler/linker
-
 
 // General defines
 #define forever                 1
@@ -92,8 +88,7 @@ extern void putUSB(char);
 
 extern volatile int GeneralTimer;
 
-extern char *SerialRxBuf;
-extern int RxBufferSize;
+extern char SerialRxBuf[];
 extern volatile int SerialRxBufHead;
 extern volatile int SerialRxBufTail;
 extern int USBSerialRxBufTail;
