@@ -1506,8 +1506,8 @@
     )
   )
 
-  (gr_text "VGA Terminal V1.1 https://github.com/petrohi/terminal/" (at 76.2 61.341) (layer B.SilkS) (tstamp 5DBDC6A3)
-    (effects (font (size 1 1) (thickness 0.15)) (justify mirror))
+  (gr_text "VGA Terminal V1.1\n(C) 2014-2019 Geoff Graham and Peter Hizalev\nhttps://github.com/petrohi/terminal" (at 70.231 59.69) (layer B.SilkS) (tstamp 5DBDC6A3)
+    (effects (font (size 1 1) (thickness 0.15)) (justify left mirror))
   )
   (gr_line (start 25.4 25.4) (end 25.4 63.5) (layer Edge.Cuts) (width 0.05) (tstamp 5DBDC766))
   (gr_line (start 127 25.4) (end 127 63.5) (layer Edge.Cuts) (width 0.05) (tstamp 5DBDC8AA))

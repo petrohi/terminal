@@ -43,7 +43,7 @@
 	and put under another distribution licence (including the GNU Public Licence).
 ****************************************************************************************/
 
-#define VERSION                 "1.3"                               // define the version number
+#define VERSION                 "2.0"                               // define the version number
 #define YEAR			"2019"			            // and the year
 
 
