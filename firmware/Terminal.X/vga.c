@@ -5,20 +5,9 @@
 #include <plib.h>
 #include "vga.h"
 
-#define LINE_T   	1600
-#define PIX_T       192
+#define VIDEO_LINE_BYTES (VIDEO_H_PIXELS / 8)
 
-#define LINES       525
-#define SYNC        2
-#define FRONT_PORCH (10 + 80)
-#define BACK_PORCH  (33 + 80)
-
-#define VIDEO_LINES (LINES - FRONT_PORCH - SYNC - BACK_PORCH)
-#define VIDEO_LINE_PIXELS 640
-
-#define VIDEO_LINE_BYTES (VIDEO_LINE_PIXELS / 8)
-
-unsigned char VideoBuf[VIDEO_LINE_BYTES * VIDEO_LINES];
+unsigned char VideoBuf[VIDEO_LINE_BYTES * VIDEO_V_PIXELS];
 volatile unsigned char *VideoLine = VideoBuf;
 volatile int CurrLine = 0;
 
@@ -287,9 +276,6 @@ const unsigned char Font[256][16]={
  * 
  */
 
-#define CHAR_HEIGHT 16
-#define CHAR_WIDTH 8
-
 void ClearScreen() {
     memset((void*)VideoBuf, 0x00, sizeof(VideoBuf));    
 }
@@ -416,7 +402,7 @@ void InitVga() {
     PPSInput(4, SS2, RPB9);                                         // B9 is the framing input
     PPSOutput(4, RPB14, OC3);                                       // B14 is the horizontal sync output (ie, the output from OC3)    
     
-    OpenOC3(OC_ON | OC_TIMER3_SRC | OC_CONTINUE_PULSE, 0, PIX_T);
+    OpenOC3(OC_ON | OC_TIMER3_SRC | OC_CONTINUE_PULSE, 0, PIXEL_T);
     OpenTimer3( T3_ON | T3_PS_1_1 | T3_SOURCE_INT, LINE_T-1);	            // enable timer 3 and set to the horizontal scanning frequency        
     SpiChnOpen(2, SPICON_ON | SPICON_MSTEN | SPICON_FRMEN | SPICON_FRMSYNC | SPICON_FRMPOL | SPI_OPEN_DISSDI, 2);
 
