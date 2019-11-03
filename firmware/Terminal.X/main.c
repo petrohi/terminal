@@ -106,7 +106,7 @@ volatile int CursorTimer = 0;
 volatile int GeneralTimer;
 int CursorOff = 0;
 
-#define MES_SIGNON  "VGA Video Terminal Ver " VERSION "\r\n"\
+#define MES_SIGNON  "VGA Terminal Ver " VERSION "\r\n"\
 					"(C) 2014-" YEAR " Geoff Graham and Peter Hizalev\r\n\r\n"
 
 int main(int argc, char* argv[]) {
