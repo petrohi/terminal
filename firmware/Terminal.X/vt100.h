@@ -53,8 +53,6 @@ void cmd_ClearEOL(void);
 void cmd_ClearEOS(void);
 void MoveCursor(int x, int y);
 
-extern int AttribUL, AttribRV, AttribInvis;                         // attributes that can be turned on/off
-
 #define VT100   1
 #define VT52    2
 #define BOTH    3

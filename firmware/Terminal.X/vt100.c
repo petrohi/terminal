@@ -69,7 +69,6 @@ extern const struct s_cmdtbl cmdtbl[];
 
 int mode;                                                           // current mode.  can be VT100 or VT52
 
-int AttribUL, AttribRV, AttribInvis;                                // attributes that can be turned on/off
 int SaveX, SaveY, SaveUL, SaveRV, SaveInvis;           // saved attributes that can be restored
 
 void VT100Putc(char c) {
@@ -222,18 +221,18 @@ void cmd_ClearLine(void) {
 void cmd_CurSave(void) {
     SaveX = CursorRow;
     SaveY = CursorCol;
-    SaveUL = AttribUL;
-    SaveRV = AttribRV;
-    SaveInvis = AttribInvis;
+    SaveUL = UnderlineChar;
+    SaveRV = ReverseVideoChar;
+    SaveInvis = InvisibleChar;
 }
 
 
 // restore the saved attributes
 void cmd_CurRestore(void) {
     MoveCursor(SaveX, SaveY);
-    AttribUL = SaveUL;
-    AttribRV = SaveRV;
-    AttribInvis = SaveInvis;
+    UnderlineChar = SaveUL;
+    ReverseVideoChar = SaveRV;
+    InvisibleChar = SaveInvis;
 }
 
 
@@ -275,9 +274,9 @@ void cmd_Reset(void) {
     ShowCursor(false);                                              // turn off the cursor to prevent it from getting confused
     ClearScreen();
     MoveCursor(1, 1);
-    AttribUL = 0;
-    AttribRV = 0;
-    AttribInvis = 0;
+    UnderlineChar = 0;
+    ReverseVideoChar = 0;
+    InvisibleChar = 0;
 }
 
 
@@ -299,11 +298,11 @@ void cmd_LEDs(void) {
 void cmd_Attributes(void) {
     ShowCursor(false);                                              // turn off the cursor to prevent it from getting confused
     if(arg[0] == 0) {
-        AttribUL = AttribRV = AttribInvis = 0;
+        UnderlineChar = ReverseVideoChar = InvisibleChar = 0;
     }
-    if(arg[0] == 4) AttribUL = 1;
-    if(arg[0] == 7) AttribRV = 1;
-    if(arg[0] == 8) AttribInvis = 1;
+    if(arg[0] == 4) UnderlineChar = 1;
+    if(arg[0] == 7) ReverseVideoChar = 1;
+    if(arg[0] == 8) InvisibleChar = 1;
 }
 
 
@@ -358,21 +357,6 @@ void cmd_ResetMode(void) {
         MoveCursor(1, 1);
     }
 }
-
-
-// draw graphics
-void cmd_Draw(void) {
-//    if(Display24Lines) {
-//        arg[2] = (arg[2]/3)*2;
-//        arg[4] = (arg[4]/3)*2;
-//    }
-    //if(arg[0] == 1) DrawLine(arg[1], arg[2], arg[3], arg[4], 1);
-    //if(arg[0] == 2) DrawBox(arg[1], arg[2], arg[3], arg[4], 0, 1);
-    //if(arg[0] == 3) DrawBox(arg[1], arg[2], arg[3], arg[4], 1, 1);
-    //if(arg[0] == 4) DrawCircle(arg[1], arg[2], arg[3], 0, 1, vga ? 1.14 : 1.0);
-    //if(arg[0] == 5) DrawCircle(arg[1], arg[2], arg[3], 1, 1, vga ? 1.14 : 1.0);
-}
-
 
 // do nothing for escape sequences that are not implemented
 void cmd_NULL(void) {}
@@ -437,9 +421,6 @@ const struct s_cmdtbl cmdtbl[]  = {
 
     { "\033[>",         VT100,      cmd_SetNumLock },
     { "\033[=",         VT100,      cmd_ExitNumLock },
-
-    { "\033[Z@;@;@;@;@Z",VT100,     cmd_Draw },
-    { "\033[Z@;@;@;@Z",  VT100,     cmd_Draw },
 
     { "\033[@m" ,       VT100,      cmd_Attributes },
     { "\033[@q" ,       VT100,      cmd_LEDs },

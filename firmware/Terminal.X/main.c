@@ -107,7 +107,7 @@ volatile int GeneralTimer;
 int CursorOff = 0;
 
 #define MES_SIGNON  "VGA Terminal Ver " VERSION "\r\n"\
-					"(C) 2014-" YEAR " Geoff Graham and Peter Hizalev\r\n\r\n"
+					"Copyright (C) 2014-" YEAR " Geoff Graham and Peter Hizalev\r\n\r\n"
 
 int main(int argc, char* argv[]) {
     int ch;
@@ -145,7 +145,7 @@ int main(int argc, char* argv[]) {
 
     while(1) {
         CheckUSB();
-        ShowCursor(CursorOff || CursorTimer > CURSOR_ON);
+        ShowCursor(!(CursorOff || CursorTimer > CURSOR_ON));
 
         ch = getSerial();
         if(ch != -1) {
@@ -490,9 +490,9 @@ void SetUp(void) {
     while(1) {
         MoveCursor(1, 1);
         Prompt(35, "");
-        AttribUL = true;
+        UnderlineChar = true;
         VideoPrintString("SET-UP MENU\r\n");
-        AttribUL = false;
+        UnderlineChar = false;
         VideoPrintString("\r\n");
         PPrompt("C = Keyboard language", (char *)kblang[saved[O_KEYBOARD] + 1]);
         VideoPrintString("\r\n");
@@ -511,11 +511,7 @@ void SetUp(void) {
         VideoPrintString("\r\n");
         VideoPrintString("\r\n");
 
-        switch(GetInput("Select item (enter A to K) : ", 'A', 'K')) {
-            case 'A': saved[O_LINES24] = GetInput("Enter 1 for 24 lines or 2 for 36 lines : ", '1', '2') - '2';
-                      break;
-            case 'B': saved[O_PAL] = GetInput("Enter 1 for PAL or 2 for NTSC : ", '1', '2') - '2';
-                      break;
+        switch(GetInput("Select item (enter C to K) : ", 'C', 'K')) {
             case 'C': saved[O_KEYBOARD] = GetInput("Language 1=US, 2=FR, 3=GR, 4=IT, 5=BE, 6=UK, 7=RS : ", '1', '7') - '2';
                       break;
             case 'D': saved[O_PARITY] = GetInput("1 = 8bit NONE, 2 = 7bit ODD, 3 = 7bit EVEN : ", '1', '7') - '2';

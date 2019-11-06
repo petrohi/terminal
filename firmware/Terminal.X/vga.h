@@ -15,9 +15,16 @@
 #define SCREEN_COLS    (VIDEO_H_PIXELS / CHAR_WIDTH)
 #define SCREEN_ROWS    (VIDEO_V_PIXELS / CHAR_HEIGHT)
 
+#define TAB_SIZE       8 
+
 extern void ClearScreen();
 extern void ScrollUp();
 extern void ScrollDown();
+
+extern int UnderlineChar;
+extern int ReverseVideoChar;
+extern int InvisibleChar;
+
 extern void DrawChar(int row, int col, char c);
 
 extern int CursorRow;

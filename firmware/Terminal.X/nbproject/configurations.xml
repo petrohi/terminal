@@ -5,10 +5,10 @@
                    displayName="Header Files"
                    projectFiles="true">
       <itemPath>config.h</itemPath>
-      <itemPath>fonts.h</itemPath>
       <itemPath>main.h</itemPath>
       <itemPath>vt100.h</itemPath>
       <itemPath>vga.h</itemPath>
+      <itemPath>vga_font.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -21,6 +21,7 @@
       <itemPath>main.c</itemPath>
       <itemPath>vt100.c</itemPath>
       <itemPath>vga.c</itemPath>
+      <itemPath>vga_font.c</itemPath>
     </logicalFolder>
     <logicalFolder name="USB" displayName="USB" projectFiles="true">
       <logicalFolder name="Microchip" displayName="Microchip" projectFiles="true">

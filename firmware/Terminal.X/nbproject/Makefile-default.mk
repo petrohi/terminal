@@ -57,17 +57,17 @@ OBJECTDIR=build/${CND_CONF}/${IMAGE_TYPE}
 DISTDIR=dist/${CND_CONF}/${IMAGE_TYPE}
 
 # Source Files Quoted if spaced
-SOURCEFILES_QUOTED_IF_SPACED=keyboard.c main.c vt100.c "USB/Microchip/USB/CDC Device Driver/usb_function_cdc.c" USB/Microchip/USB/usb_device.c USB/usb_descriptors.c vga.c
+SOURCEFILES_QUOTED_IF_SPACED=keyboard.c main.c vt100.c vga.c "USB/Microchip/USB/CDC Device Driver/usb_function_cdc.c" USB/Microchip/USB/usb_device.c USB/usb_descriptors.c vga_font.c
 
 # Object Files Quoted if spaced
-OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/keyboard.o ${OBJECTDIR}/main.o ${OBJECTDIR}/vt100.o "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver/usb_function_cdc.o" ${OBJECTDIR}/USB/Microchip/USB/usb_device.o ${OBJECTDIR}/USB/usb_descriptors.o ${OBJECTDIR}/vga.o
-POSSIBLE_DEPFILES=${OBJECTDIR}/keyboard.o.d ${OBJECTDIR}/main.o.d ${OBJECTDIR}/vt100.o.d "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver/usb_function_cdc.o.d" ${OBJECTDIR}/USB/Microchip/USB/usb_device.o.d ${OBJECTDIR}/USB/usb_descriptors.o.d ${OBJECTDIR}/vga.o.d
+OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/keyboard.o ${OBJECTDIR}/main.o ${OBJECTDIR}/vt100.o ${OBJECTDIR}/vga.o "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver/usb_function_cdc.o" ${OBJECTDIR}/USB/Microchip/USB/usb_device.o ${OBJECTDIR}/USB/usb_descriptors.o ${OBJECTDIR}/vga_font.o
+POSSIBLE_DEPFILES=${OBJECTDIR}/keyboard.o.d ${OBJECTDIR}/main.o.d ${OBJECTDIR}/vt100.o.d ${OBJECTDIR}/vga.o.d "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver/usb_function_cdc.o.d" ${OBJECTDIR}/USB/Microchip/USB/usb_device.o.d ${OBJECTDIR}/USB/usb_descriptors.o.d ${OBJECTDIR}/vga_font.o.d
 
 # Object Files
-OBJECTFILES=${OBJECTDIR}/keyboard.o ${OBJECTDIR}/main.o ${OBJECTDIR}/vt100.o ${OBJECTDIR}/USB/Microchip/USB/CDC\ Device\ Driver/usb_function_cdc.o ${OBJECTDIR}/USB/Microchip/USB/usb_device.o ${OBJECTDIR}/USB/usb_descriptors.o ${OBJECTDIR}/vga.o
+OBJECTFILES=${OBJECTDIR}/keyboard.o ${OBJECTDIR}/main.o ${OBJECTDIR}/vt100.o ${OBJECTDIR}/vga.o ${OBJECTDIR}/USB/Microchip/USB/CDC\ Device\ Driver/usb_function_cdc.o ${OBJECTDIR}/USB/Microchip/USB/usb_device.o ${OBJECTDIR}/USB/usb_descriptors.o ${OBJECTDIR}/vga_font.o
 
 # Source Files
-SOURCEFILES=keyboard.c main.c vt100.c USB/Microchip/USB/CDC Device Driver/usb_function_cdc.c USB/Microchip/USB/usb_device.c USB/usb_descriptors.c vga.c
+SOURCEFILES=keyboard.c main.c vt100.c vga.c USB/Microchip/USB/CDC Device Driver/usb_function_cdc.c USB/Microchip/USB/usb_device.c USB/usb_descriptors.c vga_font.c
 
 
 
@@ -125,6 +125,12 @@ ${OBJECTDIR}/vt100.o: vt100.c  nbproject/Makefile-${CND_CONF}.mk
 	@${RM} ${OBJECTDIR}/vt100.o 
 	@${FIXDEPS} "${OBJECTDIR}/vt100.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/vt100.o.d" -o ${OBJECTDIR}/vt100.o vt100.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
 	
+${OBJECTDIR}/vga.o: vga.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} "${OBJECTDIR}" 
+	@${RM} ${OBJECTDIR}/vga.o.d 
+	@${RM} ${OBJECTDIR}/vga.o 
+	@${FIXDEPS} "${OBJECTDIR}/vga.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/vga.o.d" -o ${OBJECTDIR}/vga.o vga.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
+	
 ${OBJECTDIR}/USB/Microchip/USB/CDC\ Device\ Driver/usb_function_cdc.o: USB/Microchip/USB/CDC\ Device\ Driver/usb_function_cdc.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver" 
 	@${RM} "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver/usb_function_cdc.o".d 
@@ -143,11 +149,11 @@ ${OBJECTDIR}/USB/usb_descriptors.o: USB/usb_descriptors.c  nbproject/Makefile-${
 	@${RM} ${OBJECTDIR}/USB/usb_descriptors.o 
 	@${FIXDEPS} "${OBJECTDIR}/USB/usb_descriptors.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/USB/usb_descriptors.o.d" -o ${OBJECTDIR}/USB/usb_descriptors.o USB/usb_descriptors.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
 	
-${OBJECTDIR}/vga.o: vga.c  nbproject/Makefile-${CND_CONF}.mk
+${OBJECTDIR}/vga_font.o: vga_font.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} "${OBJECTDIR}" 
-	@${RM} ${OBJECTDIR}/vga.o.d 
-	@${RM} ${OBJECTDIR}/vga.o 
-	@${FIXDEPS} "${OBJECTDIR}/vga.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/vga.o.d" -o ${OBJECTDIR}/vga.o vga.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
+	@${RM} ${OBJECTDIR}/vga_font.o.d 
+	@${RM} ${OBJECTDIR}/vga_font.o 
+	@${FIXDEPS} "${OBJECTDIR}/vga_font.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/vga_font.o.d" -o ${OBJECTDIR}/vga_font.o vga_font.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
 	
 else
 ${OBJECTDIR}/keyboard.o: keyboard.c  nbproject/Makefile-${CND_CONF}.mk
@@ -168,6 +174,12 @@ ${OBJECTDIR}/vt100.o: vt100.c  nbproject/Makefile-${CND_CONF}.mk
 	@${RM} ${OBJECTDIR}/vt100.o 
 	@${FIXDEPS} "${OBJECTDIR}/vt100.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/vt100.o.d" -o ${OBJECTDIR}/vt100.o vt100.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
 	
+${OBJECTDIR}/vga.o: vga.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} "${OBJECTDIR}" 
+	@${RM} ${OBJECTDIR}/vga.o.d 
+	@${RM} ${OBJECTDIR}/vga.o 
+	@${FIXDEPS} "${OBJECTDIR}/vga.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/vga.o.d" -o ${OBJECTDIR}/vga.o vga.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
+	
 ${OBJECTDIR}/USB/Microchip/USB/CDC\ Device\ Driver/usb_function_cdc.o: USB/Microchip/USB/CDC\ Device\ Driver/usb_function_cdc.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver" 
 	@${RM} "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver/usb_function_cdc.o".d 
@@ -186,11 +198,11 @@ ${OBJECTDIR}/USB/usb_descriptors.o: USB/usb_descriptors.c  nbproject/Makefile-${
 	@${RM} ${OBJECTDIR}/USB/usb_descriptors.o 
 	@${FIXDEPS} "${OBJECTDIR}/USB/usb_descriptors.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/USB/usb_descriptors.o.d" -o ${OBJECTDIR}/USB/usb_descriptors.o USB/usb_descriptors.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
 	
-${OBJECTDIR}/vga.o: vga.c  nbproject/Makefile-${CND_CONF}.mk
+${OBJECTDIR}/vga_font.o: vga_font.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} "${OBJECTDIR}" 
-	@${RM} ${OBJECTDIR}/vga.o.d 
-	@${RM} ${OBJECTDIR}/vga.o 
-	@${FIXDEPS} "${OBJECTDIR}/vga.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/vga.o.d" -o ${OBJECTDIR}/vga.o vga.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
+	@${RM} ${OBJECTDIR}/vga_font.o.d 
+	@${RM} ${OBJECTDIR}/vga_font.o 
+	@${FIXDEPS} "${OBJECTDIR}/vga_font.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/vga_font.o.d" -o ${OBJECTDIR}/vga_font.o vga_font.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD) 
 	
 endif
 

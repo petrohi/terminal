@@ -140,14 +140,12 @@ extern volatile char NumLock;
 // the option array used for storing set-up options
 extern int Option[];
 
-#define O_LINES24       0
-#define O_PAL           2
-#define O_1STOPBIT      3
-#define O_PARITY        4
-#define O_BAUDRATE      5
-#define O_KEYBOARD      6
-#define O_STARTUPMSG    7
-#define O_SERIALINV     8
+#define O_1STOPBIT      0
+#define O_PARITY        1
+#define O_BAUDRATE      2
+#define O_KEYBOARD      3
+#define O_STARTUPMSG    4
+#define O_SERIALINV     5
 
 // definitions related to setting the keyboard type in O_KEYBOARD
 #define O_KEYBOARD_US	-1
