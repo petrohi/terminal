@@ -76,20 +76,20 @@ void BlinkLED(void);
 void SetUp(void);
 
 
-#define SERIAL_RX_BUF_SIZE 4
+#define SERIAL_RX_BUF_SIZE 1024
 char SerialRxBuf[SERIAL_RX_BUF_SIZE];
 volatile int SerialRxBufHead = 0;
 volatile int SerialRxBufTail = 0;
 
-#define SERIAL_TX_BUF_SIZE 4
+#define SERIAL_TX_BUF_SIZE 1024
 char SerialTxBuf[SERIAL_TX_BUF_SIZE];
 int SerialTxBufHead = 0;
 int SerialTxBufTail = 0;
 
 // declare the USB buffers
 // these buffers are used by the USB I/O hardware
-#define USB_DEVICE_RX_BUFFER_SIZE	4
-#define USB_DEVICE_TX_BUFFER_SIZE	4
+#define USB_DEVICE_RX_BUFFER_SIZE	1024
+#define USB_DEVICE_TX_BUFFER_SIZE	1024
 char UsbDeviceRxBuf[USB_DEVICE_RX_BUFFER_SIZE];
 char UsbDeviceTxBuf[USB_DEVICE_TX_BUFFER_SIZE];
 
