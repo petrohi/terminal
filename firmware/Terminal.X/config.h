@@ -56,7 +56,7 @@
                                                                     // FRCDIV16	is Fast RC oscillator with divide by 16
                                                                     // FRCDIV	is Fast RC oscillator with divide
 
-#pragma config POSCMOD = XT                                         // Primary Oscillator Selection
+#pragma config POSCMOD = HS                                         // Primary Oscillator Selection
                                                                     // HS	is HS oscillator
                                                                     // EC	is EC oscillator
                                                                     // XT	is XT oscillator
