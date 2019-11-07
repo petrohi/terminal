@@ -44,3 +44,8 @@ extern void PutChar(char c);
 extern void PutChars(char* s);
 
 extern void InitVga();
+
+extern void SetPixel(int x, int y);
+extern void DrawLine(int x1, int y1, int x2, int y2);
+extern void DrawBox(int x1, int y1, int x2, int y2, int fill);
+extern void DrawCircle(int x, int y, int radius, int fill, float aspect);

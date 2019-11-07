@@ -6,9 +6,9 @@
 #include "vga.h"
 #include "vga_font.h"
 
-#define VIDEO_LINE_BYTES (VIDEO_H_PIXELS / 8)
+#define VIDEO_H_BYTES (VIDEO_H_PIXELS / 8)
 
-unsigned char VideoBuf[VIDEO_LINE_BYTES * VIDEO_V_PIXELS];
+unsigned char VideoBuf[VIDEO_H_BYTES * VIDEO_V_PIXELS];
 volatile unsigned char *VideoLine = VideoBuf;
 volatile int CurrLine = 0;
 
@@ -23,16 +23,16 @@ void ClearScreen() {
 }
 
 void ScrollUp() {
-    memcpy((void*)VideoBuf, ((void*)VideoBuf + (VIDEO_LINE_BYTES * CHAR_HEIGHT)), sizeof(VideoBuf) - (VIDEO_LINE_BYTES * CHAR_HEIGHT));    
-    memset((void*)VideoBuf + (VIDEO_LINE_BYTES * CHAR_HEIGHT * (SCREEN_ROWS - 1)), 0x00, VIDEO_LINE_BYTES * CHAR_HEIGHT);    
+    memcpy((void*)VideoBuf, ((void*)VideoBuf + (VIDEO_H_BYTES * CHAR_HEIGHT)), sizeof(VideoBuf) - (VIDEO_H_BYTES * CHAR_HEIGHT));    
+    memset((void*)VideoBuf + (VIDEO_H_BYTES * CHAR_HEIGHT * (SCREEN_ROWS - 1)), 0x00, VIDEO_H_BYTES * CHAR_HEIGHT);    
 }
 
 void ScrollDown() {
     int i = SCREEN_ROWS - 1;
     for (; i > 0; i--) {
-        memcpy((void*)VideoBuf + (i * VIDEO_LINE_BYTES * CHAR_HEIGHT), (void*)VideoBuf + ((i - 1) * VIDEO_LINE_BYTES * CHAR_HEIGHT), (VIDEO_LINE_BYTES * CHAR_HEIGHT));    
+        memcpy((void*)VideoBuf + (i * VIDEO_H_BYTES * CHAR_HEIGHT), (void*)VideoBuf + ((i - 1) * VIDEO_H_BYTES * CHAR_HEIGHT), (VIDEO_H_BYTES * CHAR_HEIGHT));    
     }
-    memset((void*)VideoBuf, 0x00, VIDEO_LINE_BYTES * CHAR_HEIGHT);    
+    memset((void*)VideoBuf, 0x00, VIDEO_H_BYTES * CHAR_HEIGHT);    
 }
 
 int UnderlineChar = 0;
@@ -89,16 +89,16 @@ void ClearEOL() {
     
     int m = 0;
     int colOffset = ((CursorCol - 1) * CHAR_WIDTH) / 8;
-    int rowOffset = VIDEO_LINE_BYTES * CHAR_HEIGHT * (CursorRow - 1);
+    int rowOffset = VIDEO_H_BYTES * CHAR_HEIGHT * (CursorRow - 1);
     for (; m < CHAR_HEIGHT; ++m) {    
-        memset((void*)VideoBuf + rowOffset + (VIDEO_LINE_BYTES * m) + colOffset, 0x00, VIDEO_LINE_BYTES - colOffset);
+        memset((void*)VideoBuf + rowOffset + (VIDEO_H_BYTES * m) + colOffset, 0x00, VIDEO_H_BYTES - colOffset);
     }
 }
 
 void ClearEOS() {
     ClearEOL();
     
-    int nextRowOffset = VIDEO_LINE_BYTES * CHAR_HEIGHT * CursorRow;
+    int nextRowOffset = VIDEO_H_BYTES * CHAR_HEIGHT * CursorRow;
     memset((void*)VideoBuf + nextRowOffset, 0x00, sizeof(VideoBuf) - nextRowOffset);
 }
 
@@ -108,14 +108,14 @@ void ClearBOL() {
     int m = 0;
     int colOffset = ((CursorCol - 1) * CHAR_WIDTH) / 8;
     for (; m < CHAR_HEIGHT; ++m) {    
-        memset((void*)VideoBuf + (VIDEO_LINE_BYTES * CHAR_HEIGHT * (CursorRow - 1)) + (VIDEO_LINE_BYTES * m), 0x00, colOffset);
+        memset((void*)VideoBuf + (VIDEO_H_BYTES * CHAR_HEIGHT * (CursorRow - 1)) + (VIDEO_H_BYTES * m), 0x00, colOffset);
     }
 }
 
 void ClearBOS() {
     ClearBOL();
     
-    memset((void*)VideoBuf, 0x00, VIDEO_LINE_BYTES * CHAR_HEIGHT * CursorRow);
+    memset((void*)VideoBuf, 0x00, VIDEO_H_BYTES * CHAR_HEIGHT * CursorRow);
 }
 
 int AutoLineWrap = 1;
@@ -181,7 +181,7 @@ void InitVga() {
     DmaChnSetTxfer(DMA_CHANNEL1, (void*)BackPorch, (void *)&SPI2BUF, sizeof(BackPorch), 1, 1);
     DmaChnOpen(DMA_CHANNEL0, 0, DMA_OPEN_DEFAULT);		                        // setup DMA 0 to pump the data from the graphics buffer to the SPI peripheral
     DmaChnSetEventControl(DMA_CHANNEL0, DMA_EV_START_IRQ_EN | DMA_EV_START_IRQ(_SPI2_TX_IRQ));
-    DmaChnSetTxfer(DMA_CHANNEL0, (void*)VideoLine, (void *)&SPI2BUF, VIDEO_LINE_BYTES, 1, 1);
+    DmaChnSetTxfer(DMA_CHANNEL0, (void*)VideoLine, (void *)&SPI2BUF, VIDEO_H_BYTES, 1, 1);
     DmaChnSetControlFlags(DMA_CHANNEL0, DMA_CTL_CHAIN_EN | DMA_CTL_CHAIN_DIR);    	// chain DMA 0 so that it will start on completion of the DMA 1 transfer
     
     mT3SetIntPriority(7);
@@ -199,7 +199,7 @@ void __ISR(_TIMER_3_VECTOR, IPL7SOFT) T3Interrupt(void) {
         LATBSET = (1 << 13);        
     }
     else {
-        VideoLine = (VideoBuf + ((CurrLine - FRONT_PORCH - SYNC - BACK_PORCH) * VIDEO_LINE_BYTES));
+        VideoLine = (VideoBuf + ((CurrLine - FRONT_PORCH - SYNC - BACK_PORCH) * VIDEO_H_BYTES));
         DCH0SSA = KVA_TO_PA((void*) VideoLine);            // update the DMA0 source address (DMA0 is used for composite data)
         DmaChnEnable(1);                                        // arm the DMA transfer        
     }
@@ -209,4 +209,128 @@ void __ISR(_TIMER_3_VECTOR, IPL7SOFT) T3Interrupt(void) {
     }
 
     mT3ClearIntFlag();    											// clear the interrupt flag
+}
+
+void SetPixel(int x, int y) {
+    if (x >= 0 && x < VIDEO_H_PIXELS && y >= 0 && y < VIDEO_V_PIXELS) {
+        char mask = 0x80 >> (x & 0x7);
+        int i = y * VIDEO_H_BYTES + x/8;
+        VideoBuf[i] |= mask;
+    }
+}
+
+int abs(int a) {
+    return (a > 0) ? a : -a;
+}
+
+void DrawLine(int x1, int y1, int x2, int y2) {
+    int  x, y, addx, addy, dx, dy;
+    int P;
+    int i;
+
+    dx = abs(x2 - x1);
+    dy = abs(y2 - y1);
+    x = x1;
+    y = y1;
+
+    if(x1 > x2)
+        addx = -1;
+    else
+        addx = 1;
+
+    if(y1 > y2)
+        addy = -1;
+    else
+        addy = 1;
+
+    if(dx >= dy) {
+        P = 2*dy - dx;
+        for(i = 0; i <= dx; ++i) {
+            SetPixel(x, y);
+
+            if(P < 0) {
+                P += 2*dy;
+                x += addx;
+            } else {
+                P += 2*dy - 2*dx;
+                x += addx;
+                y += addy;
+            }
+        }
+    } else {
+        P = 2*dx - dy;
+        for(i=0; i<=dy; ++i) {
+            SetPixel(x, y);
+
+            if(P < 0) {
+                P += 2*dx;
+                y += addy;
+            } else {
+                P += 2*dx - 2*dy;
+                x += addx;
+                y += addy;
+            }
+        }
+    }
+}
+
+void DrawBox(int x1, int y1, int x2, int y2, int fill) {
+
+    if (fill) {
+        int y, ymax;                          // Find the y min and max
+
+        if (y1 < y2) {
+            y = y1;
+            ymax = y2;
+        } else {
+            y = y2;
+            ymax = y1;
+        }
+
+        for(; y <= ymax; ++y) {                   // Draw lines to fill the rectangle
+            DrawLine(x1, y, x2, y);
+        }
+    } else {
+        DrawLine(x1, y1, x2, y1);      	// Draw the 4 sides
+        DrawLine(x1, y2, x2, y2);
+        DrawLine(x1, y1, x1, y2);
+        DrawLine(x2, y1, x2, y2);
+    }
+}
+
+void DrawCircle(int x, int y, int radius, int fill, float aspect) {
+    int a, b, P;
+    int A, B;
+    int asp;
+
+    a = 0;
+    b = radius;
+    P = 1 - radius;
+    asp = aspect * (float)(1 << 10);
+
+    do {
+        A = (a * asp) >> 10;
+        B = (b * asp) >> 10;
+        if (fill) {
+            DrawLine(x-A, y+b, x+A, y+b);
+            DrawLine(x-A, y-b, x+A, y-b);
+            DrawLine(x-B, y+a, x+B, y+a);
+            DrawLine(x-B, y-a, x+B, y-a);
+        } else {
+            SetPixel(A+x, b+y);
+            SetPixel(B+x, a+y);
+            SetPixel(x-A, b+y);
+            SetPixel(x-B, a+y);
+            SetPixel(B+x, y-a);
+            SetPixel(A+x, y-b);
+            SetPixel(x-A, y-b);
+            SetPixel(x-B, y-a);
+        }
+
+        if(P < 0)
+            P += 3 + 2 * a++;
+        else
+            P += 5 + 2 * (a++ - b--);
+
+    } while(a <= b);
 }

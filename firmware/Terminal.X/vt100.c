@@ -358,6 +358,14 @@ void cmd_ResetMode(void) {
     }
 }
 
+void cmd_Draw(void) {
+    if(arg[0] == 1) DrawLine(arg[1], arg[2], arg[3], arg[4]);
+    if(arg[0] == 2) DrawBox(arg[1], arg[2], arg[3], arg[4], 0);
+    if(arg[0] == 3) DrawBox(arg[1], arg[2], arg[3], arg[4], 1);
+    if(arg[0] == 4) DrawCircle(arg[1], arg[2], arg[3], 0, 1.0);
+    if(arg[0] == 5) DrawCircle(arg[1], arg[2], arg[3], 1, 1.0);
+}
+
 // do nothing for escape sequences that are not implemented
 void cmd_NULL(void) {}
 
@@ -421,6 +429,9 @@ const struct s_cmdtbl cmdtbl[]  = {
 
     { "\033[>",         VT100,      cmd_SetNumLock },
     { "\033[=",         VT100,      cmd_ExitNumLock },
+
+    { "\033[Z@;@;@;@;@Z",VT100,     cmd_Draw },
+    { "\033[Z@;@;@;@Z",  VT100,     cmd_Draw },
 
     { "\033[@m" ,       VT100,      cmd_Attributes },
     { "\033[@q" ,       VT100,      cmd_LEDs },
