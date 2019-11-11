@@ -1030,7 +1030,7 @@
     (fp_text reference Y1 (at 2.44 0) (layer F.SilkS)
       (effects (font (size 1 1) (thickness 0.15)))
     )
-    (fp_text value 10MHz (at 2.44 3.525) (layer F.SilkS)
+    (fp_text value 20MHz (at 2.44 3.525) (layer F.SilkS)
       (effects (font (size 1 1) (thickness 0.15)))
     )
     (fp_arc (start 5.565 0) (end 5.565 -2.525) (angle 180) (layer F.SilkS) (width 0.12))
