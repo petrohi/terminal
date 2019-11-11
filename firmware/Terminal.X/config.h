@@ -62,7 +62,7 @@
                                                                     // XT	is XT oscillator
                                                                     // OFF	is Disabled
 
-#pragma config FPLLIDIV = DIV_2                                     // PLL Input Divide by 1, 2, 3, 4, 5, 6, 10 or 12
+#pragma config FPLLIDIV = DIV_4                                     // PLL Input Divide by 1, 2, 3, 4, 5, 6, 10 or 12
 #pragma config FPLLMUL = MUL_20                                     // PLL Multiply by 15, 16, 17, 18, 19, 20, 21 or 24
 #pragma config FPLLODIV = DIV_2                                     // PLL Output Divide by 1, 2, 4, 8, 16, 32, 64, or 256
 
@@ -92,7 +92,7 @@
 #endif
 
 #pragma config UPLLEN = ON                                          // USB PLL ON or OFF
-#pragma config UPLLIDIV = DIV_2                                     // USB PLL Input Divide by 1, 2, 3, 4, 5, 6, 10 or 12
+#pragma config UPLLIDIV = DIV_5                                     // USB PLL Input Divide by 1, 2, 3, 4, 5, 6, 10 or 12
 
 #pragma config FVBUSONIO = OFF                                      // USB VBUS_ON pin control
 #pragma config FUSBIDIO = OFF                                       // USB USBID pin control
