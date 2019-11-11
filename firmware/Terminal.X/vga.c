@@ -14,30 +14,18 @@ volatile int CurrLine = 0;
 
 unsigned char BackPorch[] = {0, 0, 0, 0, 0, 0};
 
-/*
- * 
- */
-
-void ClearScreen() {
-    memset((void*)VideoBuf, 0x00, sizeof(VideoBuf));    
-}
-
-void ScrollUp() {
-    memcpy((void*)VideoBuf, ((void*)VideoBuf + (VIDEO_H_BYTES * CHAR_HEIGHT)), sizeof(VideoBuf) - (VIDEO_H_BYTES * CHAR_HEIGHT));    
-    memset((void*)VideoBuf + (VIDEO_H_BYTES * CHAR_HEIGHT * (SCREEN_ROWS - 1)), 0x00, VIDEO_H_BYTES * CHAR_HEIGHT);    
-}
-
-void ScrollDown() {
-    int i = SCREEN_ROWS - 1;
-    for (; i > 0; i--) {
-        memcpy((void*)VideoBuf + (i * VIDEO_H_BYTES * CHAR_HEIGHT), (void*)VideoBuf + ((i - 1) * VIDEO_H_BYTES * CHAR_HEIGHT), (VIDEO_H_BYTES * CHAR_HEIGHT));    
-    }
-    memset((void*)VideoBuf, 0x00, VIDEO_H_BYTES * CHAR_HEIGHT);    
-}
+#define CHAR_START ' '
+#define CHAR_END '~'
 
 int UnderlineChar = 0;
 int ReverseVideoChar = 0;
 int InvisibleChar = 0;
+
+int CursorRow = 1;
+int CursorCol = 1;
+int Cursor = 0;
+
+int AutoLineWrap = 1;
 
 void DrawChar(int row, int col, char c) {
     int m = 0;
@@ -58,10 +46,6 @@ void DrawChar(int row, int col, char c) {
     }
 }
 
-int CursorRow = 1;
-int CursorCol = 1;
-int Cursor = 0;
-
 void ShowCursor(int cursor) {
     if (Cursor != cursor) {
         int m = 0;
@@ -76,8 +60,12 @@ void ShowCursor(int cursor) {
 void MoveCursor(int row, int col) {
     ShowCursor(0);
     
-    if (row > SCREEN_ROWS || col > SCREEN_COLS) {
-        return;
+    if (row > SCREEN_ROWS) {
+        row = SCREEN_ROWS;
+    }
+    
+    if (col > SCREEN_COLS) {
+        col = SCREEN_COLS;
     }
     
     CursorRow = row;
@@ -118,7 +106,28 @@ void ClearBOS() {
     memset((void*)VideoBuf, 0x00, VIDEO_H_BYTES * CHAR_HEIGHT * CursorRow);
 }
 
-int AutoLineWrap = 1;
+void ClearScreen() {
+    ShowCursor(0);
+    
+    memset((void*)VideoBuf, 0x00, sizeof(VideoBuf));    
+}
+
+void ScrollUp() {
+    ShowCursor(0);
+    
+    memcpy((void*)VideoBuf, ((void*)VideoBuf + (VIDEO_H_BYTES * CHAR_HEIGHT)), sizeof(VideoBuf) - (VIDEO_H_BYTES * CHAR_HEIGHT));    
+    memset((void*)VideoBuf + (VIDEO_H_BYTES * CHAR_HEIGHT * (SCREEN_ROWS - 1)), 0x00, VIDEO_H_BYTES * CHAR_HEIGHT);    
+}
+
+void ScrollDown() {
+    ShowCursor(0);
+    
+    int i = SCREEN_ROWS - 1;
+    for (; i > 0; i--) {
+        memcpy((void*)VideoBuf + (i * VIDEO_H_BYTES * CHAR_HEIGHT), (void*)VideoBuf + ((i - 1) * VIDEO_H_BYTES * CHAR_HEIGHT), (VIDEO_H_BYTES * CHAR_HEIGHT));    
+    }
+    memset((void*)VideoBuf, 0x00, VIDEO_H_BYTES * CHAR_HEIGHT);    
+}
 
 void PutChar(char c) {
     ShowCursor(0);
@@ -137,9 +146,12 @@ void PutChar(char c) {
     else if (c == '\t') {
         CursorCol += (TAB_SIZE - ((CursorCol - 1) % TAB_SIZE));
     }
-    else if (CursorCol != SCREEN_COLS || AutoLineWrap) {
+    else if (c >= CHAR_START && c <= CHAR_END) {
         DrawChar(CursorRow, CursorCol, c);
-        CursorCol++;
+        
+        if (CursorCol != SCREEN_COLS || AutoLineWrap) {
+            CursorCol++;
+        }
     }
     
     if (CursorCol > SCREEN_COLS) {

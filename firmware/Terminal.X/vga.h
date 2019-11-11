@@ -17,19 +17,15 @@
 
 #define TAB_SIZE       8 
 
-extern void ClearScreen();
-extern void ScrollUp();
-extern void ScrollDown();
-
 extern int UnderlineChar;
 extern int ReverseVideoChar;
 extern int InvisibleChar;
 
-extern void DrawChar(int row, int col, char c);
-
 extern int CursorRow;
 extern int CursorCol;
 extern int CursorOff;
+
+extern int AutoLineWrap;
 
 extern void ShowCursor(int cursor);
 extern void MoveCursor(int row, int col);
@@ -37,8 +33,9 @@ extern void ClearEOL();
 extern void ClearEOS();
 extern void ClearBOL();
 extern void ClearBOS();
-
-extern int AutoLineWrap;
+extern void ClearScreen();
+extern void ScrollUp();
+extern void ScrollDown();
 
 extern void PutChar(char c);
 extern void PutChars(char* s);

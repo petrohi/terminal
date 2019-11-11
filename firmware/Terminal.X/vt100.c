@@ -121,7 +121,7 @@ void VideoPrintString(char *p) {
 // cursor up one or more lines
 void cmd_CurUp(void) {
     if(argc == 0 || arg[0] == 0) arg[0] = 1;
-    MoveCursor(CursorRow, CursorCol - arg[0]);
+    MoveCursor(CursorRow - arg[0], CursorCol);
 }
 
 
@@ -129,7 +129,7 @@ void cmd_CurUp(void) {
 // cursor down one or more lines
 void cmd_CurDown(void) {
     if(argc == 0 || arg[0] == 0) arg[0] = 1;
-    MoveCursor(CursorRow, CursorCol + arg[0]);
+    MoveCursor(CursorRow + arg[0], CursorCol);
 }
 
 
@@ -137,14 +137,14 @@ void cmd_CurDown(void) {
 // cursor left one or more chars
 void cmd_CurLeft(void) {
     if(argc == 0 || arg[0] == 0) arg[0] = 1;
-    MoveCursor(CursorRow - arg[0], CursorCol);
+    MoveCursor(CursorRow, CursorCol - arg[0]);
 }
 
 
 // cursor right one or more chars
 void cmd_CurRight(void) {
     if(argc == 0 || arg[0] == 0) arg[0] = 1;
-    MoveCursor(CursorRow + arg[0], CursorCol);
+    MoveCursor(CursorRow, CursorCol + arg[0]);
 }
 
 
@@ -158,7 +158,7 @@ void cmd_CurHome(void) {
 void cmd_CurPosition(void) {
     if(argc < 1 || arg[0] == 0) arg[0] = 1;
     if(argc < 2 || arg[1] == 0) arg[1] = 1;
-    MoveCursor(arg[1], arg[0]);                                 // note that the argument order is Y, X
+    MoveCursor(arg[0], arg[1]);
 }
 
 
