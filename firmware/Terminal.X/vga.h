@@ -3,7 +3,7 @@
 
 #define LINES          525
 #define SYNC           2
-#define FRONT_PORCH    (10 + 160)
+#define FRONT_PORCH    10
 #define BACK_PORCH     33
 
 #define VIDEO_V_PIXELS (LINES - FRONT_PORCH - SYNC - BACK_PORCH)
