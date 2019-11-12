@@ -1,13 +1,18 @@
-#define LINE_T   	   1600
-#define PIXEL_T        192
+#define VIDEO_LINES          525
+#define VIDEO_V_SYNC         2
+#define VIDEO_V_FRONT_PORCH  10
+#define VIDEO_V_BACK_PORCH   33
 
-#define LINES          525
-#define SYNC           2
-#define FRONT_PORCH    10
-#define BACK_PORCH     33
+#define VIDEO_PIXELS         800
+#define VIDEO_H_SYNC         96
+#define VIDEO_H_FRONT_PORCH  16
+#define VIDEO_H_BACK_PORCH   48
 
-#define VIDEO_V_PIXELS (LINES - FRONT_PORCH - SYNC - BACK_PORCH)
-#define VIDEO_H_PIXELS 640
+#define VIDEO_LINE_T   	     (VIDEO_PIXELS * 2)
+#define VIDEO_H_SYNC_T       (VIDEO_H_SYNC * 2)
+
+#define VIDEO_V_PIXELS (VIDEO_LINES - VIDEO_V_FRONT_PORCH - VIDEO_V_SYNC - VIDEO_V_BACK_PORCH)
+#define VIDEO_H_PIXELS (VIDEO_PIXELS - VIDEO_H_FRONT_PORCH - VIDEO_H_SYNC - VIDEO_H_BACK_PORCH)
 
 #define CHAR_HEIGHT    16
 #define CHAR_WIDTH     8

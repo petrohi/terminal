@@ -6,13 +6,13 @@
 #include "vga.h"
 #include "vga_font.h"
 
-#define VIDEO_H_BYTES (VIDEO_H_PIXELS / 8)
+#define VIDEO_H_BACK_PORCH_BYTES  (VIDEO_H_BACK_PORCH / 8)
+#define VIDEO_H_FRONT_PORCH_BYTES (VIDEO_H_FRONT_PORCH / 8)
+#define VIDEO_H_BYTES             (VIDEO_H_BACK_PORCH_BYTES + (VIDEO_H_PIXELS / 8) + VIDEO_H_FRONT_PORCH_BYTES)
 
 unsigned char VideoBuf[VIDEO_H_BYTES * VIDEO_V_PIXELS];
 volatile unsigned char *VideoLine = VideoBuf;
 volatile int CurrLine = 0;
-
-unsigned char BackPorch[] = {0, 0, 0, 0, 0, 0};
 
 #define CHAR_START ' '
 #define CHAR_END '~'
@@ -26,6 +26,14 @@ int CursorCol = 1;
 int Cursor = 0;
 
 int AutoLineWrap = 1;
+
+int VideoBufOffset(int i) {
+    return ((i >> 2) << 2) + (3 - (i & 3));    
+}
+
+int CharLineOffset(int row, int col, int line) {
+    VideoBufOffset(((row - 1) * CHAR_HEIGHT * VIDEO_H_BYTES) + (line * VIDEO_H_BYTES) + VIDEO_H_BACK_PORCH_BYTES + (col - 1));
+}
 
 void DrawChar(int row, int col, char c) {
     int m = 0;
@@ -42,7 +50,7 @@ void DrawChar(int row, int col, char c) {
                 charLine = ~charLine;
             }
         }
-        VideoBuf[((row - 1) * CHAR_HEIGHT * SCREEN_COLS) + (m * SCREEN_COLS) + (col - 1)] = charLine;
+        VideoBuf[CharLineOffset(row, col, m)] = charLine;
     }
 }
 
@@ -50,7 +58,7 @@ void ShowCursor(int cursor) {
     if (Cursor != cursor) {
         int m = 0;
         for (; m < CHAR_HEIGHT - 2; ++m) {
-            int i = ((CursorRow - 1) * CHAR_HEIGHT * SCREEN_COLS) + (m * SCREEN_COLS) + (CursorCol - 1);
+            int i = CharLineOffset(CursorRow, CursorCol, m);
             VideoBuf[i] = ~VideoBuf[i];
         }
         Cursor = cursor;
@@ -76,10 +84,12 @@ void ClearEOL() {
     ShowCursor(0);
     
     int m = 0;
-    int colOffset = ((CursorCol - 1) * CHAR_WIDTH) / 8;
-    int rowOffset = VIDEO_H_BYTES * CHAR_HEIGHT * (CursorRow - 1);
-    for (; m < CHAR_HEIGHT; ++m) {    
-        memset((void*)VideoBuf + rowOffset + (VIDEO_H_BYTES * m) + colOffset, 0x00, VIDEO_H_BYTES - colOffset);
+    int col = CursorCol;
+
+    for (; col <= SCREEN_COLS; ++col) {
+        for (; m < CHAR_HEIGHT; ++m) {
+            VideoBuf[CharLineOffset(CursorRow, col, m)] = 0;
+        }
     }
 }
 
@@ -91,12 +101,15 @@ void ClearEOS() {
 }
 
 void ClearBOL() {
-    ShowCursor(0);
+    ShowCursor(0);    
     
     int m = 0;
-    int colOffset = ((CursorCol - 1) * CHAR_WIDTH) / 8;
-    for (; m < CHAR_HEIGHT; ++m) {    
-        memset((void*)VideoBuf + (VIDEO_H_BYTES * CHAR_HEIGHT * (CursorRow - 1)) + (VIDEO_H_BYTES * m), 0x00, colOffset);
+    int col = 1;
+
+    for (; col <= CursorCol; ++col) {
+        for (; m < CHAR_HEIGHT; ++m) {
+            VideoBuf[CharLineOffset(CursorRow, col, m)] = 0;
+        }
     }
 }
 
@@ -175,48 +188,42 @@ void PutChars(char* s) {
 void InitVga() {
     ClearScreen();
 
-    TRISBCLR = (1<<13);                                             // Vert sync output used by VGA
-    LATBSET = (1 << 13);    
+    TRISBCLR = (1 << 13); // B13 is the vertical sync output
+    LATBSET =  (1 << 13);
     
-    PPSOutput(3, RPA4, SDO2);                                   // B5 is the video out for VGA
-    PPSInput(4, SS2, RPB9);                                         // B9 is the framing input
-    PPSOutput(4, RPB14, OC3);                                       // B14 is the horizontal sync output (ie, the output from OC3)    
+    PPSOutput(3, RPA4, SDO2); // A4 is the video output
+    PPSInput(4, SS2, RPB9);   // B9 is the framing input
+    PPSOutput(4, RPB14, OC3); // B14 is the horizontal sync output (ie, the output from OC3)    
     
-    OpenOC3(OC_ON | OC_TIMER3_SRC | OC_CONTINUE_PULSE, 0, PIXEL_T);
-    OpenTimer3( T3_ON | T3_PS_1_1 | T3_SOURCE_INT, LINE_T-1);	            // enable timer 3 and set to the horizontal scanning frequency        
-    SpiChnOpen(2, SPICON_ON | SPICON_MSTEN | SPICON_FRMEN | SPICON_FRMSYNC | SPICON_FRMPOL | SPI_OPEN_DISSDI, 2);
+    OpenOC3(OC_ON | OC_TIMER3_SRC | OC_CONTINUE_PULSE, 0, VIDEO_H_SYNC_T);
+    OpenTimer3(T3_ON | T3_PS_1_1 | T3_SOURCE_INT, VIDEO_LINE_T - 1);
+    SpiChnOpenEx(SPI_CHANNEL2, SPI_OPEN_MODE32 | SPICON_ON | SPICON_MSTEN | SPICON_FRMEN | SPICON_FRMSYNC | SPICON_FRMPOL | SPI_OPEN_DISSDI, SPI_OPEN2_IGNROV | SPI_OPEN2_IGNTUR, 2);
 
-    SPI2CON2 = (1<<9) | (1<<8);
-        
-    DmaChnOpen(DMA_CHANNEL1, 0, DMA_OPEN_DEFAULT);    	                            // setup DMA 1 is the blank padding at the start of a scan line
-    DmaChnSetEventControl(DMA_CHANNEL1, DMA_EV_START_IRQ_EN | DMA_EV_START_IRQ(_SPI2_TX_IRQ));
-    DmaChnSetTxfer(DMA_CHANNEL1, (void*)BackPorch, (void *)&SPI2BUF, sizeof(BackPorch), 1, 1);
-    DmaChnOpen(DMA_CHANNEL0, 0, DMA_OPEN_DEFAULT);		                        // setup DMA 0 to pump the data from the graphics buffer to the SPI peripheral
+    DmaChnOpen(DMA_CHANNEL0, DMA_CHN_PRI0, DMA_OPEN_DEFAULT);
     DmaChnSetEventControl(DMA_CHANNEL0, DMA_EV_START_IRQ_EN | DMA_EV_START_IRQ(_SPI2_TX_IRQ));
-    DmaChnSetTxfer(DMA_CHANNEL0, (void*)VideoLine, (void *)&SPI2BUF, VIDEO_H_BYTES, 1, 1);
-    DmaChnSetControlFlags(DMA_CHANNEL0, DMA_CTL_CHAIN_EN | DMA_CTL_CHAIN_DIR);    	// chain DMA 0 so that it will start on completion of the DMA 1 transfer
+    DmaChnSetTxfer(DMA_CHANNEL0, (void*)VideoLine, (void *)&SPI2BUF, VIDEO_H_BYTES, 4, 4);
     
     mT3SetIntPriority(7);
-    mT3IntEnable(1);    
+    mT3IntEnable(1);
 }
 
 void __ISR(_TIMER_3_VECTOR, IPL7SOFT) T3Interrupt(void) {
     
-    if (CurrLine < FRONT_PORCH) {
+    if (CurrLine < VIDEO_V_FRONT_PORCH) {
     }
-    else if (CurrLine < (FRONT_PORCH + SYNC)) {
+    else if (CurrLine < (VIDEO_V_FRONT_PORCH + VIDEO_V_SYNC)) {
         LATBCLR = (1 << 13);
     }
-    else if (CurrLine < (FRONT_PORCH + SYNC + BACK_PORCH)) {
+    else if (CurrLine < (VIDEO_V_FRONT_PORCH + VIDEO_V_SYNC + VIDEO_V_BACK_PORCH)) {
         LATBSET = (1 << 13);        
     }
     else {
-        VideoLine = (VideoBuf + ((CurrLine - FRONT_PORCH - SYNC - BACK_PORCH) * VIDEO_H_BYTES));
-        DCH0SSA = KVA_TO_PA((void*) VideoLine);            // update the DMA0 source address (DMA0 is used for composite data)
-        DmaChnEnable(1);                                        // arm the DMA transfer        
+        VideoLine = (VideoBuf + ((CurrLine - VIDEO_V_FRONT_PORCH - VIDEO_V_SYNC - VIDEO_V_BACK_PORCH) * VIDEO_H_BYTES));
+        DCH0SSA = KVA_TO_PA((void*) VideoLine);
+        DmaChnEnable(DMA_CHANNEL0);
     }
     
-    if (++CurrLine == LINES) {
+    if (++CurrLine == VIDEO_LINES) {
         CurrLine = 0;
     }
 
@@ -226,8 +233,7 @@ void __ISR(_TIMER_3_VECTOR, IPL7SOFT) T3Interrupt(void) {
 void SetPixel(int x, int y) {
     if (x >= 0 && x < VIDEO_H_PIXELS && y >= 0 && y < VIDEO_V_PIXELS) {
         char mask = 0x80 >> (x & 0x7);
-        int i = y * VIDEO_H_BYTES + x/8;
-        VideoBuf[i] |= mask;
+        VideoBuf[VideoBufOffset(y * VIDEO_H_BYTES + VIDEO_H_BACK_PORCH_BYTES + x / 8)] |= mask;
     }
 }
 
