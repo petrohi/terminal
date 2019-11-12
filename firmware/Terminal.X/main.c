@@ -490,11 +490,12 @@ void SetUp(void) {
 
     while(1) {
         MoveCursor(1, 1);
+        VideoPrintString("\r\n\r\n\r\n\r\n");
         Prompt(35, "");
         UnderlineChar = true;
         VideoPrintString("SET-UP MENU\r\n");
         UnderlineChar = false;
-        VideoPrintString("\r\n");
+        VideoPrintString("\r\n\r\n\r\n");
         PPrompt("C = Keyboard language", (char *)kblang[saved[O_KEYBOARD] + 1]);
         VideoPrintString("\r\n");
         PPrompt("D = Number of bits and parity", (char *)oparity[saved[O_PARITY] + 1]);
@@ -509,8 +510,7 @@ void SetUp(void) {
         Prompt(14, "J = Discard all changes and exit\r\n");
         Prompt(14, "K = Save changes and restart terminal\r\n");
 
-        VideoPrintString("\r\n");
-        VideoPrintString("\r\n");
+        VideoPrintString("\r\n\r\n\r\n");
 
         switch(GetInput("Select item (enter C to K) : ", 'C', 'K')) {
             case 'C': saved[O_KEYBOARD] = GetInput("Language 1=US, 2=FR, 3=GR, 4=IT, 5=BE, 6=UK, 7=RS : ", '1', '7') - '2';
