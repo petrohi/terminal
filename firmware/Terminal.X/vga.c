@@ -83,10 +83,9 @@ void MoveCursor(int row, int col) {
 void ClearEOL() {
     ShowCursor(0);
     
-    int m = 0;
     int col = CursorCol;
-
     for (; col <= SCREEN_COLS; ++col) {
+        int m = 0;
         for (; m < CHAR_HEIGHT; ++m) {
             VideoBuf[CharLineOffset(CursorRow, col, m)] = 0;
         }
@@ -103,10 +102,9 @@ void ClearEOS() {
 void ClearBOL() {
     ShowCursor(0);    
     
-    int m = 0;
     int col = 1;
-
     for (; col <= CursorCol; ++col) {
+        int m = 0;
         for (; m < CHAR_HEIGHT; ++m) {
             VideoBuf[CharLineOffset(CursorRow, col, m)] = 0;
         }
