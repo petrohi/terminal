@@ -314,9 +314,8 @@ void cmd_ReportPosition(void) {
 }
 
 
-// do a line feed
-void cmd_Lf(void) {
-    PutChar('\n');
+void cmd_CrLf(void) {
+    PutChar('\r\n');
 }
 
 
@@ -328,7 +327,6 @@ void cmd_LineFeed(void) {
 
 // do an upwards line feed with a reverse scroll
 void cmd_ReverseLineFeed(void) {
-    ShowCursor(false);                                              // turn off the cursor to prevent it from getting confused
     if(CursorCol > 1)
         MoveCursor(CursorRow, CursorCol - 1);
     else
@@ -423,7 +421,7 @@ const struct s_cmdtbl cmdtbl[]  = {
 
     { "\033D",          VT100,      cmd_LineFeed },
     { "\033M",          VT100,      cmd_ReverseLineFeed },
-    { "\033E",          VT100,      cmd_Lf },
+    { "\033E",          VT100,      cmd_CrLf },
     { "\033[?@h",       VT100,      cmd_SetMode },
     { "\033[?@l",       VT100,      cmd_ResetMode },
 
