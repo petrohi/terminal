@@ -133,7 +133,7 @@ int main(int argc, char* argv[]) {
 
     INTEnableSystemMultiVectoredInt();                              // allow vectored interrupts
     initTimer();                                                    // initialise the millisecond timer
-    InitVga();                                                    // initialise the video and associated interrupt
+    InitVga(Option[O_LINES24] ? 3 : 0);                             // initialise the video and associated interrupt
     initVT100();                                                    // initialise the vt100/vt52 decoding engine
     initSerial();                                                   // initialise the UART used for the serial I/O
     USBDeviceInit();												// Initialise USB module SFRs and firmware
@@ -490,12 +490,13 @@ void SetUp(void) {
 
     while(1) {
         MoveCursor(1, 1);
-        VideoPrintString("\r\n\r\n\r\n\r\n");
+        if (!Option[O_LINES24]) VideoPrintString("\r\n\r\n\r\n");
         Prompt(35, "");
         UnderlineChar = true;
         VideoPrintString("SET-UP MENU\r\n");
         UnderlineChar = false;
         VideoPrintString("\r\n\r\n\r\n");
+        PPrompt("A = Number of lines", saved[O_LINES24] ? "24" : "30");
         PPrompt("C = Keyboard language", (char *)kblang[saved[O_KEYBOARD] + 1]);
         VideoPrintString("\r\n");
         PPrompt("D = Number of bits and parity", (char *)oparity[saved[O_PARITY] + 1]);
@@ -512,7 +513,11 @@ void SetUp(void) {
 
         VideoPrintString("\r\n\r\n\r\n");
 
-        switch(GetInput("Select item (enter C to K) : ", 'C', 'K')) {
+        switch(GetInput("Select item (enter C to K) : ", 'A', 'K')) {
+            case 'A': saved[O_LINES24] = GetInput("Enter 1 for 24 lines or 2 for 30 lines : ", '1', '2') - '2';
+                      break;
+            case 'B':
+                      break;
             case 'C': saved[O_KEYBOARD] = GetInput("Language 1=US, 2=FR, 3=GR, 4=IT, 5=BE, 6=UK, 7=RS : ", '1', '7') - '2';
                       break;
             case 'D': saved[O_PARITY] = GetInput("1 = 8bit NONE, 2 = 7bit ODD, 3 = 7bit EVEN : ", '1', '7') - '2';

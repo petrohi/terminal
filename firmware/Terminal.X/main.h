@@ -43,7 +43,7 @@
 	and put under another distribution licence (including the GNU Public Licence).
 ****************************************************************************************/
 
-#define VERSION                 "2.1"                               // define the version number
+#define VERSION                 "2.0"                               // define the version number
 #define YEAR			"2019"			            // and the year
 
 
@@ -140,12 +140,13 @@ extern volatile char NumLock;
 // the option array used for storing set-up options
 extern int Option[];
 
-#define O_1STOPBIT      0
-#define O_PARITY        1
-#define O_BAUDRATE      2
-#define O_KEYBOARD      3
-#define O_STARTUPMSG    4
-#define O_SERIALINV     5
+#define O_LINES24       0
+#define O_1STOPBIT      1
+#define O_PARITY        2
+#define O_BAUDRATE      3
+#define O_KEYBOARD      4
+#define O_STARTUPMSG    5
+#define O_SERIALINV     6
 
 // definitions related to setting the keyboard type in O_KEYBOARD
 #define O_KEYBOARD_US	-1

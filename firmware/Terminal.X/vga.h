@@ -18,7 +18,6 @@
 #define CHAR_WIDTH     8
 
 #define SCREEN_COLS    (VIDEO_H_PIXELS / CHAR_WIDTH)
-#define SCREEN_ROWS    (VIDEO_V_PIXELS / CHAR_HEIGHT)
 
 #define TAB_SIZE       8 
 
@@ -32,6 +31,7 @@ extern int CursorOff;
 
 extern int AutoLineWrap;
 
+extern int ScreenRows();
 extern void ShowCursor(int cursor);
 extern void MoveCursor(int row, int col);
 extern void ClearEOL();
@@ -45,7 +45,7 @@ extern void ScrollDown();
 extern void PutChar(char c);
 extern void PutChars(char* s);
 
-extern void InitVga();
+extern void InitVga(int marginLines);
 
 extern void SetPixel(int x, int y);
 extern void DrawLine(int x1, int y1, int x2, int y2);

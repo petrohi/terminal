@@ -10,12 +10,18 @@
 #define VIDEO_H_FRONT_PORCH_BYTES (VIDEO_H_FRONT_PORCH / 8)
 #define VIDEO_H_BYTES             (VIDEO_H_BACK_PORCH_BYTES + (VIDEO_H_PIXELS / 8) + VIDEO_H_FRONT_PORCH_BYTES)
 
+#define VIDEO_V_FRONT_PORCH_SYNC            (VIDEO_V_FRONT_PORCH + VIDEO_V_SYNC)
+#define VIDEO_V_FRONT_PORCH_SYNC_BACK_PORCH (VIDEO_V_FRONT_PORCH_SYNC + VIDEO_V_BACK_PORCH)
+
 unsigned char VideoBuf[VIDEO_H_BYTES * VIDEO_V_PIXELS];
+
 volatile unsigned char *VideoLine = VideoBuf;
 volatile int CurrLine = 0;
 
 #define CHAR_START ' '
 #define CHAR_END '~'
+
+unsigned char *CharBuf;
 
 int UnderlineChar = 0;
 int ReverseVideoChar = 0;
@@ -26,13 +32,22 @@ int CursorCol = 1;
 int Cursor = 0;
 
 int AutoLineWrap = 1;
+int MarginLines = 0;
 
-int VideoBufOffset(int i) {
+int ScreenRows() {
+    return (VIDEO_V_PIXELS / CHAR_HEIGHT) - (MarginLines * 2);
+}
+
+volatile int CharBufSize() {
+    return (ScreenRows() * CHAR_HEIGHT * VIDEO_H_BYTES);
+}
+
+int BufOffset(int i) {
     return ((i >> 2) << 2) + (3 - (i & 3));    
 }
 
 int CharLineOffset(int row, int col, int line) {
-    VideoBufOffset(((row - 1) * CHAR_HEIGHT * VIDEO_H_BYTES) + (line * VIDEO_H_BYTES) + VIDEO_H_BACK_PORCH_BYTES + (col - 1));
+    BufOffset(((row - 1) * CHAR_HEIGHT * VIDEO_H_BYTES) + (line * VIDEO_H_BYTES) + VIDEO_H_BACK_PORCH_BYTES + (col - 1));
 }
 
 void DrawChar(int row, int col, char c) {
@@ -50,7 +65,7 @@ void DrawChar(int row, int col, char c) {
                 charLine = ~charLine;
             }
         }
-        VideoBuf[CharLineOffset(row, col, m)] = charLine;
+        CharBuf[CharLineOffset(row, col, m)] = charLine;
     }
 }
 
@@ -59,7 +74,7 @@ void ShowCursor(int cursor) {
         int m = 0;
         for (; m < CHAR_HEIGHT - 2; ++m) {
             int i = CharLineOffset(CursorRow, CursorCol, m);
-            VideoBuf[i] = ~VideoBuf[i];
+            CharBuf[i] = ~CharBuf[i];
         }
         Cursor = cursor;
     }
@@ -68,8 +83,8 @@ void ShowCursor(int cursor) {
 void MoveCursor(int row, int col) {
     ShowCursor(0);
     
-    if (row > SCREEN_ROWS) {
-        row = SCREEN_ROWS;
+    if (row > ScreenRows()) {
+        row = ScreenRows();
     }
     
     if (col > SCREEN_COLS) {
@@ -87,7 +102,7 @@ void ClearEOL() {
     for (; col <= SCREEN_COLS; ++col) {
         int m = 0;
         for (; m < CHAR_HEIGHT; ++m) {
-            VideoBuf[CharLineOffset(CursorRow, col, m)] = 0;
+            CharBuf[CharLineOffset(CursorRow, col, m)] = 0;
         }
     }
 }
@@ -96,7 +111,7 @@ void ClearEOS() {
     ClearEOL();
     
     int nextRowOffset = VIDEO_H_BYTES * CHAR_HEIGHT * CursorRow;
-    memset((void*)VideoBuf + nextRowOffset, 0x00, sizeof(VideoBuf) - nextRowOffset);
+    memset((void*)CharBuf + nextRowOffset, 0x00, CharBufSize() - nextRowOffset);
 }
 
 void ClearBOL() {
@@ -106,7 +121,7 @@ void ClearBOL() {
     for (; col <= CursorCol; ++col) {
         int m = 0;
         for (; m < CHAR_HEIGHT; ++m) {
-            VideoBuf[CharLineOffset(CursorRow, col, m)] = 0;
+            CharBuf[CharLineOffset(CursorRow, col, m)] = 0;
         }
     }
 }
@@ -114,7 +129,7 @@ void ClearBOL() {
 void ClearBOS() {
     ClearBOL();
     
-    memset((void*)VideoBuf, 0x00, VIDEO_H_BYTES * CHAR_HEIGHT * CursorRow);
+    memset((void*)CharBuf, 0x00, VIDEO_H_BYTES * CHAR_HEIGHT * CursorRow);
 }
 
 void ClearScreen() {
@@ -126,18 +141,18 @@ void ClearScreen() {
 void ScrollUp() {
     ShowCursor(0);
     
-    memcpy((void*)VideoBuf, ((void*)VideoBuf + (VIDEO_H_BYTES * CHAR_HEIGHT)), sizeof(VideoBuf) - (VIDEO_H_BYTES * CHAR_HEIGHT));    
-    memset((void*)VideoBuf + (VIDEO_H_BYTES * CHAR_HEIGHT * (SCREEN_ROWS - 1)), 0x00, VIDEO_H_BYTES * CHAR_HEIGHT);    
+    memcpy((void*)CharBuf, ((void*)CharBuf + (VIDEO_H_BYTES * CHAR_HEIGHT)), CharBufSize() - (VIDEO_H_BYTES * CHAR_HEIGHT));
+    memset((void*)CharBuf + (VIDEO_H_BYTES * CHAR_HEIGHT * (ScreenRows() - 1)), 0x00, VIDEO_H_BYTES * CHAR_HEIGHT);
 }
 
 void ScrollDown() {
     ShowCursor(0);
     
-    int i = SCREEN_ROWS - 1;
+    int i = ScreenRows() - 1;
     for (; i > 0; i--) {
-        memcpy((void*)VideoBuf + (i * VIDEO_H_BYTES * CHAR_HEIGHT), (void*)VideoBuf + ((i - 1) * VIDEO_H_BYTES * CHAR_HEIGHT), (VIDEO_H_BYTES * CHAR_HEIGHT));    
+        memcpy((void*)CharBuf + (i * VIDEO_H_BYTES * CHAR_HEIGHT), (void*)CharBuf + ((i - 1) * VIDEO_H_BYTES * CHAR_HEIGHT), (VIDEO_H_BYTES * CHAR_HEIGHT));
     }
-    memset((void*)VideoBuf, 0x00, VIDEO_H_BYTES * CHAR_HEIGHT);    
+    memset((void*)CharBuf, 0x00, VIDEO_H_BYTES * CHAR_HEIGHT);
 }
 
 void PutChar(char c) {
@@ -170,8 +185,8 @@ void PutChar(char c) {
         CursorRow++;
     }
     
-    if (CursorRow > SCREEN_ROWS) {
-        CursorRow = SCREEN_ROWS;
+    if (CursorRow > ScreenRows()) {
+        CursorRow = ScreenRows();
         ScrollUp();
     }
 }
@@ -183,11 +198,16 @@ void PutChars(char* s) {
     }
 }
 
-void InitVga() {
+#define BIT_13 (1 << 13)
+
+void InitVga(int marginLines) {
+    MarginLines = marginLines;
+    CharBuf = VideoBuf + (MarginLines * CHAR_HEIGHT * VIDEO_H_BYTES);
+
     ClearScreen();
 
-    TRISBCLR = (1 << 13); // B13 is the vertical sync output
-    LATBSET =  (1 << 13);
+    TRISBCLR = BIT_13; // B13 is the vertical sync output
+    LATBSET =  BIT_13;
     
     PPSOutput(3, RPA4, SDO2); // A4 is the video output
     PPSInput(4, SS2, RPB9);   // B9 is the framing input
@@ -209,14 +229,14 @@ void __ISR(_TIMER_3_VECTOR, IPL7SOFT) T3Interrupt(void) {
     
     if (CurrLine < VIDEO_V_FRONT_PORCH) {
     }
-    else if (CurrLine < (VIDEO_V_FRONT_PORCH + VIDEO_V_SYNC)) {
-        LATBCLR = (1 << 13);
+    else if (CurrLine < VIDEO_V_FRONT_PORCH_SYNC) {
+        LATBCLR = BIT_13;
     }
-    else if (CurrLine < (VIDEO_V_FRONT_PORCH + VIDEO_V_SYNC + VIDEO_V_BACK_PORCH)) {
-        LATBSET = (1 << 13);        
+    else if (CurrLine < VIDEO_V_FRONT_PORCH_SYNC_BACK_PORCH) {
+        LATBSET = BIT_13;
     }
     else {
-        VideoLine = (VideoBuf + ((CurrLine - VIDEO_V_FRONT_PORCH - VIDEO_V_SYNC - VIDEO_V_BACK_PORCH) * VIDEO_H_BYTES));
+        VideoLine = (VideoBuf + ((CurrLine - VIDEO_V_FRONT_PORCH_SYNC_BACK_PORCH) * VIDEO_H_BYTES));
         DCH0SSA = KVA_TO_PA((void*) VideoLine);
         DmaChnEnable(DMA_CHANNEL0);
     }
@@ -231,7 +251,7 @@ void __ISR(_TIMER_3_VECTOR, IPL7SOFT) T3Interrupt(void) {
 void SetPixel(int x, int y) {
     if (x >= 0 && x < VIDEO_H_PIXELS && y >= 0 && y < VIDEO_V_PIXELS) {
         char mask = 0x80 >> (x & 0x7);
-        VideoBuf[VideoBufOffset(y * VIDEO_H_BYTES + VIDEO_H_BACK_PORCH_BYTES + x / 8)] |= mask;
+        VideoBuf[BufOffset(y * VIDEO_H_BYTES + VIDEO_H_BACK_PORCH_BYTES + x / 8)] |= mask;
     }
 }
 
