@@ -4,7 +4,8 @@
 	vt100 decoder for the VT100 Terminal program
 
 
-	Copyright (C) 2014 Geoff Graham (projects@geoffg.net)
+	Copyright (C) 2014-2019
+	Geoff Graham (projects@geoffg.net) and Peter Hizalev (peter.hizalev@gmail.com)
 	All rights reserved.
 
 	This file and the program created from it are FREE FOR COMMERCIAL AND
@@ -26,6 +27,7 @@
 	3. All advertising materials mentioning features or use of this software must
 	   display the following acknowledgement:
 	   This product includes software developed by Geoff Graham (projects@geoffg.net)
+       and Peter Hizalev (peter.hizalev@gmail.com)
 
 	THIS SOFTWARE IS PROVIDED BY GEOFF GRAHAM ``AS IS'' AND  ANY EXPRESS OR IMPLIED
 	WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
@@ -41,8 +43,8 @@
 	The licence and distribution terms for any publically available version or
 	derivative of this code cannot be changed.  i.e. this code cannot simply be copied
 	and put under another distribution licence (including the GNU Public Licence).
-****************************************************************************************/
 
+****************************************************************************************/
 
 
 #include <p32xxxx.h>
@@ -50,7 +52,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "main.h"
-#include "video.h"
+#include "vga.h"
 #include "vt100.h"
 
 #define VTBUF_SIZE  40
@@ -69,8 +71,7 @@ extern const struct s_cmdtbl cmdtbl[];
 
 int mode;                                                           // current mode.  can be VT100 or VT52
 
-int AttribUL, AttribRV, AttribInvis;                                // attributes that can be turned on/off
-int SaveX, SaveY, SaveUL, SaveRV, SaveInvis, SaveFontNbr;           // saved attributes that can be restored
+int SaveX, SaveY, SaveUL, SaveRV, SaveInvis;           // saved attributes that can be restored
 
 void VT100Putc(char c) {
     int cmd, i, j, partial;
@@ -106,7 +107,7 @@ void VT100Putc(char c) {
             continue;
         }
         if(!partial) {                                              // we have searched the table and have not even found a partial match
-            VideoPutc(*vtbuf);                                      // so send the oldest char off
+            PutChar(*vtbuf);                                      // so send the oldest char off
             memcpy(vtbuf, vtbuf + 1, vtcnt--);                      // and shift down the table
         } else
             return;                                                 // have a partial match so keep the characters in the buffer
@@ -115,33 +116,14 @@ void VT100Putc(char c) {
 
 
 void VideoPrintString(char *p) {
-    while(*p) VideoPutc(*p++);
+    while(*p) PutChar(*p++);
 }
-
-
-// utility function to move the cursor
-void CursorPosition(int x, int y) {
-    ShowCursor(false);                                              // turn off the cursor to prevent it from getting confused
-
-    CursorX = (fontWidth * fontScale) * (x - 1);
-    if(CursorX < 0) CursorX = 0;
-    if(CursorX > HRes - (fontWidth * fontScale)) CursorX = HRes - (fontWidth * fontScale);
-
-    CursorY = (fontHeight * fontScale) * (y - 1);
-    if(CursorY < 0) CursorY = 0;
-    if(CursorY > VRes - (fontHeight * fontScale)) CursorY = VRes - (fontHeight * fontScale);
-
-    CharPosX = (CursorX / (fontWidth * fontScale)) + 1;				// update the horizontal character position
-    CharPosY = (CursorY / (fontHeight * fontScale)) + 1;			// update the horizontal character position
-
-}
-
 
 
 // cursor up one or more lines
 void cmd_CurUp(void) {
     if(argc == 0 || arg[0] == 0) arg[0] = 1;
-    CursorPosition(CharPosX, CharPosY - arg[0]);
+    MoveCursor(CursorRow - arg[0], CursorCol);
 }
 
 
@@ -149,7 +131,7 @@ void cmd_CurUp(void) {
 // cursor down one or more lines
 void cmd_CurDown(void) {
     if(argc == 0 || arg[0] == 0) arg[0] = 1;
-    CursorPosition(CharPosX, CharPosY + arg[0]);
+    MoveCursor(CursorRow + arg[0], CursorCol);
 }
 
 
@@ -157,20 +139,20 @@ void cmd_CurDown(void) {
 // cursor left one or more chars
 void cmd_CurLeft(void) {
     if(argc == 0 || arg[0] == 0) arg[0] = 1;
-    CursorPosition(CharPosX - arg[0], CharPosY);
+    MoveCursor(CursorRow, CursorCol - arg[0]);
 }
 
 
 // cursor right one or more chars
 void cmd_CurRight(void) {
     if(argc == 0 || arg[0] == 0) arg[0] = 1;
-    CursorPosition(CharPosX + arg[0], CharPosY);
+    MoveCursor(CursorRow, CursorCol + arg[0]);
 }
 
 
 // cursor home
 void cmd_CurHome(void) {
-    CursorPosition(1, 1);
+    MoveCursor(1, 1);
 }
 
 
@@ -178,7 +160,7 @@ void cmd_CurHome(void) {
 void cmd_CurPosition(void) {
     if(argc < 1 || arg[0] == 0) arg[0] = 1;
     if(argc < 2 || arg[1] == 0) arg[1] = 1;
-    CursorPosition(arg[1], arg[0]);                                 // note that the argument order is Y, X
+    MoveCursor(arg[0], arg[1]);
 }
 
 
@@ -196,41 +178,25 @@ void cmd_VT100mode(void) {
 
 // clear to end of line
 void cmd_ClearEOL(void) {
-    int x, y;
-    ShowCursor(false);                                              // turn off the cursor to prevent it from getting confused
-    for(y = CursorY; y < CursorY + (fontHeight * fontScale); y++)
-        for(x = CursorX; x < HRes; x++)
-            plot(x, y, 0);
+    ClearEOL();
 }
 
 
 // clear to end of screen
 void cmd_ClearEOS(void) {
-    int y, n;
-    cmd_ClearEOL();
-    y = CursorY + (fontHeight * fontScale);
-    n = VBuf*(HBuf/8) - (y * (HBuf/8));
-	if(y < VBuf) memset((char *)VideoBuf + (y * (HBuf/8)), 0, n);
+    ClearEOS();
 }
 
 
 // clear from the beginning of the line to the cursor
 void cmd_ClearBOL(void) {
-    int x, y;
-    ShowCursor(false);                                              // turn off the cursor to prevent it from getting confused
-    for(y = CursorY; y < CursorY + (fontHeight * fontScale); y++)
-        for(x = 0; x < CursorX; x++)
-            plot(x, y, 0);
+    ClearBOL();
 }
 
 
 // clear from home to the cursor
 void cmd_ClearBOS(void) {
-    int x, y;
-    cmd_ClearBOL();
-    for(y = CursorY - 1; y >= 0; y--)
-        for(x = 0; x < HRes; x++)
-            plot(x, y, 0);
+    ClearBOS();
 }
 
 
@@ -255,23 +221,20 @@ void cmd_ClearLine(void) {
 
 // save the current attributes
 void cmd_CurSave(void) {
-    SaveX = CharPosX;
-    SaveY = CharPosY;
-    SaveUL = AttribUL;
-    SaveRV = AttribRV;
-    SaveInvis = AttribInvis;
-    SaveFontNbr = fontNbr;
+    SaveX = CursorRow;
+    SaveY = CursorCol;
+    SaveUL = UnderlineChar;
+    SaveRV = ReverseVideoChar;
+    SaveInvis = InvisibleChar;
 }
 
 
 // restore the saved attributes
 void cmd_CurRestore(void) {
-    if(SaveFontNbr == -1) return;
-    CursorPosition(SaveX, SaveY);
-    AttribUL = SaveUL;
-    AttribRV = SaveRV;
-    AttribInvis = SaveInvis;
-    initFont(SaveFontNbr);
+    MoveCursor(SaveX, SaveY);
+    UnderlineChar = SaveUL;
+    ReverseVideoChar = SaveRV;
+    InvisibleChar = SaveInvis;
 }
 
 
@@ -310,15 +273,12 @@ void cmd_VT100ID(void) {
 // reset the terminal
 void cmd_Reset(void) {
     mode = VT100;
-    initFont(1);
-    ConfigBuffers(Option[O_LINES24]);
     ShowCursor(false);                                              // turn off the cursor to prevent it from getting confused
     ClearScreen();
-    CursorPosition(1, 1);
-    AttribUL = 0;
-    AttribRV = 0;
-    AttribInvis = 0;
-    SaveFontNbr = -1;
+    MoveCursor(1, 1);
+    UnderlineChar = 0;
+    ReverseVideoChar = 0;
+    InvisibleChar = 0;
 }
 
 
@@ -340,42 +300,37 @@ void cmd_LEDs(void) {
 void cmd_Attributes(void) {
     ShowCursor(false);                                              // turn off the cursor to prevent it from getting confused
     if(arg[0] == 0) {
-        AttribUL = AttribRV = AttribInvis = 0;
-        initFont(1);
+        UnderlineChar = ReverseVideoChar = InvisibleChar = 0;
     }
-    if(arg[0] == 4) AttribUL = 1;
-    if(arg[0] == 3) initFont(2);
-    if(arg[0] == 7) AttribRV = 1;
-    if(arg[0] == 6) initFont(3);
-    if(arg[0] == 8) AttribInvis = 1;
+    if(arg[0] == 4) UnderlineChar = 1;
+    if(arg[0] == 7) ReverseVideoChar = 1;
+    if(arg[0] == 8) InvisibleChar = 1;
 }
 
 
 // respond with the current cursor position
 void cmd_ReportPosition(void) {
     char s[20];
-    sprintf(s, "\033[%d;%dR", CharPosY, CharPosX);
+    sprintf(s, "\033[%d;%dR", CursorCol, CursorRow);
     putSerialString(s);
 }
 
 
-// do a line feed
-void cmd_Lf(void) {
-    VideoPutc('\n');
+void cmd_CrLf(void) {
+    PutChar('\r\n');
 }
 
 
 // do a line feed
 void cmd_LineFeed(void) {
-    VideoPutc('\n');
+    PutChar('\n');
 }
 
 
 // do an upwards line feed with a reverse scroll
 void cmd_ReverseLineFeed(void) {
-    ShowCursor(false);                                              // turn off the cursor to prevent it from getting confused
-    if(CharPosY > 1)
-        CursorPosition(CharPosX, CharPosY - 1);
+    if(CursorCol > 1)
+        MoveCursor(CursorRow, CursorCol - 1);
     else
         ScrollDown();
 }
@@ -384,12 +339,11 @@ void cmd_ReverseLineFeed(void) {
 // turn on automatic line wrap, etc
 void cmd_SetMode(void) {
     if(arg[0] == 7) AutoLineWrap = true;
-    if(arg[0] == 9 && vga) {
+    if(arg[0] == 9) {
         cmd_CurHome();
-        ConfigBuffers(true);
         ShowCursor(false);                                              // turn off the cursor to prevent it from getting confused
         ClearScreen();
-        CursorPosition(1, 1);
+        MoveCursor(1, 1);
     }
 }
 
@@ -397,28 +351,20 @@ void cmd_SetMode(void) {
 // turn off automatic line wrap, etc
 void cmd_ResetMode(void) {
     if(arg[0] == 7) AutoLineWrap = false;
-    if(arg[0] == 9 && vga) {
-        ConfigBuffers(false);
+    if(arg[0] == 9) {
         ShowCursor(false);                                              // turn off the cursor to prevent it from getting confused
         ClearScreen();
-        CursorPosition(1, 1);
+        MoveCursor(1, 1);
     }
 }
 
-
-// draw graphics
 void cmd_Draw(void) {
-//    if(Display24Lines) {
-//        arg[2] = (arg[2]/3)*2;
-//        arg[4] = (arg[4]/3)*2;
-//    }
-    if(arg[0] == 1) DrawLine(arg[1], arg[2], arg[3], arg[4], 1);
-    if(arg[0] == 2) DrawBox(arg[1], arg[2], arg[3], arg[4], 0, 1);
-    if(arg[0] == 3) DrawBox(arg[1], arg[2], arg[3], arg[4], 1, 1);
-    if(arg[0] == 4) DrawCircle(arg[1], arg[2], arg[3], 0, 1, vga ? 1.14 : 1.0);
-    if(arg[0] == 5) DrawCircle(arg[1], arg[2], arg[3], 1, 1, vga ? 1.14 : 1.0);
+    if(arg[0] == 1) DrawLine(arg[1], arg[2], arg[3], arg[4]);
+    if(arg[0] == 2) DrawBox(arg[1], arg[2], arg[3], arg[4], 0);
+    if(arg[0] == 3) DrawBox(arg[1], arg[2], arg[3], arg[4], 1);
+    if(arg[0] == 4) DrawCircle(arg[1], arg[2], arg[3], 0, 1.0);
+    if(arg[0] == 5) DrawCircle(arg[1], arg[2], arg[3], 1, 1.0);
 }
-
 
 // do nothing for escape sequences that are not implemented
 void cmd_NULL(void) {}
@@ -477,7 +423,7 @@ const struct s_cmdtbl cmdtbl[]  = {
 
     { "\033D",          VT100,      cmd_LineFeed },
     { "\033M",          VT100,      cmd_ReverseLineFeed },
-    { "\033E",          VT100,      cmd_Lf },
+    { "\033E",          VT100,      cmd_CrLf },
     { "\033[?@h",       VT100,      cmd_SetMode },
     { "\033[?@l",       VT100,      cmd_ResetMode },
 
@@ -502,5 +448,4 @@ void initVT100(void) {
     mode = VT100;
     vtcnt = 0;
     CmdTblSize =  (sizeof(cmdtbl)/sizeof(struct s_cmdtbl));
-    SaveFontNbr = -1;
 }

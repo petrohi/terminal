@@ -2,7 +2,11 @@
 
     config.h
 
-	Copyright (C) 2014 Geoff Graham (projects@geoffg.net)
+    Configuration for the VT100 Terminal program
+
+
+	Copyright (C) 2014-2019
+	Geoff Graham (projects@geoffg.net) and Peter Hizalev (peter.hizalev@gmail.com)
 	All rights reserved.
 
 	This file and the program created from it are FREE FOR COMMERCIAL AND
@@ -24,6 +28,7 @@
 	3. All advertising materials mentioning features or use of this software must
 	   display the following acknowledgement:
 	   This product includes software developed by Geoff Graham (projects@geoffg.net)
+       and Peter Hizalev (peter.hizalev@gmail.com)
 
 	THIS SOFTWARE IS PROVIDED BY GEOFF GRAHAM ``AS IS'' AND  ANY EXPRESS OR IMPLIED
 	WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
@@ -40,7 +45,7 @@
 	derivative of this code cannot be changed.  i.e. this code cannot simply be copied
 	and put under another distribution licence (including the GNU Public Licence).
 
-************************************************************************************************************************/
+****************************************************************************************/
 
 
 #ifndef CONFIGURATION_BITS_H
@@ -56,13 +61,13 @@
                                                                     // FRCDIV16	is Fast RC oscillator with divide by 16
                                                                     // FRCDIV	is Fast RC oscillator with divide
 
-#pragma config POSCMOD = XT                                         // Primary Oscillator Selection
+#pragma config POSCMOD = HS                                         // Primary Oscillator Selection
                                                                     // HS	is HS oscillator
                                                                     // EC	is EC oscillator
                                                                     // XT	is XT oscillator
                                                                     // OFF	is Disabled
 
-#pragma config FPLLIDIV = DIV_2                                     // PLL Input Divide by 1, 2, 3, 4, 5, 6, 10 or 12
+#pragma config FPLLIDIV = DIV_4                                     // PLL Input Divide by 1, 2, 3, 4, 5, 6, 10 or 12
 #pragma config FPLLMUL = MUL_20                                     // PLL Multiply by 15, 16, 17, 18, 19, 20, 21 or 24
 #pragma config FPLLODIV = DIV_2                                     // PLL Output Divide by 1, 2, 4, 8, 16, 32, 64, or 256
 
@@ -92,7 +97,7 @@
 #endif
 
 #pragma config UPLLEN = ON                                          // USB PLL ON or OFF
-#pragma config UPLLIDIV = DIV_2                                     // USB PLL Input Divide by 1, 2, 3, 4, 5, 6, 10 or 12
+#pragma config UPLLIDIV = DIV_5                                     // USB PLL Input Divide by 1, 2, 3, 4, 5, 6, 10 or 12
 
 #pragma config FVBUSONIO = OFF                                      // USB VBUS_ON pin control
 #pragma config FUSBIDIO = OFF                                       // USB USBID pin control

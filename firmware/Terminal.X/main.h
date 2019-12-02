@@ -1,17 +1,19 @@
 /****************************************************************************************
+
 	main.h
 
-	Include file for the VT100 Terminal program
+	VT100 Terminal program
 
 
-	Copyright (C) 2014 Geoff Graham (projects@geoffg.net)
+	Copyright (C) 2014-2019
+	Geoff Graham (projects@geoffg.net) and Peter Hizalev (peter.hizalev@gmail.com)
 	All rights reserved.
 
 	This file and the program created from it are FREE FOR COMMERCIAL AND
 	NON-COMMERCIAL USE as long as the following conditions are aheared to.
 
 	Copyright remains Geoff Graham's, and as such any Copyright notices in the
-	code are not to be removed.  If this code is used in a product,  Geoff Graham
+	code are not to be removed.  If this code is used in a product, Geoff Graham
 	should be given attribution as the author of the parts used.  This can be in
 	the form of a textual message at program startup or in documentation (online
 	or textual) provided with the program or product.
@@ -26,6 +28,7 @@
 	3. All advertising materials mentioning features or use of this software must
 	   display the following acknowledgement:
 	   This product includes software developed by Geoff Graham (projects@geoffg.net)
+       and Peter Hizalev (peter.hizalev@gmail.com)
 
 	THIS SOFTWARE IS PROVIDED BY GEOFF GRAHAM ``AS IS'' AND  ANY EXPRESS OR IMPLIED
 	WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
@@ -41,21 +44,19 @@
 	The licence and distribution terms for any publically available version or
 	derivative of this code cannot be changed.  i.e. this code cannot simply be copied
 	and put under another distribution licence (including the GNU Public Licence).
+
 ****************************************************************************************/
 
-#define VERSION                 "1.3"                               // define the version number
+
+#define VERSION                 "2.0"                               // define the version number
 #define YEAR			"2019"			            // and the year
 
 
 // The main clock frequency for the chip
-#define	CLOCKFREQ		(40000000ul)			    // This is set in in Configuration Bits.h
+#define	CLOCKFREQ		(50000000ul)			    // This is set in in Configuration Bits.h
 
 // The peripheral bus frequency
 #define BUSFREQ			(CLOCKFREQ/1)			    // This is set in in Configuration Bits.h
-
-// grab as much memory as possible for video and Rx buffers
-#define BUFFER_SIZE             (29600)                             // this should be the largest possible size allowed by the compiler/linker
-
 
 // General defines
 #define forever                 1
@@ -92,8 +93,7 @@ extern void putUSB(char);
 
 extern volatile int GeneralTimer;
 
-extern char *SerialRxBuf;
-extern int RxBufferSize;
+extern char SerialRxBuf[];
 extern volatile int SerialRxBufHead;
 extern volatile int SerialRxBufTail;
 extern int USBSerialRxBufTail;
@@ -146,13 +146,12 @@ extern volatile char NumLock;
 extern int Option[];
 
 #define O_LINES24       0
-#define O_PAL           2
-#define O_1STOPBIT      3
-#define O_PARITY        4
-#define O_BAUDRATE      5
-#define O_KEYBOARD      6
-#define O_STARTUPMSG    7
-#define O_SERIALINV     8
+#define O_1STOPBIT      1
+#define O_PARITY        2
+#define O_BAUDRATE      3
+#define O_KEYBOARD      4
+#define O_STARTUPMSG    5
+#define O_SERIALINV     6
 
 // definitions related to setting the keyboard type in O_KEYBOARD
 #define O_KEYBOARD_US	-1
