@@ -2,7 +2,11 @@
 
     main.c
 
-	Copyright (C) 2014 Geoff Graham (projects@geoffg.net)
+	VT100 Terminal program
+
+
+	Copyright (C) 2014-2019
+	Geoff Graham (projects@geoffg.net) and Peter Hizalev (peter.hizalev@gmail.com)
 	All rights reserved.
 
 	This file and the program created from it are FREE FOR COMMERCIAL AND
@@ -24,6 +28,7 @@
 	3. All advertising materials mentioning features or use of this software must
 	   display the following acknowledgement:
 	   This product includes software developed by Geoff Graham (projects@geoffg.net)
+       and Peter Hizalev (peter.hizalev@gmail.com)
 
 	THIS SOFTWARE IS PROVIDED BY GEOFF GRAHAM ``AS IS'' AND  ANY EXPRESS OR IMPLIED
 	WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF

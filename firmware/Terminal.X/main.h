@@ -1,17 +1,19 @@
 /****************************************************************************************
+
 	main.h
 
-	Include file for the VT100 Terminal program
+	VT100 Terminal program
 
 
-	Copyright (C) 2014 Geoff Graham (projects@geoffg.net)
+	Copyright (C) 2014-2019
+	Geoff Graham (projects@geoffg.net) and Peter Hizalev (peter.hizalev@gmail.com)
 	All rights reserved.
 
 	This file and the program created from it are FREE FOR COMMERCIAL AND
 	NON-COMMERCIAL USE as long as the following conditions are aheared to.
 
 	Copyright remains Geoff Graham's, and as such any Copyright notices in the
-	code are not to be removed.  If this code is used in a product,  Geoff Graham
+	code are not to be removed.  If this code is used in a product, Geoff Graham
 	should be given attribution as the author of the parts used.  This can be in
 	the form of a textual message at program startup or in documentation (online
 	or textual) provided with the program or product.
@@ -26,6 +28,7 @@
 	3. All advertising materials mentioning features or use of this software must
 	   display the following acknowledgement:
 	   This product includes software developed by Geoff Graham (projects@geoffg.net)
+       and Peter Hizalev (peter.hizalev@gmail.com)
 
 	THIS SOFTWARE IS PROVIDED BY GEOFF GRAHAM ``AS IS'' AND  ANY EXPRESS OR IMPLIED
 	WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
@@ -41,7 +44,9 @@
 	The licence and distribution terms for any publically available version or
 	derivative of this code cannot be changed.  i.e. this code cannot simply be copied
 	and put under another distribution licence (including the GNU Public Licence).
+
 ****************************************************************************************/
+
 
 #define VERSION                 "2.0"                               // define the version number
 #define YEAR			"2019"			            // and the year
