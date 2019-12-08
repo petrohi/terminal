@@ -130,7 +130,11 @@ void ShowCursor(int cursor) {
 
 void MoveCursor(int row, int col) {
     ShowCursor(0);
-    
+
+    if (row < 1) {
+        row = 1;
+    }
+
     if (row > ScreenRows()) {
         row = ScreenRows();
     }
@@ -138,7 +142,11 @@ void MoveCursor(int row, int col) {
     if (col > SCREEN_COLS) {
         col = SCREEN_COLS;
     }
-    
+
+    if (col < 1) {
+        col = 1;
+    }
+
     CursorRow = row;
     CursorCol = col;
 }
