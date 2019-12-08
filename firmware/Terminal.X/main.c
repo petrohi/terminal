@@ -202,7 +202,6 @@ int main(int argc, char* argv[]) {
 // initialize the UART2 serial port
 void initSerial(void) {
     int cfg1, cfg2, baud = 0;
-    if(Option[O_BAUDRATE] == -1) NVMWriteWord((void *)(&Option[O_BAUDRATE]), 1200); // the configurable baudrate defaults to 1200
     PPSInput(2, U2RX, RPB1); PPSOutput(4, RPB0, U2TX);
 
     cfg1 = UART_ENABLE_PINS_TX_RX_ONLY;
@@ -216,7 +215,7 @@ void initSerial(void) {
         case O_PARITY_EVEN: cfg2 |= UART_PARITY_EVEN;    break;
     }
     cfg2 |= Option[O_1STOPBIT] ? UART_STOP_BITS_1 : UART_STOP_BITS_2;
-    baud = Option[O_BAUDRATE];
+    baud = Option[O_BAUDRATE] == -1 ? 1200 : Option[O_BAUDRATE];
 
     UARTConfigure(UART2, cfg1);
     UARTSetFifoMode(UART2, UART_INTERRUPT_ON_TX_NOT_FULL | UART_INTERRUPT_ON_RX_NOT_EMPTY);
@@ -507,7 +506,7 @@ void SetUp(void) {
         PPrompt("D = Number of bits and parity", (char *)oparity[saved[O_PARITY] + 1]);
         PPrompt("E = Number of stop bits", saved[O_1STOPBIT] ? "ONE" : "TWO");
         PPrompt("F = Invert Serial (for RS232)", saved[O_SERIALINV] ? "OFF" : "INVERT");
-        sprintf(baud, "%d", saved[O_BAUDRATE]);
+        sprintf(baud, "%d", saved[O_BAUDRATE] == -1 ? 1200 : saved[O_BAUDRATE]);
         PPrompt("G = Configurable baudrate", baud);
         VideoPrintString("\r\n");
         PPrompt("H = Display start up message", saved[O_STARTUPMSG] ? "ON" : "HIDE");
@@ -554,7 +553,6 @@ void SetUp(void) {
             case 'H': saved[O_STARTUPMSG] = GetInput("Enter 1 to display or 2 to hide : ", '1', '2') - '2';
                       break;
             case 'I': for(i = 0; i < NBR_SAVED; i++) saved[i] = -1;
-                      saved[O_BAUDRATE] = 1200;
                       break;
             case 'J': cmd_Reset();
                       return;
