@@ -107,7 +107,7 @@ void DrawChar(int row, int col, char c) {
                 charLine = 0xff;
             }
             else {
-                charLine = Font[(int) c][m];            
+                charLine = Font[(int) (c * CHAR_HEIGHT + m)];
             }
             if (ReverseVideoChar) {
                 charLine = ~charLine;
