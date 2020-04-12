@@ -48,8 +48,8 @@
 ****************************************************************************************/
 
 
-#define VERSION                 "2.0"                               // define the version number
-#define YEAR			"2019"			            // and the year
+#define VERSION                 "2.0.1"                               // define the version number
+#define YEAR			"2020"			            // and the year
 
 
 // The main clock frequency for the chip
