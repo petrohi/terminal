@@ -254,7 +254,7 @@ void cmd_ExitNumLock(void) {
 
 // respond as a VT52
 void cmd_VT52ID(void) {
-    putSerialString("\033[/Z");
+    putSerialString("\033/Z");
 }
 
 
@@ -384,7 +384,7 @@ const struct s_cmdtbl cmdtbl[]  = {
     { "\033D",          VT52,       cmd_CurLeft },
     { "\033H",          VT52,       cmd_CurHome },
     { "\033I",          VT52,       cmd_ReverseLineFeed },
-    { "\033[^^",        VT52,       cmd_CurPosition },
+    { "\033Y^^",        VT52,       cmd_CurPosition },
 
     { "\033J",          VT52,       cmd_ClearEOS },
     { "\033K",          VT52,       cmd_ClearEOL },
@@ -392,7 +392,7 @@ const struct s_cmdtbl cmdtbl[]  = {
     { "\033>",          VT52,       cmd_SetNumLock },
     { "\033=",          VT52,       cmd_ExitNumLock },
 
-    { "\033[Z",         VT52,       cmd_VT52ID },
+    { "\033Z",          VT52,       cmd_VT52ID },
     { "\033<",          VT52,       cmd_VT100mode },
     { "\033F",          VT52,       cmd_NULL },
     { "\033G",          VT52,       cmd_NULL },
