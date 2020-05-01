@@ -317,7 +317,8 @@ void cmd_ReportPosition(void) {
 
 
 void cmd_CrLf(void) {
-    PutChar('\r\n');
+    PutChar('\r');
+    PutChar('\n');
 }
 
 

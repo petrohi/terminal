@@ -81,6 +81,7 @@ extern int CursorOff;
 extern int AutoLineWrap;
 
 extern int ScreenRows();
+extern void TestFont();
 extern void ShowCursor(int cursor);
 extern void MoveCursor(int row, int col);
 extern void ClearEOL();
@@ -91,8 +92,7 @@ extern void ClearScreen();
 extern void ScrollUp();
 extern void ScrollDown();
 
-extern void PutChar(char c);
-extern void PutChars(char* s);
+extern void PutChar(int c);
 
 extern void InitVga(int marginLines);
 
