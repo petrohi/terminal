@@ -66,8 +66,9 @@ unsigned char VideoBuf[VIDEO_H_BYTES * VIDEO_V_PIXELS];
 volatile unsigned char *VideoLine = VideoBuf;
 volatile int CurrLine = 0;
 
-#define CHAR_START ' '
-#define CHAR_END '~'
+#define CHAR_START 0x20
+#define CHAR_END 0xff
+#define UNPRINTABLE 0xa8
 
 unsigned char *CharBuf;
 
@@ -98,7 +99,7 @@ int CharLineOffset(int row, int col, int line) {
     BufOffset(((row - 1) * CHAR_HEIGHT * VIDEO_H_BYTES) + (line * VIDEO_H_BYTES) + VIDEO_H_BACK_PORCH_BYTES + (col - 1));
 }
 
-void DrawChar(int row, int col, char c) {
+void DrawChar(int row, int col, int c) {
     int m = 0;
     for (; m < CHAR_HEIGHT; ++m) {
         unsigned char charLine = 0;
@@ -107,7 +108,7 @@ void DrawChar(int row, int col, char c) {
                 charLine = 0xff;
             }
             else {
-                charLine = Font[(int) (c * CHAR_HEIGHT + m)];
+                charLine = Font[(int) ((c - CHAR_START) * CHAR_HEIGHT + m)];
             }
             if (ReverseVideoChar) {
                 charLine = ~charLine;
@@ -117,10 +118,20 @@ void DrawChar(int row, int col, char c) {
     }
 }
 
+void TestFont() {
+    int i = 2;
+    for (; i < 16; ++i) {
+        int j = 0;
+        for (; j < 16; ++j) {
+            DrawChar(i + 1, j + 1, (i << 4) + j);
+        }
+    }
+}
+
 void ShowCursor(int cursor) {
     if (Cursor != cursor) {
         int m = 0;
-        for (; m < CHAR_HEIGHT - 2; ++m) {
+        for (; m < CHAR_HEIGHT; ++m) {
             int i = CharLineOffset(CursorRow, CursorCol, m);
             CharBuf[i] = ~CharBuf[i];
         }
@@ -211,7 +222,7 @@ void ScrollDown() {
     memset((void*)CharBuf, 0x00, VIDEO_H_BYTES * CHAR_HEIGHT);
 }
 
-void PutChar(char c) {
+void PutChar(int c) {
     ShowCursor(0);
     
     if (c == '\r') {
@@ -228,14 +239,18 @@ void PutChar(char c) {
     else if (c == '\t') {
         CursorCol += (TAB_SIZE - ((CursorCol - 1) % TAB_SIZE));
     }
-    else if (c >= CHAR_START && c <= CHAR_END) {
+    else {
+        if (c < CHAR_START || c > CHAR_END) {
+            c = UNPRINTABLE;
+        }
+
         DrawChar(CursorRow, CursorCol, c);
         
         if (CursorCol != SCREEN_COLS || AutoLineWrap) {
             CursorCol++;
         }
     }
-    
+
     if (CursorCol > SCREEN_COLS) {
         CursorCol = 1;
         CursorRow++;
@@ -244,13 +259,6 @@ void PutChar(char c) {
     if (CursorRow > ScreenRows()) {
         CursorRow = ScreenRows();
         ScrollUp();
-    }
-}
-
-void PutChars(char* s) {
-    int i = 0;
-    while (s[i]) {
-        PutChar(s[i++]);
     }
 }
 

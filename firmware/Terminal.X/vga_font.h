@@ -47,4 +47,4 @@
 ****************************************************************************************/
 
 
-extern const unsigned char Font[2048];
+extern const unsigned char Font[];
