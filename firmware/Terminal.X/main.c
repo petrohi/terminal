@@ -81,6 +81,8 @@ void BlinkLED(void);
 void SetUp(void);
 
 #define DEFAULT_BAUD 9600
+#define MIN_BAUD 48
+#define MAX_BAUD 3125000
 
 #define SERIAL_RX_BUF_SIZE 256
 char SerialRxBuf[SERIAL_RX_BUF_SIZE];
@@ -546,8 +548,8 @@ void SetUp(void) {
                           if(j >= '0' && j <= '9') { VT100Putc(j); i = (i * 10) + j - '0'; }
                       }
                       if(i == 0) i = saved[O_BAUDRATE];
-                      if(i < 40) i = 40;
-                      if(i > 1000000) i = 1000000;
+                      if(i < MIN_BAUD) i = MIN_BAUD;
+                      if(i > MAX_BAUD) i = MAX_BAUD;
                       saved[O_BAUDRATE] = i;
                       break;
             case 'H': saved[O_STARTUPMSG] = GetInput("Enter 1 to display or 2 to hide : ", '1', '2') - '2';
