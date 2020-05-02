@@ -53,7 +53,6 @@ void VideoPrintString(char *p);
 void cmd_Reset(void);
 void cmd_ClearEOL(void);
 void cmd_ClearEOS(void);
-void MoveCursor(int x, int y);
 
 #define VT100   1
 #define VT52    2

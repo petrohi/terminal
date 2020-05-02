@@ -71,7 +71,7 @@ extern const struct s_cmdtbl cmdtbl[];
 
 int mode;                                                           // current mode.  can be VT100 or VT52
 
-int SaveX, SaveY, SaveUL, SaveRV, SaveInvis;           // saved attributes that can be restored
+int SaveX, SaveY, SaveLastColumn, SaveUL, SaveRV, SaveInvis;           // saved attributes that can be restored
 
 void VT100Putc(char c) {
     int cmd, i, j, partial;
@@ -223,6 +223,7 @@ void cmd_ClearLine(void) {
 void cmd_CurSave(void) {
     SaveX = CursorRow;
     SaveY = CursorCol;
+    SaveLastColumn = LastColumn;
     SaveUL = UnderlineChar;
     SaveRV = ReverseVideoChar;
     SaveInvis = InvisibleChar;
@@ -231,7 +232,7 @@ void cmd_CurSave(void) {
 
 // restore the saved attributes
 void cmd_CurRestore(void) {
-    MoveCursor(SaveX, SaveY);
+    MoveCursorEx(SaveX, SaveY, SaveLastColumn);
     UnderlineChar = SaveUL;
     ReverseVideoChar = SaveRV;
     InvisibleChar = SaveInvis;
