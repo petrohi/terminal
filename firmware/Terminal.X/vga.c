@@ -67,8 +67,7 @@ volatile unsigned char *VideoLine = VideoBuf;
 volatile int CurrLine = 0;
 
 #define CHAR_START 0x20
-#define CHAR_END 0xff
-#define UNPRINTABLE 0xa8
+#define CHAR_END 0x7f
 
 unsigned char *CharBuf;
 
@@ -239,11 +238,7 @@ void PutChar(int c) {
     else if (c == '\t') {
         CursorCol += (TAB_SIZE - ((CursorCol - 1) % TAB_SIZE));
     }
-    else {
-        if (c < CHAR_START || c > CHAR_END) {
-            c = UNPRINTABLE;
-        }
-
+    else if (c >= CHAR_START && c <= CHAR_END) {
         DrawChar(CursorRow, CursorCol, c);
         
         if (CursorCol != SCREEN_COLS || AutoLineWrap) {
