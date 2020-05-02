@@ -48,7 +48,7 @@
 ****************************************************************************************/
 
 
-#define VERSION                 "2.0.1"                               // define the version number
+#define VERSION                 "2.0.2"                               // define the version number
 #define YEAR			"2020"			            // and the year
 
 
