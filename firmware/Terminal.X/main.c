@@ -80,6 +80,7 @@ void initTimer(void);
 void BlinkLED(void);
 void SetUp(void);
 
+#define DEFAULT_BAUD 9600
 
 #define SERIAL_RX_BUF_SIZE 256
 char SerialRxBuf[SERIAL_RX_BUF_SIZE];
@@ -205,7 +206,6 @@ void initSerial(void) {
     PPSInput(2, U2RX, RPB1); PPSOutput(4, RPB0, U2TX);
 
     cfg1 = UART_ENABLE_PINS_TX_RX_ONLY;
-    if(baud > 9000) cfg1 |= UART_ENABLE_HIGH_SPEED;
     if(!Option[O_SERIALINV]) cfg1 |= (UART_INVERT_RECEIVE_POLARITY | UART_INVERT_TRANSMIT_POLARITY);
 
     cfg2 = UART_DATA_SIZE_8_BITS;
@@ -215,7 +215,7 @@ void initSerial(void) {
         case O_PARITY_EVEN: cfg2 |= UART_PARITY_EVEN;    break;
     }
     cfg2 |= Option[O_1STOPBIT] ? UART_STOP_BITS_1 : UART_STOP_BITS_2;
-    baud = Option[O_BAUDRATE] == -1 ? 1200 : Option[O_BAUDRATE];
+    baud = Option[O_BAUDRATE] == -1 ? DEFAULT_BAUD : Option[O_BAUDRATE];
 
     UARTConfigure(UART2, cfg1);
     UARTSetFifoMode(UART2, UART_INTERRUPT_ON_TX_NOT_FULL | UART_INTERRUPT_ON_RX_NOT_EMPTY);
@@ -506,7 +506,7 @@ void SetUp(void) {
         PPrompt("D = Number of bits and parity", (char *)oparity[saved[O_PARITY] + 1]);
         PPrompt("E = Number of stop bits", saved[O_1STOPBIT] ? "ONE" : "TWO");
         PPrompt("F = Invert Serial (for RS232)", saved[O_SERIALINV] ? "OFF" : "INVERT");
-        sprintf(baud, "%d", saved[O_BAUDRATE] == -1 ? 1200 : saved[O_BAUDRATE]);
+        sprintf(baud, "%d", saved[O_BAUDRATE] == -1 ? DEFAULT_BAUD : saved[O_BAUDRATE]);
         PPrompt("G = Configurable baudrate", baud);
         VideoPrintString("\r\n");
         PPrompt("H = Display start up message", saved[O_STARTUPMSG] ? "ON" : "HIDE");
