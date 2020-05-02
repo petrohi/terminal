@@ -80,6 +80,7 @@ int CursorCol = 1;
 int Cursor = 0;
 
 int AutoLineWrap = 1;
+int LastColumn = 0;
 int MarginLines = 0;
 
 int ScreenRows() {
@@ -139,6 +140,10 @@ void ShowCursor(int cursor) {
 }
 
 void MoveCursor(int row, int col) {
+    MoveCursorEx(row, col, 0);
+}
+
+void MoveCursorEx(int row, int col, int lastColumn) {
     ShowCursor(0);
 
     if (row < 1) {
@@ -159,6 +164,7 @@ void MoveCursor(int row, int col) {
 
     CursorRow = row;
     CursorCol = col;
+    LastColumn = lastColumn;
 }
 
 void ClearEOL() {
@@ -221,39 +227,71 @@ void ScrollDown() {
     memset((void*)CharBuf, 0x00, VIDEO_H_BYTES * CHAR_HEIGHT);
 }
 
+void NextRow() {
+    if (CursorRow == ScreenRows()) {
+        ScrollUp();
+    }
+    else {
+        CursorRow++;
+    }
+}
+
 void PutChar(int c) {
     ShowCursor(0);
     
     if (c == '\r') {
+        LastColumn = 0;
         CursorCol = 1;
     }
     else if (c == '\n') {
-        CursorRow++;
+        NextRow();
     }
     else if (c == '\b') {
         if (CursorCol > 1) {
+            LastColumn = 0;
             CursorCol--;
         }
     }
     else if (c == '\t') {
-        CursorCol += (TAB_SIZE - ((CursorCol - 1) % TAB_SIZE));
-    }
-    else if (c >= CHAR_START && c <= CHAR_END) {
-        DrawChar(CursorRow, CursorCol, c);
-        
-        if (CursorCol != SCREEN_COLS || AutoLineWrap) {
-            CursorCol++;
+        if (LastColumn) {
+            LastColumn = 0;
+            CursorCol = 1;
+
+            NextRow();
+        }
+        else {
+            int tabCol = CursorCol + (TAB_SIZE - ((CursorCol - 1) % TAB_SIZE));
+
+            if (tabCol >= SCREEN_COLS) {
+                CursorCol = SCREEN_COLS;
+
+                if (AutoLineWrap) {
+                    LastColumn = 1;
+                }
+            }
+            else {
+                CursorCol = tabCol;
+            }
         }
     }
+    else if (c >= CHAR_START && c <= CHAR_END) {
+        if (LastColumn) {
+            LastColumn = 0;
+            CursorCol = 1;
 
-    if (CursorCol > SCREEN_COLS) {
-        CursorCol = 1;
-        CursorRow++;
-    }
-    
-    if (CursorRow > ScreenRows()) {
-        CursorRow = ScreenRows();
-        ScrollUp();
+            NextRow();
+        }
+
+        DrawChar(CursorRow, CursorCol, c);
+
+        if (CursorCol == SCREEN_COLS) {
+            if (AutoLineWrap) {
+                LastColumn = 1;
+            }
+        }
+        else {
+            CursorCol++;
+        }
     }
 }
 

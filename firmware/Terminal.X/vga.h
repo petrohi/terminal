@@ -79,11 +79,13 @@ extern int CursorCol;
 extern int CursorOff;
 
 extern int AutoLineWrap;
+extern int LastColumn;
 
 extern int ScreenRows();
 extern void TestFont();
 extern void ShowCursor(int cursor);
 extern void MoveCursor(int row, int col);
+extern void MoveCursorEx(int row, int col, int lastColumn);
 extern void ClearEOL();
 extern void ClearEOS();
 extern void ClearBOL();
