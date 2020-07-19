@@ -27,6 +27,7 @@ void terminal_init(struct terminal *terminal,
 
   terminal->transmit_buffer = transmit_buffer;
   terminal->transmit_buffer_size = transmit_buffer_size;
+  terminal->transmit_buffer_head = 0;
 
   terminal->charset = config->charset;
   terminal->c1_mode = config->c1_mode;

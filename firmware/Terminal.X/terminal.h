@@ -40,7 +40,7 @@ enum screen_test {
 
 struct terminal_callbacks {
   void (*keyboard_set_leds)(struct lock_state state);
-  void (*uart_transmit)(character_t *characters, size_t size);
+  void (*uart_transmit)(character_t *characters, size_t size, size_t head);
   void (*screen_draw_codepoint)(struct format format, size_t row, size_t col,
                                 codepoint_t codepoint, enum font font,
                                 bool italic, bool underlined, bool crossedout,
@@ -186,6 +186,7 @@ struct terminal {
 
   character_t *transmit_buffer;
   size_t transmit_buffer_size;
+  size_t transmit_buffer_head;
 
   size_t utf8_codepoint_length;
   size_t utf8_buffer_length;

@@ -84,11 +84,6 @@ void FlashWrite(void *p, unsigned int wrd, unsigned int operation);
 int GetFlashOption(const unsigned int *w);
 void SetFlashOption(const unsigned int *w, int x);
 
-extern void putSerial(int);
-extern void putSerialString(char *p);
-extern void putUSB(char);
-
-
 //#define LOCAL_ECHO  false
 
 extern volatile int GeneralTimer;
@@ -100,11 +95,10 @@ extern int USBSerialRxBufTail;
 
 // global keyboard functions, defines and variables
 extern void initKeyboard(void);
-extern volatile int KeyDown;
 
 extern void setLEDs(int num, int caps, int scroll);
-extern volatile char CapsLock;
-extern volatile char NumLock;
+
+extern struct ps2 *global_ps2;
 
 // the values returned by the standard control keys
 #define TAB     	0x9

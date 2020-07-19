@@ -57,6 +57,8 @@
 #include "terminal_config_ui.h"
 #include "screen.h"
 #include "normal.h"
+#include "ps2.h"
+#include "keys.h"
 
 //** USB INCLUDES ***********************************************************
 #include "./USB/Microchip/Include/USB/usb.h"
@@ -71,8 +73,6 @@
 
 // declare the serial I/O functions
 void initSerial(void);
-int getSerial(void);
-void putSerial(int c);
 
 // declare the USB I/O functions
 void CheckUSB(void);
@@ -85,10 +85,13 @@ void BlinkLED(void);
 #define MIN_BAUD 48
 #define MAX_BAUD 3125000
 
-#define SERIAL_RX_BUF_SIZE 256
+#define SERIAL_RX_BUF_SIZE 4096
 char SerialRxBuf[SERIAL_RX_BUF_SIZE];
 volatile int SerialRxBufHead = 0;
 volatile int SerialRxBufTail = 0;
+
+#define XOFF_LIMIT SERIAL_RX_BUF_SIZE / 16
+#define KEYBOARD_CHARS_PER_POLL 80
 
 #define SERIAL_TX_BUF_SIZE 256
 char SerialTxBuf[SERIAL_TX_BUF_SIZE];
@@ -170,13 +173,8 @@ struct terminal *global_terminal;
 struct terminal_config_ui *global_terminal_config_ui;
 
 #define UART_TRANSMIT_BUFFER_SIZE 64
-#define UART_RECEIVE_BUFFER_SIZE 1024 * 4
-
-#define XOFF_LIMIT UART_RECEIVE_BUFFER_SIZE / 8
-#define KEYBOARD_CHARS_PER_POLL 80
 
 static character_t uart_transmit_buffer[UART_TRANSMIT_BUFFER_SIZE];
-static character_t uart_receive_buffer[UART_RECEIVE_BUFFER_SIZE];
 
 struct terminal_config terminal_config = {
     .format = {
@@ -206,13 +204,13 @@ struct terminal_config terminal_config = {
     .start_up = START_UP_MESSAGE,
 };
 
-static void uart_transmit(character_t *characters, size_t size) {
+static void uart_transmit(character_t *characters, size_t size, size_t head) {
   if (global_terminal_config_ui->activated) {
     terminal_config_ui_receive_characters(global_terminal_config_ui, characters,
                                        size);
   } else {
-    /*while (HAL_UART_Transmit_DMA(&huart3, (void *)characters, size) != HAL_OK)
-      ;*/
+    SerialTxBufHead = head;
+    INTEnable(INT_SOURCE_UART_TX(UART2), INT_ENABLED);
   }
 }
 
@@ -288,28 +286,21 @@ system_write_config_callback(struct terminal_config *terminal_config_copy) {
 }
 
 static void keyboard_set_leds(struct lock_state state) {
-  uint8_t led_state =
-      (state.scroll ? 0x4 : 0) | (state.caps ? 0x2 : 0) | (state.num ? 1 : 0);
-  /*while (USBH_HID_SetReport(&hUsbHostHS, 0x02, 0x0, &led_state, 1) == USBH_BUSY)
-    ;*/
+  setLEDs(state.num, state.caps, state.scroll);
 }
 
 static void keyboard_handle(struct terminal *terminal) {
-  /*if (Appli_state == APPLICATION_READY) {
-
-    HID_KEYBD_Info_TypeDef *info = USBH_HID_GetKeybdInfo(&hUsbHostHS);
-
-    if (info) {
-      if (info->keys[0] == KEY_F12 && (info->lshift || info->rshift)) {
-        terminal_config_ui_enter(global_terminal_config_ui);
-      } else {
-        terminal_keyboard_handle_shift(terminal, info->lshift || info->rshift);
-        terminal_keyboard_handle_alt(terminal, info->lalt || info->ralt);
-        terminal_keyboard_handle_ctrl(terminal, info->lctrl || info->rctrl);
-        terminal_keyboard_handle_key(terminal, info->keys[0]);
-      }
+    if (global_ps2->keys[0] == KEY_F12 && (global_ps2->lshift || global_ps2->rshift)) {
+      terminal_config_ui_enter(global_terminal_config_ui);
+    } else {
+      terminal_keyboard_handle_shift(terminal, global_ps2->lshift || global_ps2->rshift);
+      terminal_keyboard_handle_alt(terminal, global_ps2->lalt || global_ps2->ralt);
+      terminal_keyboard_handle_ctrl(terminal, global_ps2->lctrl || global_ps2->rctrl);
+      terminal_keyboard_handle_key(terminal, global_ps2->keys[0]);
     }
-  }*/
+    
+    if (global_ps2->keys[0] != KEY_NONE)
+        BlinkLED();
 }
 
 #define VGA_LINES          525
@@ -424,24 +415,25 @@ int main(int argc, char* argv[]) {
       .system_reset = SoftReset,
       .screen_test = screen_test_callback,
       .system_write_config = system_write_config_callback};
-  terminal_init(&terminal, &callbacks, &terminal_config, uart_transmit_buffer,
-                UART_TRANSMIT_BUFFER_SIZE);
+  terminal_init(&terminal, &callbacks, &terminal_config, SerialTxBuf,
+                SERIAL_TX_BUF_SIZE);
   global_terminal = &terminal;
 
-    INTEnableSystemMultiVectoredInt();                              // allow vectored interrupts
-    initTimer();                                                    // initialise the millisecond timer
-    initSerial();                                                   // initialise the UART used for the serial I/O
-    USBDeviceInit();												// Initialise USB module SFRs and firmware
-    initKeyboard();                                                 // initialise the keyboard and associated interrupt
+    INTEnableSystemMultiVectoredInt();
+    
+    initTimer();
+    initSerial();
+    USBDeviceInit();
+    initKeyboard();
 
     INTEnableInterrupts();
 
     uSec(100000);
  
   
-  //struct terminal_config_ui terminal_config_ui;
-  //global_terminal_config_ui = &terminal_config_ui;
-  //terminal_config_ui_init(&terminal_config_ui, &terminal, &terminal_config);
+  struct terminal_config_ui terminal_config_ui;
+  global_terminal_config_ui = &terminal_config_ui;
+  terminal_config_ui_init(&terminal_config_ui, &terminal, &terminal_config);
     
     while(1) {
         CheckUSB();
@@ -449,16 +441,36 @@ int main(int argc, char* argv[]) {
         terminal_screen_update(&terminal);
         terminal_keyboard_repeat_key(&terminal);
 
-        ch = getSerial();
-        if(ch != -1) {
-            terminal_uart_receive_character(&terminal, (character_t)ch);
+        if (terminal_config_ui.activated)
+            continue;
+
+        if (SerialRxBufHead == SerialRxBufTail) {
+            terminal_uart_xon_off(&terminal, XON);
+            continue;
         }
 
-        if(KeyDown != -1) {            
-            KeyDown = -1;
-            BlinkLED();
-        }
+        int size = 0;
+        if (SerialRxBufTail < SerialRxBufHead)
+            size = SerialRxBufHead - SerialRxBufTail;
+        else
+            size = SerialRxBufHead +
+                (SERIAL_RX_BUF_SIZE - SerialRxBufTail);
 
+        if (size > XOFF_LIMIT)
+            terminal_uart_xon_off(&terminal, XOFF);
+
+        while (size--) {
+            if (size % KEYBOARD_CHARS_PER_POLL == 0) {
+                CheckUSB();
+                keyboard_handle(&terminal);
+            }
+
+            character_t character = SerialRxBuf[SerialRxBufTail];
+            SerialRxBufTail++;
+
+            terminal_uart_receive_character(&terminal, character);
+            if(SerialRxBufTail == SERIAL_RX_BUF_SIZE) SerialRxBufTail = 0;
+        }
     }
 }
 
@@ -483,7 +495,7 @@ void initSerial(void) {
         case O_PARITY_EVEN: cfg2 |= UART_PARITY_EVEN;    break;
     }
     cfg2 |= Option[O_1STOPBIT] ? UART_STOP_BITS_1 : UART_STOP_BITS_2;
-    baud = Option[O_BAUDRATE] == -1 ? DEFAULT_BAUD : Option[O_BAUDRATE];
+    baud = terminal_config_get_baud_rate(&terminal_config);
 
     UARTConfigure(UART2, cfg1);
     UARTSetFifoMode(UART2, UART_INTERRUPT_ON_TX_NOT_FULL | UART_INTERRUPT_ON_RX_NOT_EMPTY);
@@ -529,34 +541,6 @@ void __ISR(_UART2_VECTOR, ipl3) IntUart2Handler(void) {
     }
 }
 
-
-
-// send a character to the Console serial port
-void putSerial(int c) {
-    SerialTxBuf[SerialTxBufHead++] = c;								// add the char
-    SerialTxBufHead = SerialTxBufHead % SERIAL_TX_BUF_SIZE;         // advance the head of the queue
-    INTEnable(INT_SOURCE_UART_TX(UART2), INT_ENABLED);              // enable Tx interrupt in case it was off
-}
-
-
-void putSerialString(char *p) {
-    while(*p) putSerial(*p++);
-}
-
-
-// get a char from the UART1 serial port
-// will return immediately with -1 if there is no character waiting
-int getSerial(void) {
-    char c;
-    if(SerialRxBufHead == SerialRxBufTail) return -1;
-    c = SerialRxBuf[SerialRxBufTail++];
-    if(SerialRxBufTail >= SERIAL_RX_BUF_SIZE) SerialRxBufTail = 0;
-    return c;
-}
-
-
-
-
 /*********************************************************************************************
 * USB I/O functions
 **********************************************************************************************/
@@ -581,7 +565,7 @@ void CheckUSB(void) {
                 numBytesRead = getsUSBUSART(UsbDeviceRxBuf,USB_DEVICE_RX_BUFFER_SIZE);// check for data to be read
                 if(numBytesRead > 0) {                                             // if we have some data,
                     for(i = 0; i < numBytesRead; i++)
-                        putSerial(UsbDeviceRxBuf[i]);	                           // copy it into the serial output queue
+                        terminal_uart_transmit_character(global_terminal, UsbDeviceRxBuf[i]); // copy it into the serial output queue
                     BlinkLED();
                 }
             }

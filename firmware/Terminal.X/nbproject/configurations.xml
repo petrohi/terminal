@@ -14,6 +14,7 @@
       <itemPath>terminal_internal.h</itemPath>
       <itemPath>normal.h</itemPath>
       <itemPath>keys.h</itemPath>
+      <itemPath>ps2.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -32,6 +33,7 @@
       <itemPath>terminal_keyboard.c</itemPath>
       <itemPath>terminal_screen.c</itemPath>
       <itemPath>terminal_uart.c</itemPath>
+      <itemPath>ps2.c</itemPath>
     </logicalFolder>
     <logicalFolder name="USB" displayName="USB" projectFiles="true">
       <logicalFolder name="Microchip" displayName="Microchip" projectFiles="true">

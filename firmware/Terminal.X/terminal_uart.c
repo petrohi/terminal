@@ -1509,8 +1509,18 @@ static const receive_table_t pm_receive_table = {
 
 void terminal_uart_transmit_character(struct terminal *terminal,
                                       character_t character) {
-  memcpy(terminal->transmit_buffer, &character, 1);
-  terminal->callbacks->uart_transmit(terminal->transmit_buffer, 1);
+
+  character_t *buffer_head =
+      terminal->transmit_buffer + terminal->transmit_buffer_head;
+
+  buffer_head[0] = character;
+  terminal->transmit_buffer_head++;
+
+  if (terminal->transmit_buffer_head == terminal->transmit_buffer_size)
+    terminal->transmit_buffer_head = 0;
+
+  terminal->callbacks->uart_transmit(buffer_head, 1,
+                                     terminal->transmit_buffer_head);
 
   if (!terminal->send_receive_mode)
     terminal_uart_receive_character(terminal, character);
@@ -1526,34 +1536,46 @@ static const character_t
 
 void terminal_uart_transmit_string(struct terminal *terminal,
                                    const char *string) {
-  size_t len = 0;
+
+  character_t *buffer_head =
+      terminal->transmit_buffer + terminal->transmit_buffer_head;
+  size_t size = 0;
 
   while (*string) {
-    if (len == terminal->transmit_buffer_size) {
-      terminal->callbacks->uart_transmit(terminal->transmit_buffer, len);
-      len = 0;
-    }
-
     if (terminal->c1_mode == C1_MODE_8BIT && *string == 0x1b) {
       const char *next = string + 1;
       character_t eight_bit_character =
           eight_bit_character_table[(size_t)*next];
 
       if (eight_bit_character) {
-        terminal->transmit_buffer[len] = eight_bit_character;
-        len++;
+        buffer_head[size] = eight_bit_character;
         string += 2;
-
-        continue;
+      } else {
+        buffer_head[size] = *string;
+        string++;
       }
+    } else {
+      buffer_head[size] = *string;
+      string++;
     }
 
-    terminal->transmit_buffer[len] = *string;
-    len++;
-    string++;
+    size++;
+    terminal->transmit_buffer_head++;
+
+    if (terminal->transmit_buffer_head == terminal->transmit_buffer_size) {
+      terminal->transmit_buffer_head = 0;
+
+      terminal->callbacks->uart_transmit(buffer_head, size,
+                                         terminal->transmit_buffer_head);
+
+      buffer_head = terminal->transmit_buffer;
+      size = 0;
+    }
   }
 
-  terminal->callbacks->uart_transmit(terminal->transmit_buffer, len);
+  if (size)
+    terminal->callbacks->uart_transmit(buffer_head, size,
+                                       terminal->transmit_buffer_head);
 
   if (!terminal->send_receive_mode)
     terminal_uart_receive_string(terminal, string);

@@ -57,17 +57,17 @@ OBJECTDIR=build/${CND_CONF}/${IMAGE_TYPE}
 DISTDIR=dist/${CND_CONF}/${IMAGE_TYPE}
 
 # Source Files Quoted if spaced
-SOURCEFILES_QUOTED_IF_SPACED=keyboard.c main.c "USB/Microchip/USB/CDC Device Driver/usb_function_cdc.c" USB/Microchip/USB/usb_device.c USB/usb_descriptors.c screen.c font.c terminal_config.c terminal_config_ui.c terminal.c terminal_keyboard.c terminal_screen.c terminal_uart.c
+SOURCEFILES_QUOTED_IF_SPACED=keyboard.c main.c "USB/Microchip/USB/CDC Device Driver/usb_function_cdc.c" USB/Microchip/USB/usb_device.c USB/usb_descriptors.c screen.c font.c terminal_config.c terminal_config_ui.c terminal.c terminal_keyboard.c terminal_screen.c terminal_uart.c ps2.c
 
 # Object Files Quoted if spaced
-OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/keyboard.o ${OBJECTDIR}/main.o "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver/usb_function_cdc.o" ${OBJECTDIR}/USB/Microchip/USB/usb_device.o ${OBJECTDIR}/USB/usb_descriptors.o ${OBJECTDIR}/screen.o ${OBJECTDIR}/font.o ${OBJECTDIR}/terminal_config.o ${OBJECTDIR}/terminal_config_ui.o ${OBJECTDIR}/terminal.o ${OBJECTDIR}/terminal_keyboard.o ${OBJECTDIR}/terminal_screen.o ${OBJECTDIR}/terminal_uart.o
-POSSIBLE_DEPFILES=${OBJECTDIR}/keyboard.o.d ${OBJECTDIR}/main.o.d "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver/usb_function_cdc.o.d" ${OBJECTDIR}/USB/Microchip/USB/usb_device.o.d ${OBJECTDIR}/USB/usb_descriptors.o.d ${OBJECTDIR}/screen.o.d ${OBJECTDIR}/font.o.d ${OBJECTDIR}/terminal_config.o.d ${OBJECTDIR}/terminal_config_ui.o.d ${OBJECTDIR}/terminal.o.d ${OBJECTDIR}/terminal_keyboard.o.d ${OBJECTDIR}/terminal_screen.o.d ${OBJECTDIR}/terminal_uart.o.d
+OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/keyboard.o ${OBJECTDIR}/main.o "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver/usb_function_cdc.o" ${OBJECTDIR}/USB/Microchip/USB/usb_device.o ${OBJECTDIR}/USB/usb_descriptors.o ${OBJECTDIR}/screen.o ${OBJECTDIR}/font.o ${OBJECTDIR}/terminal_config.o ${OBJECTDIR}/terminal_config_ui.o ${OBJECTDIR}/terminal.o ${OBJECTDIR}/terminal_keyboard.o ${OBJECTDIR}/terminal_screen.o ${OBJECTDIR}/terminal_uart.o ${OBJECTDIR}/ps2.o
+POSSIBLE_DEPFILES=${OBJECTDIR}/keyboard.o.d ${OBJECTDIR}/main.o.d "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver/usb_function_cdc.o.d" ${OBJECTDIR}/USB/Microchip/USB/usb_device.o.d ${OBJECTDIR}/USB/usb_descriptors.o.d ${OBJECTDIR}/screen.o.d ${OBJECTDIR}/font.o.d ${OBJECTDIR}/terminal_config.o.d ${OBJECTDIR}/terminal_config_ui.o.d ${OBJECTDIR}/terminal.o.d ${OBJECTDIR}/terminal_keyboard.o.d ${OBJECTDIR}/terminal_screen.o.d ${OBJECTDIR}/terminal_uart.o.d ${OBJECTDIR}/ps2.o.d
 
 # Object Files
-OBJECTFILES=${OBJECTDIR}/keyboard.o ${OBJECTDIR}/main.o ${OBJECTDIR}/USB/Microchip/USB/CDC\ Device\ Driver/usb_function_cdc.o ${OBJECTDIR}/USB/Microchip/USB/usb_device.o ${OBJECTDIR}/USB/usb_descriptors.o ${OBJECTDIR}/screen.o ${OBJECTDIR}/font.o ${OBJECTDIR}/terminal_config.o ${OBJECTDIR}/terminal_config_ui.o ${OBJECTDIR}/terminal.o ${OBJECTDIR}/terminal_keyboard.o ${OBJECTDIR}/terminal_screen.o ${OBJECTDIR}/terminal_uart.o
+OBJECTFILES=${OBJECTDIR}/keyboard.o ${OBJECTDIR}/main.o ${OBJECTDIR}/USB/Microchip/USB/CDC\ Device\ Driver/usb_function_cdc.o ${OBJECTDIR}/USB/Microchip/USB/usb_device.o ${OBJECTDIR}/USB/usb_descriptors.o ${OBJECTDIR}/screen.o ${OBJECTDIR}/font.o ${OBJECTDIR}/terminal_config.o ${OBJECTDIR}/terminal_config_ui.o ${OBJECTDIR}/terminal.o ${OBJECTDIR}/terminal_keyboard.o ${OBJECTDIR}/terminal_screen.o ${OBJECTDIR}/terminal_uart.o ${OBJECTDIR}/ps2.o
 
 # Source Files
-SOURCEFILES=keyboard.c main.c USB/Microchip/USB/CDC Device Driver/usb_function_cdc.c USB/Microchip/USB/usb_device.c USB/usb_descriptors.c screen.c font.c terminal_config.c terminal_config_ui.c terminal.c terminal_keyboard.c terminal_screen.c terminal_uart.c
+SOURCEFILES=keyboard.c main.c USB/Microchip/USB/CDC Device Driver/usb_function_cdc.c USB/Microchip/USB/usb_device.c USB/usb_descriptors.c screen.c font.c terminal_config.c terminal_config_ui.c terminal.c terminal_keyboard.c terminal_screen.c terminal_uart.c ps2.c
 
 
 
@@ -185,6 +185,12 @@ ${OBJECTDIR}/terminal_uart.o: terminal_uart.c  nbproject/Makefile-${CND_CONF}.mk
 	@${RM} ${OBJECTDIR}/terminal_uart.o 
 	@${FIXDEPS} "${OBJECTDIR}/terminal_uart.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/terminal_uart.o.d" -o ${OBJECTDIR}/terminal_uart.o terminal_uart.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD)  -std=gnu99
 	
+${OBJECTDIR}/ps2.o: ps2.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} "${OBJECTDIR}" 
+	@${RM} ${OBJECTDIR}/ps2.o.d 
+	@${RM} ${OBJECTDIR}/ps2.o 
+	@${FIXDEPS} "${OBJECTDIR}/ps2.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/ps2.o.d" -o ${OBJECTDIR}/ps2.o ps2.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD)  -std=gnu99
+	
 else
 ${OBJECTDIR}/keyboard.o: keyboard.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} "${OBJECTDIR}" 
@@ -263,6 +269,12 @@ ${OBJECTDIR}/terminal_uart.o: terminal_uart.c  nbproject/Makefile-${CND_CONF}.mk
 	@${RM} ${OBJECTDIR}/terminal_uart.o.d 
 	@${RM} ${OBJECTDIR}/terminal_uart.o 
 	@${FIXDEPS} "${OBJECTDIR}/terminal_uart.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/terminal_uart.o.d" -o ${OBJECTDIR}/terminal_uart.o terminal_uart.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD)  -std=gnu99
+	
+${OBJECTDIR}/ps2.o: ps2.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} "${OBJECTDIR}" 
+	@${RM} ${OBJECTDIR}/ps2.o.d 
+	@${RM} ${OBJECTDIR}/ps2.o 
+	@${FIXDEPS} "${OBJECTDIR}/ps2.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/ps2.o.d" -o ${OBJECTDIR}/ps2.o ps2.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD)  -std=gnu99
 	
 endif
 
