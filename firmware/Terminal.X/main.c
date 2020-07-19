@@ -53,8 +53,10 @@
 #include <ctype.h>
 #include "config.h"                     // config pragmas
 #include "main.h"
-#include "vga.h"
-#include "vt100.h"
+#include "terminal.h"
+#include "terminal_config_ui.h"
+#include "screen.h"
+#include "normal.h"
 
 //** USB INCLUDES ***********************************************************
 #include "./USB/Microchip/Include/USB/usb.h"
@@ -78,7 +80,6 @@ void CheckUSB(void);
 void initTimer(void);
 
 void BlinkLED(void);
-void SetUp(void);
 
 #define DEFAULT_BAUD 9600
 #define MIN_BAUD 48
@@ -114,9 +115,280 @@ volatile int CursorTimer = 0;
 volatile int GeneralTimer;
 int CursorOff = 0;
 
-#define MES_SIGNON  "ASCII Terminal Version " VERSION "\r\n"\
-					"Copyright (C) 2014-" YEAR " Geoff Graham and Peter Hizalev\r\n"\
-                    "https://github.com/petrohi/terminal\r\n\r\n"
+#define FONT_WIDTH 8
+#define FONT_HEIGHT 16
+
+static const struct bitmap_font normal_bitmap_font = {
+    .height = FONT_HEIGHT,
+    .width = FONT_WIDTH,
+    .data = normal_font_data,
+    .codepoints_length = sizeof(normal_font_codepoints) / sizeof(int),
+    .codepoints = normal_font_codepoints,
+    .codepoints_map = normal_font_codepoints_map,
+};
+
+#define CHAR_HEIGHT    16
+#define CHAR_WIDTH     8
+
+static struct screen screen_24_rows = {
+    .format =
+        {
+            .rows = 24,
+            .cols = 80,
+        },
+    .char_width = CHAR_WIDTH,
+    .char_height = CHAR_HEIGHT,
+    .buffer = NULL,
+    .normal_bitmap_font = &normal_bitmap_font,
+    .bold_bitmap_font = &normal_bitmap_font,
+};
+
+static struct screen screen_30_rows = {
+    .format =
+        {
+            .rows = 30,
+            .cols = 80,
+        },
+    .char_width = CHAR_WIDTH,
+    .char_height = CHAR_HEIGHT,
+    .buffer = NULL,
+    .normal_bitmap_font = &normal_bitmap_font,
+    .bold_bitmap_font = &normal_bitmap_font,
+};
+
+struct screen *get_screen(struct format format) {
+  if (format.rows == screen_24_rows.format.rows && format.cols == screen_24_rows.format.cols)
+    return &screen_24_rows;
+
+  if (format.rows == screen_30_rows.format.rows && format.cols == screen_30_rows.format.cols)
+    return &screen_30_rows;
+
+  return NULL;
+}
+
+struct terminal *global_terminal;
+struct terminal_config_ui *global_terminal_config_ui;
+
+#define UART_TRANSMIT_BUFFER_SIZE 64
+#define UART_RECEIVE_BUFFER_SIZE 1024 * 4
+
+#define XOFF_LIMIT UART_RECEIVE_BUFFER_SIZE / 8
+#define KEYBOARD_CHARS_PER_POLL 80
+
+static character_t uart_transmit_buffer[UART_TRANSMIT_BUFFER_SIZE];
+static character_t uart_receive_buffer[UART_RECEIVE_BUFFER_SIZE];
+
+struct terminal_config terminal_config = {
+    .format = {
+      .cols = 80,
+      .rows = 24,
+    },
+
+    .baud_rate = BAUD_RATE_115200,
+    .word_length = WORD_LENGTH_8B,
+    .stop_bits = STOP_BITS_1,
+    .parity = PARITY_NONE,
+
+    .charset = CHARSET_UTF8,
+    .c1_mode = C1_MODE_7BIT,
+
+    .auto_wrap_mode = true,
+    .screen_mode = false,
+
+    .send_receive_mode = true,
+
+    .new_line_mode = false,
+    .cursor_key_mode = false,
+    .auto_repeat_mode = true,
+    .ansi_mode = true,
+    .backspace_mode = false,
+
+    .start_up = START_UP_MESSAGE,
+};
+
+static void uart_transmit(character_t *characters, size_t size) {
+  if (global_terminal_config_ui->activated) {
+    terminal_config_ui_receive_characters(global_terminal_config_ui, characters,
+                                       size);
+  } else {
+    /*while (HAL_UART_Transmit_DMA(&huart3, (void *)characters, size) != HAL_OK)
+      ;*/
+  }
+}
+
+static void screen_draw_codepoint_callback(struct format format, size_t row,
+                                           size_t col, codepoint_t codepoint,
+                                           enum font font, bool italic,
+                                           bool underlined, bool crossedout,
+                                           color_t active, color_t inactive) {
+  screen_draw_codepoint(get_screen(format), row, col, codepoint, font,
+                        italic, underlined, crossedout, active, inactive);
+}
+
+static void screen_clear_rows_callback(struct format format, size_t from_row,
+                                       size_t to_row, color_t inactive) {
+  screen_clear_rows(get_screen(format), from_row, to_row, inactive);
+}
+
+static void screen_clear_cols_callback(struct format format, size_t row,
+                                       size_t from_col, size_t to_col,
+                                       color_t inactive) {
+  screen_clear_cols(get_screen(format), row, from_col, to_col, inactive);
+}
+
+static void screen_scroll_callback(struct format format, enum scroll scroll,
+                                   size_t from_row, size_t to_row, size_t rows,
+                                   color_t inactive) {
+  screen_scroll(get_screen(format), scroll, from_row, to_row, rows,
+                inactive);
+}
+
+static void screen_shift_right_callback(struct format format, size_t row,
+                                        size_t col, size_t cols,
+                                        color_t inactive) {
+  screen_shift_right(get_screen(format), row, col, cols, inactive);
+}
+
+static void screen_shift_left_callback(struct format format, size_t row,
+                                       size_t col, size_t cols,
+                                       color_t inactive) {
+  screen_shift_left(get_screen(format), row, col, cols, inactive);
+}
+
+static void screen_test_callback(struct format format,
+                                 enum screen_test screen_test) {
+  struct screen *screen = get_screen(format);
+  switch (screen_test) {
+  case SCREEN_TEST_FONT1:
+    screen_test_fonts(screen, FONT_NORMAL);
+    break;
+  case SCREEN_TEST_FONT2:
+    screen_test_fonts(screen, FONT_BOLD);
+    break;
+  case SCREEN_TEST_COLOR1:
+  case SCREEN_TEST_COLOR2:
+    screen_test_colors(screen);
+    break;
+  }
+}
+
+static void
+system_write_config_callback(struct terminal_config *terminal_config_copy) {
+  /*HAL_FLASH_Unlock();
+  __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP | FLASH_FLAG_OPERR | FLASH_FLAG_WRPERR |
+                         FLASH_FLAG_PGAERR | FLASH_FLAG_PGSERR);
+  FLASH_Erase_Sector(FLASH_SECTOR_11, VOLTAGE_RANGE_3);
+
+  for (size_t i = 0; i < sizeof(struct terminal_config); ++i)
+    HAL_FLASH_Program(TYPEPROGRAM_BYTE,
+                      (uint32_t)((uint8_t *)&terminal_config + i),
+                      *(((uint8_t *)terminal_config_copy) + i));
+
+  HAL_FLASH_Lock();*/
+}
+
+static void keyboard_set_leds(struct lock_state state) {
+  uint8_t led_state =
+      (state.scroll ? 0x4 : 0) | (state.caps ? 0x2 : 0) | (state.num ? 1 : 0);
+  /*while (USBH_HID_SetReport(&hUsbHostHS, 0x02, 0x0, &led_state, 1) == USBH_BUSY)
+    ;*/
+}
+
+static void keyboard_handle(struct terminal *terminal) {
+  /*if (Appli_state == APPLICATION_READY) {
+
+    HID_KEYBD_Info_TypeDef *info = USBH_HID_GetKeybdInfo(&hUsbHostHS);
+
+    if (info) {
+      if (info->keys[0] == KEY_F12 && (info->lshift || info->rshift)) {
+        terminal_config_ui_enter(global_terminal_config_ui);
+      } else {
+        terminal_keyboard_handle_shift(terminal, info->lshift || info->rshift);
+        terminal_keyboard_handle_alt(terminal, info->lalt || info->ralt);
+        terminal_keyboard_handle_ctrl(terminal, info->lctrl || info->rctrl);
+        terminal_keyboard_handle_key(terminal, info->keys[0]);
+      }
+    }
+  }*/
+}
+
+#define VGA_LINES          525
+#define VGA_V_SYNC         2
+#define VGA_V_FRONT_PORCH  10
+#define VGA_V_BACK_PORCH   33
+
+#define VGA_PIXELS         800
+#define VGA_H_SYNC         96
+#define VGA_H_FRONT_PORCH  16
+#define VGA_H_BACK_PORCH   48
+
+#define VGA_LINE_T   	     (VGA_PIXELS * 2)
+#define VGA_H_SYNC_T       (VGA_H_SYNC * 2)
+
+#define VGA_V_LINES (VGA_LINES - VGA_V_FRONT_PORCH - VGA_V_SYNC - VGA_V_BACK_PORCH)
+#define VGA_H_PIXELS (VGA_PIXELS - VGA_H_FRONT_PORCH - VGA_H_SYNC - VGA_H_BACK_PORCH)
+
+#define VGA_H_BACK_PORCH_BYTES  (VGA_H_BACK_PORCH / 8)
+#define VGA_H_FRONT_PORCH_BYTES (VGA_H_FRONT_PORCH / 8)
+#define VGA_H_BYTES             (VGA_H_BACK_PORCH_BYTES + (VGA_H_PIXELS / 8) + VGA_H_FRONT_PORCH_BYTES)
+
+#define VGA_V_FRONT_PORCH_SYNC            (VGA_V_FRONT_PORCH + VGA_V_SYNC)
+#define VGA_V_FRONT_PORCH_SYNC_BACK_PORCH (VGA_V_FRONT_PORCH_SYNC + VGA_V_BACK_PORCH)
+
+uint8_t vga_buffer[VGA_H_BYTES * VGA_V_LINES];
+
+volatile uint8_t *vga_line = vga_buffer;
+volatile size_t vga_cur_line = 0;
+
+#define BIT_13 (1 << 13)
+
+void init_vga() {
+    screen_30_rows.buffer = vga_buffer;
+    screen_24_rows.buffer = vga_buffer + (3 * CHAR_HEIGHT * VGA_H_BYTES);
+    
+    memset((void*)vga_buffer, 0x00, sizeof(vga_buffer));
+
+    TRISBCLR = BIT_13; // B13 is the vertical sync output
+    LATBSET =  BIT_13;
+    
+    PPSOutput(3, RPA4, SDO2); // A4 is the video output
+    PPSInput(4, SS2, RPB9);   // B9 is the framing input
+    PPSOutput(4, RPB14, OC3); // B14 is the horizontal sync output (ie, the output from OC3)    
+    
+    OpenOC3(OC_ON | OC_TIMER3_SRC | OC_CONTINUE_PULSE, 0, VGA_H_SYNC_T);
+    OpenTimer3(T3_ON | T3_PS_1_1 | T3_SOURCE_INT, VGA_LINE_T - 1);
+    SpiChnOpenEx(SPI_CHANNEL2, SPI_OPEN_MODE32 | SPICON_ON | SPICON_MSTEN | SPICON_FRMEN | SPICON_FRMSYNC | SPICON_FRMPOL | SPI_OPEN_DISSDI, SPI_OPEN2_IGNROV | SPI_OPEN2_IGNTUR, 2);
+
+    DmaChnOpen(DMA_CHANNEL0, DMA_CHN_PRI0, DMA_OPEN_DEFAULT);
+    DmaChnSetEventControl(DMA_CHANNEL0, DMA_EV_START_IRQ_EN | DMA_EV_START_IRQ(_SPI2_TX_IRQ));
+    DmaChnSetTxfer(DMA_CHANNEL0, (void*)vga_line, (void *)&SPI2BUF, VGA_H_BYTES, 4, 4);
+    
+    mT3SetIntPriority(7);
+    mT3IntEnable(1);
+}
+
+void __ISR(_TIMER_3_VECTOR, IPL7SOFT) T3Interrupt(void) {
+    
+    if (vga_cur_line < VGA_V_FRONT_PORCH) {
+    }
+    else if (vga_cur_line < VGA_V_FRONT_PORCH_SYNC) {
+        LATBCLR = BIT_13;
+    }
+    else if (vga_cur_line < VGA_V_FRONT_PORCH_SYNC_BACK_PORCH) {
+        LATBSET = BIT_13;
+    }
+    else {
+        vga_line = (vga_buffer + ((vga_cur_line - VGA_V_FRONT_PORCH_SYNC_BACK_PORCH) * VGA_H_BYTES));
+        DCH0SSA = KVA_TO_PA((void*) vga_line);
+        DmaChnEnable(DMA_CHANNEL0);
+    }
+    
+    if (++vga_cur_line == VGA_LINES) {
+        vga_cur_line = 0;
+    }
+
+    mT3ClearIntFlag();    											// clear the interrupt flag
+}
 
 int main(int argc, char* argv[]) {
     int ch;
@@ -135,60 +407,54 @@ int main(int argc, char* argv[]) {
     CNENA = CNENB = CNCONA = CNCONB = 0;
     CNPUA = CNPUB = CNPDA = CNPDB = 0;
 
-    CNPUBSET = (1 << 4); CNPUBSET = (1 << 3); CNPUASET = (1 << 1);  // set pullups on the baudrate jumpers
     TRISBbits.TRISB5 = 0; LATBCLR = (1<<5);                         // turn on the power LED
     uSec(1000);                                                     // settling time
 
+    init_vga();
+  struct terminal terminal;
+  struct terminal_callbacks callbacks = {
+      .keyboard_set_leds = keyboard_set_leds,
+      .uart_transmit = uart_transmit,
+      .screen_draw_codepoint = screen_draw_codepoint_callback,
+      .screen_clear_rows = screen_clear_rows_callback,
+      .screen_clear_cols = screen_clear_cols_callback,
+      .screen_scroll = screen_scroll_callback,
+      .screen_shift_left = screen_shift_left_callback,
+      .screen_shift_right = screen_shift_right_callback,
+      .system_reset = SoftReset,
+      .screen_test = screen_test_callback,
+      .system_write_config = system_write_config_callback};
+  terminal_init(&terminal, &callbacks, &terminal_config, uart_transmit_buffer,
+                UART_TRANSMIT_BUFFER_SIZE);
+  global_terminal = &terminal;
+
     INTEnableSystemMultiVectoredInt();                              // allow vectored interrupts
     initTimer();                                                    // initialise the millisecond timer
-    InitVga(Option[O_LINES24] ? 3 : 0);                             // initialise the video and associated interrupt
-    initVT100();                                                    // initialise the vt100/vt52 decoding engine
     initSerial();                                                   // initialise the UART used for the serial I/O
     USBDeviceInit();												// Initialise USB module SFRs and firmware
     initKeyboard();                                                 // initialise the keyboard and associated interrupt
 
     INTEnableInterrupts();
 
-    uSec(100000);                                                   // allow everything to settle
-	if(Option[O_STARTUPMSG]) VideoPrintString(MES_SIGNON); 			// print signon message
-
+    uSec(100000);
+ 
+  
+  //struct terminal_config_ui terminal_config_ui;
+  //global_terminal_config_ui = &terminal_config_ui;
+  //terminal_config_ui_init(&terminal_config_ui, &terminal, &terminal_config);
+    
     while(1) {
         CheckUSB();
-        ShowCursor(!(CursorOff || CursorTimer > CURSOR_ON));
+        keyboard_handle(&terminal);
+        terminal_screen_update(&terminal);
+        terminal_keyboard_repeat_key(&terminal);
 
         ch = getSerial();
         if(ch != -1) {
-            VT100Putc(ch);
+            terminal_uart_receive_character(&terminal, (character_t)ch);
         }
 
-        if(KeyDown != -1) {
-            switch(KeyDown) {
-                case UP:        putSerialString(mode == VT100 ? "\033[A" : "\033A");      break;
-                case DOWN:      putSerialString(mode == VT100 ? "\033[B" : "\033B");      break;
-                case LEFT:      putSerialString(mode == VT100 ? "\033[D" : "\033D");      break;
-                case RIGHT:     putSerialString(mode == VT100 ? "\033[C" : "\033C");      break;
-                case HOME:      putSerialString("\033[1~");     break;
-                case INSERT:    putSerialString("\033[2~");     break;
-                case DEL:       putSerialString("\033[3~");     break;
-                case END:       putSerialString("\033[4~");     break;
-                case PUP:       putSerialString("\033[5~");     break;
-                case PDOWN:     putSerialString("\033[6~");     break;
-                case F1:        putSerialString("\033[11~");    break;
-                case F2:        putSerialString("\033[12~");    break;
-                case F3:        putSerialString("\033[13~");    break;
-                case F4:        putSerialString("\033[14~");    break;
-                case F5:        putSerialString("\033[15~");    break;
-                case F6:        putSerialString("\033[17~");    break;
-                case F7:        putSerialString("\033[18~");    break;
-                case F8:        putSerialString("\033[19~");    break;
-                case F9:        putSerialString("\033[20~");    break;
-                case F10:       putSerialString("\033[21~");    break;
-                case F11:       putSerialString("\033[23~");    break;
-                case F12:       putSerialString("\033[24~");    break;
-                case F3+0x20:   putSerialString("\033[25~");    break;
-                case F12+0x20:  SetUp();                        break;
-                default:        putSerial(KeyDown);             break;
-            }
+        if(KeyDown != -1) {            
             KeyDown = -1;
             BlinkLED();
         }
@@ -411,9 +677,9 @@ void __ISR( _TIMER_4_VECTOR, ipl1) T4Interrupt(void) {
         if(--LEDTimer < 25) LATBCLR = (1<<5);
 
     if(GeneralTimer) GeneralTimer--;
-
-    if(++CursorTimer > CURSOR_OFF + CURSOR_ON) CursorTimer = 0;		// used to control cursor blink rate
-
+    
+    terminal_timer_tick(global_terminal);
+    
     // Clear the interrupt flag
     mT4ClearIntFlag();
 }
@@ -442,130 +708,11 @@ void BlinkLED(void) {
 NVM_ALLOCATE(Option, 256);
 
 
-
-void Prompt(int x, char *msg) {
-    int i;
-    for(i = 0; i < x; i++) VT100Putc(' ');
-    VideoPrintString(msg);
-}
-
-
-void PPrompt(char *msg, char *current) {
-    int i;
-     for(i = 0; i < 14; i++) VT100Putc(' ');
-    VideoPrintString(msg);
-    for(i = 0; i < 38 - strlen(msg); i++) VT100Putc(' ');
-    VideoPrintString("(currently ");
-    VideoPrintString(current);
-    VideoPrintString(")     \r\n");
-}
-
-
-int GetInput(char *msg, int min, int max) {
-    int i;
-    for(i = 0; i < (74 - strlen(msg))/2; i++) VT100Putc(' ');
-    VideoPrintString(msg);
-    cmd_ClearEOS();
-    while(toupper(KeyDown) < min || toupper(KeyDown) > max) ShowCursor(true);
-    i = toupper(KeyDown);
-    KeyDown = -1;
-    VT100Putc(i);
-    VideoPrintString("\r\n");
-    return i;
-}
-
 void ConfigBuffers() {
     SerialRxBufHead = 0;
     SerialRxBufTail = 0;
     USBSerialRxBufTail = 0;
 }
-
-void SetUp(void) {
-    const char *kblang[8] = {"US", "FR", "GR", "IT", "BE", "UK", "RS" };
-    const char *oparity[3] = {"8 NONE", "7 ODD", "7 EVEN" };
-    char baud[10];
-    #define NBR_SAVED   20
-    int saved[NBR_SAVED], i;
-
-    for(i = 0; i < NBR_SAVED; i++) saved[i] = Option[i];
-
-    cmd_Reset();
-    ConfigBuffers();
-    ShowCursor(false);                                              // turn off the cursor to prevent it from getting confused
-    ClearScreen();
-
-    while(1) {
-        MoveCursor(1, 1);
-        if (!Option[O_LINES24]) VideoPrintString("\r\n\r\n\r\n");
-        Prompt(35, "");
-        UnderlineChar = true;
-        VideoPrintString("SET-UP MENU\r\n");
-        UnderlineChar = false;
-        VideoPrintString("\r\n\r\n\r\n");
-        PPrompt("A = Number of lines", saved[O_LINES24] ? "24" : "30");
-        PPrompt("C = Keyboard language", (char *)kblang[saved[O_KEYBOARD] + 1]);
-        VideoPrintString("\r\n");
-        PPrompt("D = Number of bits and parity", (char *)oparity[saved[O_PARITY] + 1]);
-        PPrompt("E = Number of stop bits", saved[O_1STOPBIT] ? "ONE" : "TWO");
-        PPrompt("F = Invert Serial (for RS232)", saved[O_SERIALINV] ? "OFF" : "INVERT");
-        sprintf(baud, "%d", saved[O_BAUDRATE] == -1 ? DEFAULT_BAUD : saved[O_BAUDRATE]);
-        PPrompt("G = Configurable baudrate", baud);
-        VideoPrintString("\r\n");
-        PPrompt("H = Display start up message", saved[O_STARTUPMSG] ? "ON" : "HIDE");
-        VideoPrintString("\r\n");
-        Prompt(14, "I = Reset to the original defaults\r\n");
-        Prompt(14, "J = Discard all changes and exit\r\n");
-        Prompt(14, "K = Save changes and restart terminal\r\n");
-
-        VideoPrintString("\r\n\r\n\r\n");
-
-        switch(GetInput("Select item (enter C to K) : ", 'A', 'K')) {
-            case 'A': saved[O_LINES24] = GetInput("Enter 1 for 24 lines or 2 for 30 lines : ", '1', '2') - '2';
-                      break;
-            case 'B':
-                      break;
-            case 'C': saved[O_KEYBOARD] = GetInput("Language 1=US, 2=FR, 3=GR, 4=IT, 5=BE, 6=UK, 7=RS : ", '1', '7') - '2';
-                      break;
-            case 'D': saved[O_PARITY] = GetInput("1 = 8bit NONE, 2 = 7bit ODD, 3 = 7bit EVEN : ", '1', '7') - '2';
-                      break;
-            case 'E': saved[O_1STOPBIT] = GetInput("Enter the number of stop bits : ", '1', '2') - '2';
-                      break;
-            case 'F': saved[O_SERIALINV] = GetInput("Enter 1 for normal or 2 for inverted : ", '1', '2') - '2';
-                      break;
-            case 'G': for(i = 0; i < (74 - strlen("Enter baudrate as a number followed by ENTER : "))/2; i++) VT100Putc(' ');
-                      VideoPrintString("Enter baudrate as a number followed by ENTER : ");
-                      cmd_ClearEOS();
-                      i = 0;
-                      while(1) {
-                          int j;
-                          mINT3IntEnable(false);       				// disable interrupt while we play
-                          j = KeyDown;
-                          KeyDown = -1;
-                          mINT3IntEnable(true);
-                          ShowCursor(true);
-                          if(j == '\r') break;
-                          if(j == '\b') { i = i /10; VideoPrintString("\b \b"); }
-                          if(j >= '0' && j <= '9') { VT100Putc(j); i = (i * 10) + j - '0'; }
-                      }
-                      if(i == 0) i = saved[O_BAUDRATE];
-                      if(i < MIN_BAUD) i = MIN_BAUD;
-                      if(i > MAX_BAUD) i = MAX_BAUD;
-                      saved[O_BAUDRATE] = i;
-                      break;
-            case 'H': saved[O_STARTUPMSG] = GetInput("Enter 1 to display or 2 to hide : ", '1', '2') - '2';
-                      break;
-            case 'I': for(i = 0; i < NBR_SAVED; i++) saved[i] = -1;
-                      break;
-            case 'J': cmd_Reset();
-                      return;
-            case 'K': NVMErasePage((char *)Option);
-                      for(i = 0; i < NBR_SAVED; i++) NVMWriteWord((void *)(&Option[i]), saved[i]);
-                      SoftReset();
-        }
-    }
-}
-
-
 
 int GetFlashOption(const unsigned int *w) {
     return O_KEYBOARD_US;

@@ -6,9 +6,14 @@
                    projectFiles="true">
       <itemPath>config.h</itemPath>
       <itemPath>main.h</itemPath>
-      <itemPath>vt100.h</itemPath>
-      <itemPath>vga.h</itemPath>
-      <itemPath>vga_font.h</itemPath>
+      <itemPath>font.h</itemPath>
+      <itemPath>screen.h</itemPath>
+      <itemPath>terminal.h</itemPath>
+      <itemPath>terminal_config.h</itemPath>
+      <itemPath>terminal_config_ui.h</itemPath>
+      <itemPath>terminal_internal.h</itemPath>
+      <itemPath>normal.h</itemPath>
+      <itemPath>keys.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -19,9 +24,14 @@
                    projectFiles="true">
       <itemPath>keyboard.c</itemPath>
       <itemPath>main.c</itemPath>
-      <itemPath>vt100.c</itemPath>
-      <itemPath>vga.c</itemPath>
-      <itemPath>vga_font.c</itemPath>
+      <itemPath>screen.c</itemPath>
+      <itemPath>font.c</itemPath>
+      <itemPath>terminal_config.c</itemPath>
+      <itemPath>terminal_config_ui.c</itemPath>
+      <itemPath>terminal.c</itemPath>
+      <itemPath>terminal_keyboard.c</itemPath>
+      <itemPath>terminal_screen.c</itemPath>
+      <itemPath>terminal_uart.c</itemPath>
     </logicalFolder>
     <logicalFolder name="USB" displayName="USB" projectFiles="true">
       <logicalFolder name="Microchip" displayName="Microchip" projectFiles="true">
@@ -58,7 +68,7 @@
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
-    <Elem>USB</Elem>
+    <Elem>.</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
@@ -125,6 +135,7 @@
         <property key="use-cci" value="false"/>
         <property key="use-iar" value="false"/>
         <property key="use-indirect-calls" value="false"/>
+        <appendMe value="-std=gnu99"/>
       </C32>
       <C32-AR>
         <property key="additional-options-chop-files" value="false"/>
@@ -183,7 +194,7 @@
         <property key="oXC32ld-extra-opts" value=""/>
         <property key="optimization-level" value=""/>
         <property key="preprocessor-macros" value=""/>
-        <property key="remove-unused-sections" value="false"/>
+        <property key="remove-unused-sections" value="true"/>
         <property key="report-memory-usage" value="false"/>
         <property key="serial-length" value=""/>
         <property key="serial-origin" value=""/>
@@ -191,6 +202,7 @@
         <property key="symbol-stripping" value=""/>
         <property key="trace-symbols" value=""/>
         <property key="warn-section-align" value="false"/>
+        <appendMe value="-allow-multiple-definition"/>
       </C32-LD>
       <C32CPP>
         <property key="additional-warnings" value="false"/>
@@ -360,6 +372,8 @@
         <property key="memories.programmemory" value="true"/>
         <property key="memories.programmemory.ranges" value="1d000000-1d01ffff"/>
         <property key="poweroptions.powerenable" value="false"/>
+        <property key="programmerToGoFilePath"
+                  value="/home/peter/terminal/firmware/Terminal.X/debug/default/Terminal_ptg"/>
         <property key="programmerToGoImageName" value="Terminal_ptg"/>
         <property key="programoptions.donoteraseauxmem" value="false"/>
         <property key="programoptions.eraseb4program" value="true"/>
