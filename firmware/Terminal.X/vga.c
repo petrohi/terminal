@@ -29,9 +29,9 @@
 #define VGA_V_FRONT_PORCH_SYNC            (VGA_V_FRONT_PORCH + VGA_V_SYNC)
 #define VGA_V_FRONT_PORCH_SYNC_BACK_PORCH (VGA_V_FRONT_PORCH_SYNC + VGA_V_BACK_PORCH)
 
-uint8_t vga_buffer[VGA_H_BYTES * VGA_V_LINES];
+#define VGA_BUFFER_BYTES (VGA_H_BYTES * VGA_V_LINES)
 
-volatile uint8_t *vga_line = vga_buffer;
+uint8_t vga_buffer[VGA_BUFFER_BYTES];
 volatile size_t vga_cur_line = 0;
 
 #define BIT_13 (1 << 13)
@@ -52,7 +52,7 @@ uint8_t *init_vga() {
 
     DmaChnOpen(DMA_CHANNEL0, DMA_CHN_PRI0, DMA_OPEN_DEFAULT);
     DmaChnSetEventControl(DMA_CHANNEL0, DMA_EV_START_IRQ_EN | DMA_EV_START_IRQ(_SPI2_TX_IRQ));
-    DmaChnSetTxfer(DMA_CHANNEL0, (void*)vga_line, (void *)&SPI2BUF, VGA_H_BYTES, 4, 4);
+    DmaChnSetTxfer(DMA_CHANNEL0, (void*)vga_buffer, (void *)&SPI2BUF, VGA_BUFFER_BYTES, 4, 4);
     
     mT3SetIntPriority(7);
     mT3IntEnable(1);
@@ -70,15 +70,12 @@ void __ISR(_TIMER_3_VECTOR, IPL7SOFT) T3Interrupt(void) {
     else if (vga_cur_line < VGA_V_FRONT_PORCH_SYNC_BACK_PORCH) {
         LATBSET = BIT_13;
     }
-    else {
-        vga_line += VGA_H_BYTES;
-        DCH0SSA = KVA_TO_PA((void*) vga_line);
+    else if (vga_cur_line == VGA_V_FRONT_PORCH_SYNC_BACK_PORCH) {
         DmaChnEnable(DMA_CHANNEL0);
     }
     
     if (++vga_cur_line == VGA_LINES) {
         vga_cur_line = 0;
-        vga_line = vga_buffer;
     }
 
     mT3ClearIntFlag();    											// clear the interrupt flag
