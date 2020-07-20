@@ -18,6 +18,7 @@ void terminal_init(struct terminal *terminal,
   terminal->callbacks = callbacks;
 
   terminal->format = config->format;
+  terminal->monochrome = config->monochrome;
 
   if (terminal->format.rows > MAX_ROWS)
     terminal->format.rows = MAX_ROWS;

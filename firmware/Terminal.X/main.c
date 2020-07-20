@@ -166,6 +166,7 @@ struct terminal_config terminal_config = {
       .cols = 80,
       .rows = 24,
     },
+    .monochrome = true,
 
     .baud_rate = BAUD_RATE_115200,
     .word_length = WORD_LENGTH_8B,

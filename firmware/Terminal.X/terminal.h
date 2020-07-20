@@ -128,6 +128,7 @@ struct terminal {
   const struct terminal_callbacks *callbacks;
 
   struct format format;
+  bool monochrome;
 
   uint8_t pressed_key_code;
   volatile uint16_t repeat_counter;

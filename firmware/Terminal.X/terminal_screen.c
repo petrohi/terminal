@@ -1,5 +1,6 @@
 #include "terminal_internal.h"
 
+#include "luminance.h"
 #include <string.h>
 
 #define CURSOR_ON_COUNTER 650
@@ -148,6 +149,9 @@ static void render_character(struct terminal *terminal, int16_t row,
     active = inactive;
   }
 
+  if (terminal->monochrome)
+    luminance_to_monochrome(&active, &inactive);
+
   terminal->callbacks->screen_draw_codepoint(
       terminal->format, row, col, cell->c, cell->p.font, cell->p.italic,
       cell->p.underlined, cell->p.crossedout, active, inactive);
@@ -233,8 +237,13 @@ static void draw_screen(struct terminal *terminal) {
 }
 
 static color_t inactive_color(struct terminal *terminal) {
-  return terminal->screen_mode ? terminal->vs.p.active_color
-                               : terminal->vs.p.inactive_color;
+  color_t active = terminal->vs.p.active_color;
+  color_t inactive = terminal->vs.p.inactive_color;
+
+  if (terminal->monochrome)
+    luminance_to_monochrome(&active, &inactive);
+
+  return terminal->screen_mode ? active : inactive;
 }
 
 static void clear_rows(struct terminal *terminal, int16_t from_row,
@@ -641,6 +650,9 @@ void terminal_screen_init(struct terminal *terminal) {
   terminal->blink_counter = BLINK_ON_COUNTER;
   terminal->blink_on = true;
   terminal->blink_drawn = false;
+
+  if (terminal->monochrome)
+    luminance_init();
 
   terminal_screen_clear_all(terminal);
   update_cursor(terminal);

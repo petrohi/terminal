@@ -62,6 +62,7 @@ enum start_up {
 
 struct terminal_config {
   struct format format;
+  bool monochrome;
 
   enum baud_rate baud_rate;
   enum word_length word_length;
