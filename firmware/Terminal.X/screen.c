@@ -150,20 +150,20 @@ void screen_scroll(struct screen *screen, enum scroll scroll, size_t from_row,
   }
 }
 
-static size_t pixel_offset(struct screen *screen, size_t line, size_t pixel) {
+static inline size_t pixel_offset(struct screen *screen, size_t line,
+                                  size_t pixel) {
   return (SCREEN_WIDTH_BYTES * line) + (pixel / PIXELS_PER_BYTE) +
          LEFT_PADDING_BYTES;
 }
 
 #ifdef TERMINAL_8BIT_COLOR
-static void set_color(struct screen *screen, size_t offset, size_t pixel,
-                      color_t color) {
+static inline void set_color(struct screen *screen, size_t offset, size_t pixel,
+                             color_t color) {
   screen->buffer[offset] = color;
 }
 #else
-static void set_color(struct screen *screen, size_t offset, size_t pixel,
-                      color_t color) {
-  offset = ((offset >> 2) << 2) + (3 - (offset & 3));
+static inline void set_color(struct screen *screen, size_t offset, size_t pixel,
+                             color_t color) {
   size_t shift = (CHAR_WIDTH_PIXELS - (pixel % PIXELS_PER_BYTE)) - 1;
 
   if (color)
