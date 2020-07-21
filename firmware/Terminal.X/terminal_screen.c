@@ -651,9 +651,6 @@ void terminal_screen_init(struct terminal *terminal) {
   terminal->blink_on = true;
   terminal->blink_drawn = false;
 
-  if (terminal->monochrome)
-    luminance_init();
-
   terminal_screen_clear_all(terminal);
   update_cursor(terminal);
 }

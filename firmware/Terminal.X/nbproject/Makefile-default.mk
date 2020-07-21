@@ -57,17 +57,17 @@ OBJECTDIR=build/${CND_CONF}/${IMAGE_TYPE}
 DISTDIR=dist/${CND_CONF}/${IMAGE_TYPE}
 
 # Source Files Quoted if spaced
-SOURCEFILES_QUOTED_IF_SPACED=keyboard.c main.c screen.c font.c terminal_config.c terminal_config_ui.c terminal.c terminal_keyboard.c terminal_screen.c terminal_uart.c ps2.c vga.c "USB/Microchip/USB/CDC Device Driver/usb_function_cdc.c" USB/Microchip/USB/usb_device.c USB/usb_descriptors.c rgb.c luminance.c
+SOURCEFILES_QUOTED_IF_SPACED=keyboard.c main.c screen.c font.c terminal_config.c terminal_config_ui.c terminal.c terminal_keyboard.c terminal_screen.c terminal_uart.c ps2.c vga.c "USB/Microchip/USB/CDC Device Driver/usb_function_cdc.c" USB/Microchip/USB/usb_device.c USB/usb_descriptors.c luminance.c
 
 # Object Files Quoted if spaced
-OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/keyboard.o ${OBJECTDIR}/main.o ${OBJECTDIR}/screen.o ${OBJECTDIR}/font.o ${OBJECTDIR}/terminal_config.o ${OBJECTDIR}/terminal_config_ui.o ${OBJECTDIR}/terminal.o ${OBJECTDIR}/terminal_keyboard.o ${OBJECTDIR}/terminal_screen.o ${OBJECTDIR}/terminal_uart.o ${OBJECTDIR}/ps2.o ${OBJECTDIR}/vga.o "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver/usb_function_cdc.o" ${OBJECTDIR}/USB/Microchip/USB/usb_device.o ${OBJECTDIR}/USB/usb_descriptors.o ${OBJECTDIR}/rgb.o ${OBJECTDIR}/luminance.o
-POSSIBLE_DEPFILES=${OBJECTDIR}/keyboard.o.d ${OBJECTDIR}/main.o.d ${OBJECTDIR}/screen.o.d ${OBJECTDIR}/font.o.d ${OBJECTDIR}/terminal_config.o.d ${OBJECTDIR}/terminal_config_ui.o.d ${OBJECTDIR}/terminal.o.d ${OBJECTDIR}/terminal_keyboard.o.d ${OBJECTDIR}/terminal_screen.o.d ${OBJECTDIR}/terminal_uart.o.d ${OBJECTDIR}/ps2.o.d ${OBJECTDIR}/vga.o.d "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver/usb_function_cdc.o.d" ${OBJECTDIR}/USB/Microchip/USB/usb_device.o.d ${OBJECTDIR}/USB/usb_descriptors.o.d ${OBJECTDIR}/rgb.o.d ${OBJECTDIR}/luminance.o.d
+OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/keyboard.o ${OBJECTDIR}/main.o ${OBJECTDIR}/screen.o ${OBJECTDIR}/font.o ${OBJECTDIR}/terminal_config.o ${OBJECTDIR}/terminal_config_ui.o ${OBJECTDIR}/terminal.o ${OBJECTDIR}/terminal_keyboard.o ${OBJECTDIR}/terminal_screen.o ${OBJECTDIR}/terminal_uart.o ${OBJECTDIR}/ps2.o ${OBJECTDIR}/vga.o "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver/usb_function_cdc.o" ${OBJECTDIR}/USB/Microchip/USB/usb_device.o ${OBJECTDIR}/USB/usb_descriptors.o ${OBJECTDIR}/luminance.o
+POSSIBLE_DEPFILES=${OBJECTDIR}/keyboard.o.d ${OBJECTDIR}/main.o.d ${OBJECTDIR}/screen.o.d ${OBJECTDIR}/font.o.d ${OBJECTDIR}/terminal_config.o.d ${OBJECTDIR}/terminal_config_ui.o.d ${OBJECTDIR}/terminal.o.d ${OBJECTDIR}/terminal_keyboard.o.d ${OBJECTDIR}/terminal_screen.o.d ${OBJECTDIR}/terminal_uart.o.d ${OBJECTDIR}/ps2.o.d ${OBJECTDIR}/vga.o.d "${OBJECTDIR}/USB/Microchip/USB/CDC Device Driver/usb_function_cdc.o.d" ${OBJECTDIR}/USB/Microchip/USB/usb_device.o.d ${OBJECTDIR}/USB/usb_descriptors.o.d ${OBJECTDIR}/luminance.o.d
 
 # Object Files
-OBJECTFILES=${OBJECTDIR}/keyboard.o ${OBJECTDIR}/main.o ${OBJECTDIR}/screen.o ${OBJECTDIR}/font.o ${OBJECTDIR}/terminal_config.o ${OBJECTDIR}/terminal_config_ui.o ${OBJECTDIR}/terminal.o ${OBJECTDIR}/terminal_keyboard.o ${OBJECTDIR}/terminal_screen.o ${OBJECTDIR}/terminal_uart.o ${OBJECTDIR}/ps2.o ${OBJECTDIR}/vga.o ${OBJECTDIR}/USB/Microchip/USB/CDC\ Device\ Driver/usb_function_cdc.o ${OBJECTDIR}/USB/Microchip/USB/usb_device.o ${OBJECTDIR}/USB/usb_descriptors.o ${OBJECTDIR}/rgb.o ${OBJECTDIR}/luminance.o
+OBJECTFILES=${OBJECTDIR}/keyboard.o ${OBJECTDIR}/main.o ${OBJECTDIR}/screen.o ${OBJECTDIR}/font.o ${OBJECTDIR}/terminal_config.o ${OBJECTDIR}/terminal_config_ui.o ${OBJECTDIR}/terminal.o ${OBJECTDIR}/terminal_keyboard.o ${OBJECTDIR}/terminal_screen.o ${OBJECTDIR}/terminal_uart.o ${OBJECTDIR}/ps2.o ${OBJECTDIR}/vga.o ${OBJECTDIR}/USB/Microchip/USB/CDC\ Device\ Driver/usb_function_cdc.o ${OBJECTDIR}/USB/Microchip/USB/usb_device.o ${OBJECTDIR}/USB/usb_descriptors.o ${OBJECTDIR}/luminance.o
 
 # Source Files
-SOURCEFILES=keyboard.c main.c screen.c font.c terminal_config.c terminal_config_ui.c terminal.c terminal_keyboard.c terminal_screen.c terminal_uart.c ps2.c vga.c USB/Microchip/USB/CDC Device Driver/usb_function_cdc.c USB/Microchip/USB/usb_device.c USB/usb_descriptors.c rgb.c luminance.c
+SOURCEFILES=keyboard.c main.c screen.c font.c terminal_config.c terminal_config_ui.c terminal.c terminal_keyboard.c terminal_screen.c terminal_uart.c ps2.c vga.c USB/Microchip/USB/CDC Device Driver/usb_function_cdc.c USB/Microchip/USB/usb_device.c USB/usb_descriptors.c luminance.c
 
 
 
@@ -197,12 +197,6 @@ ${OBJECTDIR}/USB/usb_descriptors.o: USB/usb_descriptors.c  nbproject/Makefile-${
 	@${RM} ${OBJECTDIR}/USB/usb_descriptors.o 
 	@${FIXDEPS} "${OBJECTDIR}/USB/usb_descriptors.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/USB/usb_descriptors.o.d" -o ${OBJECTDIR}/USB/usb_descriptors.o USB/usb_descriptors.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD)  -std=gnu99
 	
-${OBJECTDIR}/rgb.o: rgb.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} "${OBJECTDIR}" 
-	@${RM} ${OBJECTDIR}/rgb.o.d 
-	@${RM} ${OBJECTDIR}/rgb.o 
-	@${FIXDEPS} "${OBJECTDIR}/rgb.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/rgb.o.d" -o ${OBJECTDIR}/rgb.o rgb.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD)  -std=gnu99
-	
 ${OBJECTDIR}/luminance.o: luminance.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} "${OBJECTDIR}" 
 	@${RM} ${OBJECTDIR}/luminance.o.d 
@@ -299,12 +293,6 @@ ${OBJECTDIR}/USB/usb_descriptors.o: USB/usb_descriptors.c  nbproject/Makefile-${
 	@${RM} ${OBJECTDIR}/USB/usb_descriptors.o.d 
 	@${RM} ${OBJECTDIR}/USB/usb_descriptors.o 
 	@${FIXDEPS} "${OBJECTDIR}/USB/usb_descriptors.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/USB/usb_descriptors.o.d" -o ${OBJECTDIR}/USB/usb_descriptors.o USB/usb_descriptors.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD)  -std=gnu99
-	
-${OBJECTDIR}/rgb.o: rgb.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} "${OBJECTDIR}" 
-	@${RM} ${OBJECTDIR}/rgb.o.d 
-	@${RM} ${OBJECTDIR}/rgb.o 
-	@${FIXDEPS} "${OBJECTDIR}/rgb.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/rgb.o.d" -o ${OBJECTDIR}/rgb.o rgb.c    -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD)  -std=gnu99
 	
 ${OBJECTDIR}/luminance.o: luminance.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} "${OBJECTDIR}" 

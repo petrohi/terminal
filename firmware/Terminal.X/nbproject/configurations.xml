@@ -17,7 +17,7 @@
       <itemPath>ps2.h</itemPath>
       <itemPath>vga.h</itemPath>
       <itemPath>luminance.h</itemPath>
-      <itemPath>rgb.h</itemPath>
+      <itemPath>luminance_table.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -38,7 +38,6 @@
       <itemPath>terminal_uart.c</itemPath>
       <itemPath>ps2.c</itemPath>
       <itemPath>vga.c</itemPath>
-      <itemPath>rgb.c</itemPath>
       <itemPath>luminance.c</itemPath>
     </logicalFolder>
     <logicalFolder name="USB" displayName="USB" projectFiles="true">
