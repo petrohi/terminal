@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "keys.h"
+
 #define PRINTF_BUFFER_SIZE 256
 
 static size_t current_baud_rate(struct terminal_config_ui *terminal_config_ui) {
@@ -528,7 +530,7 @@ void terminal_config_ui_enter(struct terminal_config_ui *terminal_config_ui) {
                                       "\x1b%%G"
                                       "\x1b[2l"
                                       "\x1b[4l"
-                                      "\x1b[12l"
+                                      "\x1b[12h"
                                       "\x1b[20l"
                                       "\x1b[?1l"
                                       "\x1b[?2h"
@@ -572,6 +574,8 @@ static void leave(struct terminal_config_ui *terminal_config_ui) {
     render_screen(terminal_config_ui);
   } else {
     terminal_uart_xon_off(terminal_config_ui->terminal, XON);
+    screen_printf(terminal_config_ui, "\x1b[0m");
+    clear_screen(terminal_config_ui);
     screen_printf(terminal_config_ui, "\033c");
   }
 }
@@ -585,40 +589,34 @@ static void apply(struct terminal_config_ui *terminal_config_ui) {
       &terminal_config_ui->terminal_config_copy);
 
   terminal_uart_xon_off(terminal_config_ui->terminal, XON);
+  clear_screen(terminal_config_ui);
   screen_printf(terminal_config_ui, "\033c");
 }
 
-static bool match(character_t *characters, size_t size, const char *string) {
-  size_t l = strlen(string);
-  if (size == l && strncmp(string, (const char *)characters, size) == 0)
-    return true;
+void terminal_config_ui_handle_key(
+    struct terminal_config_ui *terminal_config_ui, uint8_t key) {
 
-  return false;
-}
-
-static const char *LEAVE = "\x1b";
-static const char *ENTER = "\r";
-static const char *UP = "\x1b[A";
-static const char *DOWN = "\x1b[B";
-static const char *LEFT = "\x1b[D";
-static const char *RIGHT = "\x1b[C";
-static const char *APPLY = "\x1b[24~";
-
-void terminal_config_ui_receive_characters(
-    struct terminal_config_ui *terminal_config_ui, character_t *characters,
-    size_t size) {
-  if (match(characters, size, ENTER))
+  switch (key) {
+  case KEY_ENTER:
     enter(terminal_config_ui);
-  else if (match(characters, size, LEAVE))
+    break;
+  case KEY_ESCAPE:
     leave(terminal_config_ui);
-  else if (match(characters, size, UP))
+    break;
+  case KEY_UPARROW:
     prev_option(terminal_config_ui);
-  else if (match(characters, size, DOWN))
+    break;
+  case KEY_DOWNARROW:
     next_option(terminal_config_ui);
-  else if (match(characters, size, LEFT))
+    break;
+  case KEY_LEFTARROW:
     prev_menu(terminal_config_ui);
-  else if (match(characters, size, RIGHT))
+    break;
+  case KEY_RIGHTARROW:
     next_menu(terminal_config_ui);
-  else if (match(characters, size, APPLY))
+    break;
+  case KEY_F12:
     apply(terminal_config_ui);
+    break;
+  }
 }

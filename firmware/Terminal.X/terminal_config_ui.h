@@ -35,6 +35,5 @@ void terminal_config_ui_init(struct terminal_config_ui *terminal_config_ui,
                              struct terminal *terminal,
                              struct terminal_config *terminal_config);
 void terminal_config_ui_enter(struct terminal_config_ui *terminal_config_ui);
-void terminal_config_ui_receive_characters(
-    struct terminal_config_ui *terminal_config_ui, character_t *characters,
-    size_t size);
+void terminal_config_ui_handle_key(
+    struct terminal_config_ui *terminal_config_ui, uint8_t key);

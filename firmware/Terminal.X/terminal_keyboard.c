@@ -1,10 +1,6 @@
 #include "terminal_internal.h"
 
-#ifdef TERMINAL_USB_KEYBOARD
-#include "usbh_hid_keybd.h"
-#else
 #include "keys.h"
-#endif
 
 #define FIRST_REPEAT_COUNTER 500
 #define NEXT_REPEAT_COUNTER 33

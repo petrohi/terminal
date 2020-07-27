@@ -21,9 +21,14 @@ static void clear_cells_rows(struct terminal *terminal, int16_t from_row,
   if (to_row > ROWS)
     return;
 
-  for (int16_t row = from_row; row < to_row; ++row) {
-    memset((void *)terminal->cells + from_row * CELLS_ROW_SIZE, 0,
-           CELLS_ROW_SIZE * (to_row - from_row));
+  uint16_t rows = to_row - from_row;
+  size_t offset = from_row * COLS;
+  struct visual_cell *cells = terminal->cells + offset;
+
+  for (uint16_t i = 0; i < rows; ++i, cells += COLS) {
+    memset(cells, 0, CELLS_ROW_SIZE);
+
+    terminal->callbacks->system_yield();
   }
 }
 
@@ -38,8 +43,10 @@ static void clear_cells_cols(struct terminal *terminal, int16_t row,
   if (to_col > COLS)
     return;
 
-  memset((void *)terminal->cells + row * CELLS_ROW_SIZE + from_col * CELL_SIZE,
-         0, CELL_SIZE * (to_col - from_col));
+  size_t offset = row * COLS + from_col;
+  struct visual_cell *cells = terminal->cells + offset;
+
+  memset(cells, 0, CELL_SIZE * (to_col - from_col));
 }
 
 static void scroll_cells(struct terminal *terminal, enum scroll scroll,
@@ -55,18 +62,29 @@ static void scroll_cells(struct terminal *terminal, enum scroll scroll,
     return;
   }
 
-  size_t disp = CELLS_ROW_SIZE * rows;
-  size_t size = CELLS_ROW_SIZE * (to_row - from_row - rows);
-  size_t offset = CELLS_ROW_SIZE * from_row;
+  size_t disp = COLS * rows;
+  uint16_t rows_diff = to_row - from_row - rows;
 
   if (scroll == SCROLL_DOWN) {
-    memmove((void *)terminal->cells + offset + disp,
-            (void *)terminal->cells + offset, size);
+    size_t offset = COLS * to_row - COLS;
+    struct visual_cell *cells = terminal->cells + offset;
+
+    for (uint16_t i = 0; i < rows_diff; ++i, cells -= COLS) {
+      memcpy(cells, cells - disp, CELLS_ROW_SIZE);
+
+      terminal->callbacks->system_yield();
+    }
 
     clear_cells_rows(terminal, from_row, from_row + rows);
   } else if (scroll == SCROLL_UP) {
-    memcpy((void *)terminal->cells + offset,
-           (void *)terminal->cells + offset + disp, size);
+    size_t offset = COLS * from_row;
+    struct visual_cell *cells = terminal->cells + offset;
+
+    for (uint16_t i = 0; i < rows_diff; ++i, cells += COLS) {
+      memcpy(cells, cells + disp, CELLS_ROW_SIZE);
+
+      terminal->callbacks->system_yield();
+    }
 
     clear_cells_rows(terminal, to_row - rows, to_row);
   }
@@ -83,14 +101,14 @@ static void shift_cells_right(struct terminal *terminal, int16_t row,
   if (col + cols > COLS)
     return;
 
-  if (col + cols < COLS) {
-    size_t size = CELL_SIZE * (COLS - col - cols);
-    size_t offset = CELLS_ROW_SIZE * row + CELL_SIZE * col;
-    size_t disp = CELL_SIZE * cols;
+  size_t size = CELL_SIZE * (COLS - col - cols);
+  size_t offset = COLS * row + col;
+  struct visual_cell *cells = terminal->cells + offset;
 
-    memmove((void *)terminal->cells + offset + disp,
-            (void *)terminal->cells + offset, size);
-  }
+  struct visual_cell tmp[COLS];
+
+  memcpy(tmp, cells, size);
+  memcpy(cells + cols, tmp, size);
 
   clear_cells_cols(terminal, row, col, col + cols);
 }
@@ -106,14 +124,11 @@ static void shift_cells_left(struct terminal *terminal, int16_t row,
   if (col + cols > COLS)
     return;
 
-  if (col + cols < COLS) {
-    size_t size = CELL_SIZE * (COLS - col - cols);
-    size_t offset = CELLS_ROW_SIZE * row + CELL_SIZE * col;
-    size_t disp = CELL_SIZE * cols;
+  size_t size = CELL_SIZE * (COLS - col - cols);
+  size_t offset = COLS * row + col;
+  struct visual_cell *cells = terminal->cells + offset;
 
-    memcpy((void *)terminal->cells + offset,
-           (void *)terminal->cells + offset + disp, size);
-  }
+  memcpy(cells, cells + cols, size);
 
   clear_cells_cols(terminal, row, COLS - cols, COLS);
 }

@@ -1521,9 +1521,6 @@ void terminal_uart_transmit_character(struct terminal *terminal,
 
   terminal->callbacks->uart_transmit(buffer_head, 1,
                                      terminal->transmit_buffer_head);
-
-  if (!terminal->send_receive_mode)
-    terminal_uart_receive_character(terminal, character);
 }
 
 static const character_t

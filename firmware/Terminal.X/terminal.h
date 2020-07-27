@@ -57,6 +57,7 @@ struct terminal_callbacks {
   void (*screen_shift_left)(struct format format, size_t row, size_t col,
                             size_t cols, color_t inactive);
   void (*screen_test)(struct format format, enum screen_test screen_test);
+  void (*system_yield)();
   void (*system_reset)();
   void (*system_write_config)(struct terminal_config *terminal_config_copy);
 };

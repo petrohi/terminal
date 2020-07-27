@@ -37,21 +37,26 @@
 #define SCREEN_HEIGHT_LINES (ROWS * CHAR_HEIGHT_LINES)
 
 void screen_clear_rows(struct screen *screen, size_t from_row, size_t to_row,
-                       color_t inactive) {
+                       color_t inactive, void (*yield)()) {
   if (to_row <= from_row)
     return;
 
   if (to_row > ROWS)
     return;
 
-  size_t size = SCREEN_WIDTH_BYTES * CHAR_HEIGHT_LINES * (to_row - from_row);
+  size_t lines = CHAR_HEIGHT_LINES * (to_row - from_row);
   size_t offset = SCREEN_WIDTH_BYTES * CHAR_HEIGHT_LINES * from_row;
+  uint8_t *buffer = screen->buffer + offset;
 
-  memset(screen->buffer + offset, inactive, size);
+  for (size_t i = 0; i < lines; ++i, buffer += SCREEN_WIDTH_BYTES) {
+    memset(buffer, inactive, SCREEN_WIDTH_BYTES);
+
+    yield();
+  }
 }
 
 void screen_clear_cols(struct screen *screen, size_t row, size_t from_col,
-                       size_t to_col, color_t inactive) {
+                       size_t to_col, color_t inactive, void (*yield)()) {
   if (row >= ROWS)
     return;
 
@@ -64,13 +69,17 @@ void screen_clear_cols(struct screen *screen, size_t row, size_t from_col,
   size_t size = CHAR_WIDTH_BYTES * (to_col - from_col);
   size_t offset = SCREEN_WIDTH_BYTES * CHAR_HEIGHT_LINES * row +
                   CHAR_WIDTH_BYTES * from_col + LEFT_PADDING_BYTES;
+  uint8_t *buffer = screen->buffer + offset;
 
-  for (size_t i = 0; i < CHAR_HEIGHT_LINES; ++i)
-    memset(screen->buffer + offset + (SCREEN_WIDTH_BYTES * i), inactive, size);
+  for (size_t i = 0; i < CHAR_HEIGHT_LINES; ++i, buffer += SCREEN_WIDTH_BYTES) {
+    memset(buffer, inactive, size);
+
+    yield();
+  }
 }
 
 void screen_shift_right(struct screen *screen, size_t row, size_t col,
-                        size_t cols, color_t inactive) {
+                        size_t cols, color_t inactive, void (*yield)()) {
   if (row >= ROWS)
     return;
 
@@ -80,22 +89,26 @@ void screen_shift_right(struct screen *screen, size_t row, size_t col,
   if (col + cols > COLS)
     return;
 
-  if (col + cols < COLS) {
-    size_t size = CHAR_WIDTH_BYTES * (COLS - col - cols);
-    size_t offset = SCREEN_WIDTH_BYTES * CHAR_HEIGHT_LINES * row +
-                    CHAR_WIDTH_BYTES * col + LEFT_PADDING_BYTES;
-    size_t disp = CHAR_WIDTH_BYTES * cols;
+  size_t size = CHAR_WIDTH_BYTES * (COLS - col - cols);
+  size_t offset = SCREEN_WIDTH_BYTES * CHAR_HEIGHT_LINES * row +
+                  CHAR_WIDTH_BYTES * col + LEFT_PADDING_BYTES;
+  size_t disp = CHAR_WIDTH_BYTES * cols;
+  uint8_t *buffer = screen->buffer + offset;
 
-    for (size_t i = 0; i < CHAR_HEIGHT_LINES; ++i)
-      memmove(screen->buffer + offset + (SCREEN_WIDTH_BYTES * i) + disp,
-              screen->buffer + offset + (SCREEN_WIDTH_BYTES * i), size);
+  uint8_t tmp[SCREEN_WIDTH_BYTES];
+
+  for (size_t i = 0; i < CHAR_HEIGHT_LINES; ++i, buffer += SCREEN_WIDTH_BYTES) {
+    memcpy(tmp, buffer, size);
+    memcpy(buffer + disp, tmp, size);
+
+    yield();
   }
 
-  screen_clear_cols(screen, row, col, col + cols, inactive);
+  screen_clear_cols(screen, row, col, col + cols, inactive, yield);
 }
 
 void screen_shift_left(struct screen *screen, size_t row, size_t col,
-                       size_t cols, color_t inactive) {
+                       size_t cols, color_t inactive, void (*yield)()) {
   if (row >= ROWS)
     return;
 
@@ -105,22 +118,24 @@ void screen_shift_left(struct screen *screen, size_t row, size_t col,
   if (col + cols > COLS)
     return;
 
-  if (col + cols < COLS) {
-    size_t size = CHAR_WIDTH_BYTES * (COLS - col - cols);
-    size_t offset = SCREEN_WIDTH_BYTES * CHAR_HEIGHT_LINES * row +
-                    CHAR_WIDTH_BYTES * col + LEFT_PADDING_BYTES;
-    size_t disp = CHAR_WIDTH_BYTES * cols;
+  size_t size = CHAR_WIDTH_BYTES * (COLS - col - cols);
+  size_t offset = SCREEN_WIDTH_BYTES * CHAR_HEIGHT_LINES * row +
+                  CHAR_WIDTH_BYTES * col + LEFT_PADDING_BYTES;
+  size_t disp = CHAR_WIDTH_BYTES * cols;
+  uint8_t *buffer = screen->buffer + offset;
 
-    for (size_t i = 0; i < CHAR_HEIGHT_LINES; ++i)
-      memcpy(screen->buffer + offset + (SCREEN_WIDTH_BYTES * i),
-             screen->buffer + offset + (SCREEN_WIDTH_BYTES * i) + disp, size);
+  for (size_t i = 0; i < CHAR_HEIGHT_LINES; ++i, buffer += SCREEN_WIDTH_BYTES) {
+    memcpy(buffer, buffer + disp, size);
+
+    yield();
   }
 
-  screen_clear_cols(screen, row, COLS - cols, COLS, inactive);
+  screen_clear_cols(screen, row, COLS - cols, COLS, inactive, yield);
 }
 
 void screen_scroll(struct screen *screen, enum scroll scroll, size_t from_row,
-                   size_t to_row, size_t rows, color_t inactive) {
+                   size_t to_row, size_t rows, color_t inactive,
+                   void (*yield)()) {
   if (to_row <= from_row)
     return;
 
@@ -128,25 +143,35 @@ void screen_scroll(struct screen *screen, enum scroll scroll, size_t from_row,
     return;
 
   if (to_row <= from_row + rows) {
-    screen_clear_rows(screen, from_row, to_row, inactive);
+    screen_clear_rows(screen, from_row, to_row, inactive, yield);
     return;
   }
 
   size_t disp = SCREEN_WIDTH_BYTES * CHAR_HEIGHT_LINES * rows;
-  size_t size =
-      SCREEN_WIDTH_BYTES * CHAR_HEIGHT_LINES * (to_row - from_row - rows);
-  size_t offset = SCREEN_WIDTH_BYTES * CHAR_HEIGHT_LINES * from_row;
-
+  size_t lines = CHAR_HEIGHT_LINES * (to_row - from_row - rows);
   if (scroll == SCROLL_DOWN) {
-    memmove((void *)screen->buffer + offset + disp,
-            (void *)screen->buffer + offset, size);
+    size_t offset =
+        SCREEN_WIDTH_BYTES * CHAR_HEIGHT_LINES * to_row - SCREEN_WIDTH_BYTES;
+    uint8_t *buffer = screen->buffer + offset;
 
-    screen_clear_rows(screen, from_row, from_row + rows, inactive);
+    for (size_t i = 0; i < lines; ++i, buffer -= SCREEN_WIDTH_BYTES) {
+      memcpy(buffer, buffer - disp, SCREEN_WIDTH_BYTES);
+
+      yield();
+    }
+
+    screen_clear_rows(screen, from_row, from_row + rows, inactive, yield);
   } else if (scroll == SCROLL_UP) {
-    memcpy((void *)screen->buffer + offset,
-           (void *)screen->buffer + offset + disp, size);
+    size_t offset = SCREEN_WIDTH_BYTES * CHAR_HEIGHT_LINES * from_row;
+    uint8_t *buffer = screen->buffer + offset;
 
-    screen_clear_rows(screen, to_row - rows, to_row, inactive);
+    for (size_t i = 0; i < lines; ++i, buffer += SCREEN_WIDTH_BYTES) {
+      memcpy(buffer, buffer + disp, SCREEN_WIDTH_BYTES);
+
+      yield();
+    }
+
+    screen_clear_rows(screen, to_row - rows, to_row, inactive, yield);
   }
 }
 

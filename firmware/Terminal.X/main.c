@@ -72,19 +72,13 @@
 #include "./USB/Microchip/Include/USB/usb_device.h"
 
 
-// declare the serial I/O functions
 void initSerial(void);
 
-// declare the USB I/O functions
 void CheckUSB(void);
 
 void initTimer(void);
 
 void BlinkLED(void);
-
-#define DEFAULT_BAUD 9600
-#define MIN_BAUD 48
-#define MAX_BAUD 3125000
 
 #define SERIAL_RX_BUF_SIZE 4096
 char SerialRxBuf[SERIAL_RX_BUF_SIZE];
@@ -92,12 +86,17 @@ volatile int SerialRxBufHead = 0;
 volatile int SerialRxBufTail = 0;
 
 #define XOFF_LIMIT SERIAL_RX_BUF_SIZE / 16
-#define KEYBOARD_CHARS_PER_POLL 80
 
 #define SERIAL_TX_BUF_SIZE 256
 char SerialTxBuf[SERIAL_TX_BUF_SIZE];
 int SerialTxBufHead = 0;
 int SerialTxBufTail = 0;
+
+#define LOCAL_BUFFER_SIZE 256
+static character_t local_buffer[LOCAL_BUFFER_SIZE];
+
+static size_t local_head = 0;
+static size_t local_tail = 0;
 
 // declare the USB buffers
 // these buffers are used by the USB I/O hardware
@@ -111,13 +110,8 @@ char UsbDeviceTxBuf[USB_DEVICE_TX_BUFFER_SIZE];
 // The only pointer that we need is this one which keep track of where we are while reading the serial Rx buffer
 int USBSerialRxBufTail = 0;
 
-#define CURSOR_OFF		350											// cursor off time in mS
-#define CURSOR_ON		650											// cursor on time in mS
-
 volatile int LEDTimer = 0;
-volatile int CursorTimer = 0;
 volatile int GeneralTimer;
-int CursorOff = 0;
 
 #define FONT_WIDTH 8
 #define FONT_HEIGHT 16
@@ -154,8 +148,8 @@ struct screen *get_screen(struct format format) {
   return NULL;
 }
 
-struct terminal *global_terminal;
-struct terminal_config_ui *global_terminal_config_ui;
+struct terminal *global_terminal = NULL;
+struct terminal_config_ui *global_terminal_config_ui = NULL;
 
 #define UART_TRANSMIT_BUFFER_SIZE 64
 
@@ -190,14 +184,48 @@ struct terminal_config terminal_config = {
     .start_up = START_UP_MESSAGE,
 };
 
-static void uart_transmit(character_t *characters, size_t size, size_t head) {
-  if (global_terminal_config_ui->activated) {
-    terminal_config_ui_receive_characters(global_terminal_config_ui, characters,
-                                       size);
-  } else {
-    SerialTxBufHead = head;
-    INTEnable(INT_SOURCE_UART_TX(UART2), INT_ENABLED);
+static bool config_ui_enter = false;
+static uint8_t config_ui_key = KEY_NONE;
+
+static void yield() {
+  CheckUSB();
+
+  if (global_ps2) {
+    if (global_terminal_config_ui && global_terminal_config_ui->activated) {
+      config_ui_key = global_ps2->keys[0];
+
+    } else if (global_ps2->keys[0] == KEY_F12 &&
+               (global_ps2->lshift || global_ps2->rshift)) {
+      config_ui_enter = true;
+    } else if (global_terminal) {
+      terminal_keyboard_handle_shift(global_terminal,
+                                     global_ps2->lshift || global_ps2->rshift);
+      terminal_keyboard_handle_alt(global_terminal,
+                                   global_ps2->lalt || global_ps2->ralt);
+      terminal_keyboard_handle_ctrl(global_terminal,
+                                    global_ps2->lctrl || global_ps2->rctrl);
+      terminal_keyboard_handle_key(global_terminal, global_ps2->keys[0]);
+    }
+
+    if (global_ps2->keys[0] != KEY_NONE)
+      BlinkLED();
   }
+}
+
+static void uart_transmit(character_t *characters, size_t size, size_t head) {
+  if (!global_terminal->send_receive_mode) {
+    while (size--) {
+      local_buffer[local_head] = *characters;
+      local_head++;
+      characters++;
+
+      if (local_head == LOCAL_BUFFER_SIZE)
+        local_head = 0;
+    }
+  }
+
+  SerialTxBufHead = head;
+  INTEnable(INT_SOURCE_UART_TX(UART2), INT_ENABLED);
 }
 
 static void screen_draw_codepoint_callback(struct format format, size_t row,
@@ -211,32 +239,32 @@ static void screen_draw_codepoint_callback(struct format format, size_t row,
 
 static void screen_clear_rows_callback(struct format format, size_t from_row,
                                        size_t to_row, color_t inactive) {
-  screen_clear_rows(get_screen(format), from_row, to_row, inactive);
+  screen_clear_rows(get_screen(format), from_row, to_row, inactive, yield);
 }
 
 static void screen_clear_cols_callback(struct format format, size_t row,
                                        size_t from_col, size_t to_col,
                                        color_t inactive) {
-  screen_clear_cols(get_screen(format), row, from_col, to_col, inactive);
+  screen_clear_cols(get_screen(format), row, from_col, to_col, inactive, yield);
 }
 
 static void screen_scroll_callback(struct format format, enum scroll scroll,
                                    size_t from_row, size_t to_row, size_t rows,
                                    color_t inactive) {
-  screen_scroll(get_screen(format), scroll, from_row, to_row, rows,
-                inactive);
+  screen_scroll(get_screen(format), scroll, from_row, to_row, rows, inactive,
+                yield);
 }
 
 static void screen_shift_right_callback(struct format format, size_t row,
                                         size_t col, size_t cols,
                                         color_t inactive) {
-  screen_shift_right(get_screen(format), row, col, cols, inactive);
+  screen_shift_right(get_screen(format), row, col, cols, inactive, yield);
 }
 
 static void screen_shift_left_callback(struct format format, size_t row,
                                        size_t col, size_t cols,
                                        color_t inactive) {
-  screen_shift_left(get_screen(format), row, col, cols, inactive);
+  screen_shift_left(get_screen(format), row, col, cols, inactive, yield);
 }
 
 static void screen_test_callback(struct format format,
@@ -275,42 +303,32 @@ static void keyboard_set_leds(struct lock_state state) {
   setLEDs(state.num, state.caps, state.scroll);
 }
 
-static void keyboard_handle(struct terminal *terminal) {
-    if (global_ps2->keys[0] == KEY_F12 && (global_ps2->lshift || global_ps2->rshift)) {
-      terminal_config_ui_enter(global_terminal_config_ui);
-    } else {
-      terminal_keyboard_handle_shift(terminal, global_ps2->lshift || global_ps2->rshift);
-      terminal_keyboard_handle_alt(terminal, global_ps2->lalt || global_ps2->ralt);
-      terminal_keyboard_handle_ctrl(terminal, global_ps2->lctrl || global_ps2->rctrl);
-      terminal_keyboard_handle_key(terminal, global_ps2->keys[0]);
-    }
-    
-    if (global_ps2->keys[0] != KEY_NONE)
-        BlinkLED();
-}
-
 int main(int argc, char* argv[]) {
-    int ch;
+  int ch;
 
-	// initial setup of the I/O ports
-    ANSELA = 0; ANSELB = 0;			                                // Default all pins to digital
-    mJTAGPortEnable(0);                                             // turn off jtag
+  // initial setup of the I/O ports
+  ANSELA = 0;
+  ANSELB = 0;         // Default all pins to digital
+  mJTAGPortEnable(0); // turn off jtag
 
- 	// setup the CPU
-    SYSTEMConfigPerformance(CLOCKFREQ);    							// System config performance
-	mOSCSetPBDIV(OSC_PB_DIV_1);									    // fix the peripheral bus to the main clock speed
+  // setup the CPU
+  SYSTEMConfigPerformance(CLOCKFREQ); // System config performance
+  mOSCSetPBDIV(OSC_PB_DIV_1); // fix the peripheral bus to the main clock speed
 
-    // clear all port I/O (they are not cleared by a software reset)
-    LATA = LATB = 0;
-    TRISA = TRISB = 0xffffffff;
-    CNENA = CNENB = CNCONA = CNCONB = 0;
-    CNPUA = CNPUB = CNPDA = CNPDB = 0;
+  // clear all port I/O (they are not cleared by a software reset)
+  LATA = LATB = 0;
+  TRISA = TRISB = 0xffffffff;
+  CNENA = CNENB = CNCONA = CNCONB = 0;
+  CNPUA = CNPUB = CNPDA = CNPDB = 0;
 
-    TRISBbits.TRISB5 = 0; LATBCLR = (1<<5);                         // turn on the power LED
-    uSec(1000);                                                     // settling time
+  TRISBbits.TRISB5 = 0;
+  LATBCLR = (1 << 5); // turn on the power LED
+  uSec(1000);         // settling time
 
-    screen.buffer = init_vga();
-    
+  USBDeviceInit();
+  initKeyboard();
+  screen.buffer = init_vga();
+
   struct terminal terminal;
   struct terminal_callbacks callbacks = {
       .keyboard_set_leds = keyboard_set_leds,
@@ -322,65 +340,86 @@ int main(int argc, char* argv[]) {
       .screen_shift_left = screen_shift_left_callback,
       .screen_shift_right = screen_shift_right_callback,
       .system_reset = SoftReset,
+      .system_yield = yield,
       .screen_test = screen_test_callback,
       .system_write_config = system_write_config_callback};
   terminal_init(&terminal, &callbacks, &terminal_config, SerialTxBuf,
                 SERIAL_TX_BUF_SIZE);
   global_terminal = &terminal;
 
-    INTEnableSystemMultiVectoredInt();
-    
-    initTimer();
-    initSerial();
-    USBDeviceInit();
-    initKeyboard();
+  INTEnableSystemMultiVectoredInt();
 
-    INTEnableInterrupts();
+  initTimer();
+  initSerial();
 
-    uSec(100000);
- 
-  
+  INTEnableInterrupts();
+
+  uSec(100000);
+
   struct terminal_config_ui terminal_config_ui;
   global_terminal_config_ui = &terminal_config_ui;
   terminal_config_ui_init(&terminal_config_ui, &terminal, &terminal_config);
-    
-    while(1) {
-        CheckUSB();
-        keyboard_handle(&terminal);
-        terminal_screen_update(&terminal);
-        terminal_keyboard_repeat_key(&terminal);
 
-        if (terminal_config_ui.activated)
-            continue;
+  while (1) {
+    yield();
+    terminal_screen_update(&terminal);
+    terminal_keyboard_repeat_key(&terminal);
 
-        if (SerialRxBufHead == SerialRxBufTail) {
-            terminal_uart_xon_off(&terminal, XON);
-            continue;
-        }
+    if (terminal_config_ui.activated) {
+      if (config_ui_key != KEY_NONE) {
+        terminal_config_ui_handle_key(&terminal_config_ui, config_ui_key);
+        config_ui_key = KEY_NONE;
+      }
 
-        int size = 0;
-        if (SerialRxBufTail < SerialRxBufHead)
-            size = SerialRxBufHead - SerialRxBufTail;
-        else
-            size = SerialRxBufHead +
-                (SERIAL_RX_BUF_SIZE - SerialRxBufTail);
-
-        if (size > XOFF_LIMIT)
-            terminal_uart_xon_off(&terminal, XOFF);
-
-        while (size--) {
-            if (size % KEYBOARD_CHARS_PER_POLL == 0) {
-                CheckUSB();
-                keyboard_handle(&terminal);
-            }
-
-            character_t character = SerialRxBuf[SerialRxBufTail];
-            SerialRxBufTail++;
-
-            terminal_uart_receive_character(&terminal, character);
-            if(SerialRxBufTail == SERIAL_RX_BUF_SIZE) SerialRxBufTail = 0;
-        }
+      continue;
     }
+
+    if (config_ui_enter) {
+      terminal_config_ui_enter(global_terminal_config_ui);
+      config_ui_enter = false;
+    }
+
+    if (local_tail != local_head) {
+      size_t size = 0;
+      if (local_tail < local_head)
+        size = local_head - local_tail;
+      else
+        size = local_head + (LOCAL_BUFFER_SIZE - local_tail);
+
+      while (size--) {
+        character_t character = local_buffer[local_tail];
+        terminal_uart_receive_character(&terminal, character);
+        local_tail++;
+
+        if (local_tail == LOCAL_BUFFER_SIZE)
+          local_tail = 0;
+      }
+    }
+
+    if (SerialRxBufHead != SerialRxBufTail) {
+      int size = 0;
+      if (SerialRxBufTail < SerialRxBufHead)
+        size = SerialRxBufHead - SerialRxBufTail;
+      else
+        size = SerialRxBufHead + (SERIAL_RX_BUF_SIZE - SerialRxBufTail);
+
+      if (size > XOFF_LIMIT)
+        terminal_uart_xon_off(&terminal, XOFF);
+
+      while (size--) {
+        yield();
+
+        character_t character = SerialRxBuf[SerialRxBufTail];
+        SerialRxBufTail++;
+
+        terminal_uart_receive_character(&terminal, character);
+        if (SerialRxBufTail == SERIAL_RX_BUF_SIZE)
+          SerialRxBufTail = 0;
+      }
+    } else {
+      terminal_uart_xon_off(&terminal, XON);
+    }
+  }
 }
 
 
