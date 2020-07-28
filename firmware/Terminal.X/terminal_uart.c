@@ -649,7 +649,7 @@ static void receive_sd(struct terminal *terminal, character_t character) {
   if (!rows)
     rows = 1;
 
-  terminal_screen_scroll(terminal, SCROLL_DOWN, 0, rows);
+  terminal_screen_scroll(terminal, SCROLL_DOWN, terminal->margin_top, rows);
   clear_receive_table(terminal);
 }
 
@@ -658,7 +658,7 @@ static void receive_su(struct terminal *terminal, character_t character) {
   if (!rows)
     rows = 1;
 
-  terminal_screen_scroll(terminal, SCROLL_UP, 0, rows);
+  terminal_screen_scroll(terminal, SCROLL_UP, terminal->margin_top, rows);
   clear_receive_table(terminal);
 }
 
