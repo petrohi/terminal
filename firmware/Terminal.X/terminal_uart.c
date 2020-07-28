@@ -1573,9 +1573,6 @@ void terminal_uart_transmit_string(struct terminal *terminal,
   if (size)
     terminal->callbacks->uart_transmit(buffer_head, size,
                                        terminal->transmit_buffer_head);
-
-  if (!terminal->send_receive_mode)
-    terminal_uart_receive_string(terminal, string);
 }
 
 void terminal_uart_transmit_printf(struct terminal *terminal,
