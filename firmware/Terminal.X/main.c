@@ -151,10 +151,6 @@ struct screen *get_screen(struct format format) {
 struct terminal *global_terminal = NULL;
 struct terminal_config_ui *global_terminal_config_ui = NULL;
 
-#define UART_TRANSMIT_BUFFER_SIZE 64
-
-static character_t uart_transmit_buffer[UART_TRANSMIT_BUFFER_SIZE];
-
 struct terminal_config terminal_config = {
     .format = {
       .cols = 80,
@@ -300,7 +296,7 @@ system_write_config_callback(struct terminal_config *terminal_config_copy) {
 }
 
 static void keyboard_set_leds(struct lock_state state) {
-  setLEDs(state.num, state.caps, state.scroll);
+  setLEDs(state.caps, state.num, state.scroll);
 }
 
 int main(int argc, char* argv[]) {
