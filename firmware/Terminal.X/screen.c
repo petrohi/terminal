@@ -36,6 +36,19 @@
 
 #define SCREEN_HEIGHT_LINES (ROWS * CHAR_HEIGHT_LINES)
 
+#ifdef TERMINAL_8BIT_COLOR
+static inline void clear_line(color_t inactive, uint8_t *buffer, size_t size) {
+  memset(buffer, inactive, size);
+}
+#else
+static inline void clear_line(color_t inactive, uint8_t *buffer, size_t size) {
+  if (inactive == DEFAULT_ACTIVE_COLOR)
+    memset(buffer, 0xff, size);
+  else
+    memset(buffer, 0, size);
+}
+#endif
+
 void screen_clear_rows(struct screen *screen, size_t from_row, size_t to_row,
                        color_t inactive, void (*yield)()) {
   if (to_row <= from_row)
@@ -49,7 +62,7 @@ void screen_clear_rows(struct screen *screen, size_t from_row, size_t to_row,
   uint8_t *buffer = screen->buffer + offset;
 
   for (size_t i = 0; i < lines; ++i, buffer += SCREEN_WIDTH_BYTES) {
-    memset(buffer, inactive, SCREEN_WIDTH_BYTES);
+    clear_line(inactive, buffer, SCREEN_WIDTH_BYTES);
 
     yield();
   }
@@ -72,7 +85,7 @@ void screen_clear_cols(struct screen *screen, size_t row, size_t from_col,
   uint8_t *buffer = screen->buffer + offset;
 
   for (size_t i = 0; i < CHAR_HEIGHT_LINES; ++i, buffer += SCREEN_WIDTH_BYTES) {
-    memset(buffer, inactive, size);
+    clear_line(inactive, buffer, size);
 
     yield();
   }
