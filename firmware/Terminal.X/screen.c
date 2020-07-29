@@ -1,6 +1,6 @@
 #include "screen.h"
 
-#ifdef TERMINAL_MANDELBROT
+#ifdef TERMINAL_8BIT_COLOR
 #include <complex.h>
 #endif
 #include <string.h>
@@ -14,20 +14,18 @@
 #define CHAR_HEIGHT_LINES screen->char_height
 
 #ifdef TERMINAL_8BIT_COLOR
-#define PIXELS_PER_BYTE 1
-#define BYTES_PER_PIXEL 1
+#define PIXELS_SHIFT 0
 #define LEFT_PADDING_PIXELS 0
 #define RIGHT_PADDING_PIXELS 0
 #else
-#define PIXELS_PER_BYTE 8
-#define BYTES_PER_PIXEL 0
+#define PIXELS_SHIFT 3
 #define LEFT_PADDING_PIXELS 48
 #define RIGHT_PADDING_PIXELS 16
 #endif
 
-#define LEFT_PADDING_BYTES (LEFT_PADDING_PIXELS / PIXELS_PER_BYTE)
-#define RIGHT_PADDING_BYTES (RIGHT_PADDING_PIXELS / PIXELS_PER_BYTE)
-#define CHAR_WIDTH_BYTES (CHAR_WIDTH_PIXELS / PIXELS_PER_BYTE)
+#define LEFT_PADDING_BYTES (LEFT_PADDING_PIXELS >> PIXELS_SHIFT)
+#define RIGHT_PADDING_BYTES (RIGHT_PADDING_PIXELS >> PIXELS_SHIFT)
+#define CHAR_WIDTH_BYTES (CHAR_WIDTH_PIXELS >> PIXELS_SHIFT)
 
 #define SCREEN_WIDTH_PIXELS                                                    \
   (LEFT_PADDING_PIXELS + COLS * CHAR_WIDTH_PIXELS + RIGHT_PADDING_PIXELS)
@@ -36,18 +34,16 @@
 
 #define SCREEN_HEIGHT_LINES (ROWS * CHAR_HEIGHT_LINES)
 
+static inline void clear_line(color_t inactive, uint8_t *buffer, size_t size) {
 #ifdef TERMINAL_8BIT_COLOR
-static inline void clear_line(color_t inactive, uint8_t *buffer, size_t size) {
   memset(buffer, inactive, size);
-}
 #else
-static inline void clear_line(color_t inactive, uint8_t *buffer, size_t size) {
   if (inactive == DEFAULT_ACTIVE_COLOR)
     memset(buffer, 0xff, size);
   else
     memset(buffer, 0, size);
-}
 #endif
+}
 
 void screen_clear_rows(struct screen *screen, size_t from_row, size_t to_row,
                        color_t inactive, void (*yield)()) {
@@ -190,26 +186,9 @@ void screen_scroll(struct screen *screen, enum scroll scroll, size_t from_row,
 
 static inline size_t pixel_offset(struct screen *screen, size_t line,
                                   size_t pixel) {
-  return (SCREEN_WIDTH_BYTES * line) + (pixel / PIXELS_PER_BYTE) +
+  return (SCREEN_WIDTH_BYTES * line) + (pixel >> PIXELS_SHIFT) +
          LEFT_PADDING_BYTES;
 }
-
-#ifdef TERMINAL_8BIT_COLOR
-static inline void set_color(struct screen *screen, size_t offset, size_t pixel,
-                             color_t color) {
-  screen->buffer[offset] = color;
-}
-#else
-static inline void set_color(struct screen *screen, size_t offset, size_t pixel,
-                             color_t color) {
-  size_t shift = (CHAR_WIDTH_PIXELS - (pixel % PIXELS_PER_BYTE)) - 1;
-
-  if (color)
-    screen->buffer[offset] |= (1 << shift);
-  else
-    screen->buffer[offset] &= ~(1 << shift);
-}
-#endif
 
 void screen_draw_codepoint(struct screen *screen, size_t row, size_t col,
                            codepoint_t codepoint, enum font font, bool italic,
@@ -223,6 +202,7 @@ void screen_draw_codepoint(struct screen *screen, size_t row, size_t col,
 
   size_t base_line = row * CHAR_HEIGHT_LINES;
   size_t base_pixel = col * CHAR_WIDTH_PIXELS;
+  size_t base_offset = pixel_offset(screen, base_line, base_pixel);
 
   const struct bitmap_font *bitmap_font;
   if (font == FONT_BOLD) {
@@ -240,28 +220,51 @@ void screen_draw_codepoint(struct screen *screen, size_t row, size_t col,
       glyph = find_glyph(bitmap_font, REPLACEMENT_CODEPOINT);
   }
 
-  for (size_t char_line = 0; char_line < CHAR_HEIGHT_LINES; char_line++) {
+  size_t underlined_line = CHAR_HEIGHT_LINES - 2;
+  size_t crossedout_line = CHAR_HEIGHT_LINES >> 1;
 
-    for (size_t char_pixel = 0; char_pixel < CHAR_WIDTH_PIXELS; char_pixel++) {
+  for (size_t char_line = 0; char_line < CHAR_HEIGHT_LINES;
+       char_line++, base_offset += SCREEN_WIDTH_BYTES) {
+#ifdef TERMINAL_8BIT_COLOR
+    size_t pixel = base_pixel;
+    size_t pixel_offset = base_offset;
 
-      size_t offset =
-          pixel_offset(screen, base_line + char_line, base_pixel + char_pixel);
+    for (size_t char_pixel = 0; char_pixel < CHAR_WIDTH_PIXELS;
+         char_pixel++, pixel++) {
 
       color_t color = inactive;
+      uint8_t glyph_mask = 1 << char_pixel;
 
-      if (glyph && ((underlined && char_line == CHAR_HEIGHT_LINES - 2) ||
-                    (crossedout && char_line == CHAR_HEIGHT_LINES / 2) ||
+      if (glyph && ((underlined && char_line == underlined_line) ||
+                    (crossedout && char_line == crossedout_line) ||
 
                     (char_pixel < bitmap_font->width &&
                      char_line < bitmap_font->height &&
 
-                     glyph[char_line] & (1 << char_pixel)))) {
+                     glyph[char_line] & glyph_mask))) {
 
         color = active;
       }
 
-      set_color(screen, offset, base_pixel + char_pixel, color);
+      screen->buffer[pixel_offset] = color;
+      pixel_offset++;
     }
+#else
+    uint8_t pixels = inactive == DEFAULT_ACTIVE_COLOR ? 0xff : 0;
+
+    if (glyph) {
+
+      if (char_line < bitmap_font->height)
+        pixels = active == DEFAULT_ACTIVE_COLOR ? glyph[char_line]
+                                                : ~glyph[char_line];
+
+      if ((underlined && char_line == underlined_line) ||
+          (crossedout && char_line == crossedout_line))
+        pixels = active == DEFAULT_ACTIVE_COLOR ? 0xff : 0;
+    }
+
+    screen->buffer[base_offset] = pixels;
+#endif
   }
 }
 
@@ -276,7 +279,7 @@ void screen_test_fonts(struct screen *screen, enum font font) {
   }
 }
 
-#ifdef TERMINAL_MANDELBROT
+#ifdef TERMINAL_8BIT_COLOR
 #define MANDELBROT_ITERATIONS 200
 
 static float mandelbrot(float complex z) {
@@ -320,7 +323,7 @@ void screen_test_mandelbrot(struct screen *screen, float window_x,
       color_t color = (color_t)(mandelbrot(x + y * I) * 6.0 * 6.0 * 6.0) + 16;
       size_t offset = pixel_offset(screen, screen_y, screen_x);
 
-      set_color(screen, offset, screen_x, color);
+      screen->buffer[offset] = color;
 
       if (cancel && cancel()) {
         return;
@@ -328,7 +331,6 @@ void screen_test_mandelbrot(struct screen *screen, float window_x,
     }
   }
 }
-#endif
 
 #define COLOR_TEST_BASE_COLORS 16
 
@@ -363,7 +365,7 @@ void screen_test_colors(struct screen *screen) {
            sub_pixel < COLOR_TEST_BASE_COLORS_WIDTH_PIXELS; ++sub_pixel) {
         size_t offset =
             pixel_offset(screen, line + sub_line, pixel + sub_pixel);
-        set_color(screen, offset, pixel + sub_pixel, color);
+        screen->buffer[offset] = color;
       }
     }
   }
@@ -385,10 +387,9 @@ void screen_test_colors(struct screen *screen) {
              ++sub_pixel) {
           size_t offset =
               pixel_offset(screen, line + sub_line, pixel + sub_pixel);
-          set_color(screen, offset, pixel + sub_pixel,
-                    COLOR_TEST_BASE_COLORS +
-                        (cube * COLOR_TEST_CUBE_SIZE * COLOR_TEST_CUBE_SIZE) +
-                        color);
+          screen->buffer[offset] =
+              COLOR_TEST_BASE_COLORS +
+              (cube * COLOR_TEST_CUBE_SIZE * COLOR_TEST_CUBE_SIZE) + color;
         }
       }
     }
@@ -409,12 +410,12 @@ void screen_test_colors(struct screen *screen) {
            ++sub_pixel) {
         size_t offset =
             pixel_offset(screen, line + sub_line, pixel + sub_pixel);
-        set_color(screen, offset, pixel + sub_pixel,
-                  COLOR_TEST_BASE_COLORS +
-                      (COLOR_TEST_CUBE_SIZE * COLOR_TEST_CUBE_SIZE *
-                       COLOR_TEST_CUBE_SIZE) +
-                      color);
+        screen->buffer[offset] = COLOR_TEST_BASE_COLORS +
+                                 (COLOR_TEST_CUBE_SIZE * COLOR_TEST_CUBE_SIZE *
+                                  COLOR_TEST_CUBE_SIZE) +
+                                 color;
       }
     }
   }
 }
+#endif

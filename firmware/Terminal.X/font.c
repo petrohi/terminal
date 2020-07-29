@@ -2,8 +2,14 @@
 
 #include <stdlib.h>
 
-const uint8_t *find_glyph(const struct bitmap_font *font,
-                          unsigned short codepoint) {
+static int32_t find_glyph_index(const struct bitmap_font *font,
+                                unsigned short codepoint) {
+  if (codepoint == 0)
+    return 0;
+
+  if (codepoint < 0x80)
+    return codepoint - 0x1f;
+
   size_t first = 0;
   size_t last = font->codepoints_length - 1;
   size_t middle = (first + last) / 2;
@@ -12,12 +18,22 @@ const uint8_t *find_glyph(const struct bitmap_font *font,
     if (font->codepoints[middle] < codepoint)
       first = middle + 1;
     else if (font->codepoints[middle] == codepoint)
-      return font->data + (font->codepoints_map[middle] * font->height);
+      return font->codepoints_map[middle];
     else
       last = middle - 1;
 
     middle = (first + last) / 2;
   }
 
-  return NULL;
+  return -1;
+}
+
+const uint8_t *find_glyph(const struct bitmap_font *font,
+                          unsigned short codepoint) {
+  int32_t index = find_glyph_index(font, codepoint);
+
+  if (index == -1)
+    return NULL;
+
+  return font->data + (index * font->height);
 }

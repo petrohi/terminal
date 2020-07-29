@@ -39,9 +39,9 @@ void screen_draw_codepoint(struct screen *screen, size_t row, size_t col,
 
 void screen_test_fonts(struct screen *screen, enum font font);
 
-#ifdef TERMINAL_MANDELBROT
+#ifdef TERMINAL_8BIT_COLOR
 void screen_test_mandelbrot(struct screen *screen, float window_x,
                             float window_y, float window_r, bool (*cancel)());
-#endif
 
 void screen_test_colors(struct screen *screen);
+#endif
