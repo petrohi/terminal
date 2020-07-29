@@ -34,8 +34,10 @@ typedef uint16_t codepoint_t;
 enum screen_test {
   SCREEN_TEST_FONT1,
   SCREEN_TEST_FONT2,
+#ifdef TERMINAL_8BIT_COLOR
   SCREEN_TEST_COLOR1,
   SCREEN_TEST_COLOR2,
+#endif
 };
 
 struct terminal_callbacks {

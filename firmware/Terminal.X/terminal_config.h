@@ -56,8 +56,10 @@ enum start_up {
   START_UP_MESSAGE,
   START_UP_TEST_FONT1,
   START_UP_TEST_FONT2,
+#ifdef TERMINAL_8BIT_COLOR
   START_UP_TEST_COLOR1,
   START_UP_TEST_COLOR2,
+#endif
 };
 
 struct terminal_config {

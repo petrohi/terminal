@@ -79,13 +79,13 @@ void CheckUSB(void);
 void initTimer(void);
 
 void BlinkLED(void);
-
-#define SERIAL_RX_BUF_SIZE 4096
+#define SERIAL_RX_BUF_SIZE (1024 * 4)
 char SerialRxBuf[SERIAL_RX_BUF_SIZE];
 volatile int SerialRxBufHead = 0;
 volatile int SerialRxBufTail = 0;
 
 #define XOFF_LIMIT SERIAL_RX_BUF_SIZE / 16
+#define XON_LIMIT XOFF_LIMIT / 2
 
 #define SERIAL_TX_BUF_SIZE 256
 char SerialTxBuf[SERIAL_TX_BUF_SIZE];
@@ -273,10 +273,6 @@ static void screen_test_callback(struct format format,
   case SCREEN_TEST_FONT2:
     screen_test_fonts(screen, FONT_BOLD);
     break;
-  case SCREEN_TEST_COLOR1:
-  case SCREEN_TEST_COLOR2:
-    screen_test_colors(screen);
-    break;
   }
 }
 
@@ -362,11 +358,7 @@ int main(int argc, char* argv[]) {
     terminal_keyboard_repeat_key(&terminal);
 
     if (terminal_config_ui.activated) {
-      if (config_ui_key != KEY_NONE) {
-        terminal_config_ui_handle_key(&terminal_config_ui, config_ui_key);
-        config_ui_key = KEY_NONE;
-      }
-
+      terminal_config_ui_handle_key(&terminal_config_ui, config_ui_key);
       continue;
     }
 
@@ -404,6 +396,9 @@ int main(int argc, char* argv[]) {
 
       while (size--) {
         yield();
+
+        if (size < XON_LIMIT)
+          terminal_uart_xon_off(&terminal, XON);
 
         character_t character = SerialRxBuf[SerialRxBufTail];
         SerialRxBufTail++;

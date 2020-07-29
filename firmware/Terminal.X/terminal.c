@@ -62,12 +62,14 @@ void terminal_init(struct terminal *terminal,
     terminal_uart_receive_string(
         terminal, PRODUCT_NAME PRODUCT_VERSION PRODUCT_COPYRIGHT "\r\n");
     break;
+#ifdef TERMINAL_8BIT_COLOR
   case START_UP_TEST_COLOR1:
     terminal->callbacks->screen_test(terminal->format, SCREEN_TEST_COLOR1);
     break;
   case START_UP_TEST_COLOR2:
     terminal->callbacks->screen_test(terminal->format, SCREEN_TEST_COLOR2);
     break;
+#endif
   case START_UP_TEST_FONT1:
     terminal->callbacks->screen_test(terminal->format, SCREEN_TEST_FONT1);
     break;

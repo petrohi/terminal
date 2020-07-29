@@ -170,8 +170,10 @@ static const struct terminal_ui_menu menus[] = {
                                                {"message"},
                                                {"font test1"},
                                                {"font test2"},
+#ifdef TERMINAL_8BIT_COLOR
                                                {"color test1"},
                                                {"color test2"},
+#endif
                                                {NULL},
                                            }},
                                           {NULL}}},
@@ -278,6 +280,7 @@ void terminal_config_ui_init(struct terminal_config_ui *terminal_config_ui,
   terminal_config_ui->terminal_config = terminal_config;
 
   terminal_config_ui->activated = false;
+  terminal_config_ui->previous_key = KEY_NONE;
 
   terminal_config_ui->current_menu = &menus[0];
   terminal_config_ui->current_option =
@@ -330,10 +333,11 @@ static void clear_help(struct terminal_config_ui *terminal_config_ui) {
   size_t i = 0;
   while (*help) {
     move_cursor(terminal_config_ui, i + MAIN_ROW, HELP_COL);
-    screen_printf(terminal_config_ui, "\x1b[%dX",
-                  COLS - HELP_COL);
+    screen_printf(terminal_config_ui, "\x1b[%dX", COLS - HELP_COL);
     help++;
     i++;
+
+    terminal_config_ui->terminal->callbacks->system_yield();
   }
 }
 
@@ -347,6 +351,8 @@ static void render_help(struct terminal_config_ui *terminal_config_ui) {
     screen_printf(terminal_config_ui, *help);
     help++;
     i++;
+
+    terminal_config_ui->terminal->callbacks->system_yield();
   }
 }
 
@@ -362,6 +368,8 @@ static void render_menu(struct terminal_config_ui *terminal_config_ui) {
 
     col += (strlen(menu->title) + 4);
     menu++;
+
+    terminal_config_ui->terminal->callbacks->system_yield();
   }
 }
 
@@ -378,6 +386,8 @@ static void render_borders(struct terminal_config_ui *terminal_config_ui) {
     screen_printf(terminal_config_ui, "│");
     move_cursor(terminal_config_ui, row, RIGHT_COL);
     screen_printf(terminal_config_ui, "║");
+
+    terminal_config_ui->terminal->callbacks->system_yield();
   }
 
   move_cursor(terminal_config_ui, 24, LEFT_COL);
@@ -391,6 +401,8 @@ static void render_borders(struct terminal_config_ui *terminal_config_ui) {
       screen_printf(terminal_config_ui, "╤");
     else
       screen_printf(terminal_config_ui, "═");
+
+    terminal_config_ui->terminal->callbacks->system_yield();
   }
 
   move_cursor(terminal_config_ui, BOTTOM_ROW, LEFT_COL + 1);
@@ -399,6 +411,8 @@ static void render_borders(struct terminal_config_ui *terminal_config_ui) {
       screen_printf(terminal_config_ui, "╧");
     else
       screen_printf(terminal_config_ui, "═");
+
+    terminal_config_ui->terminal->callbacks->system_yield();
   }
 }
 
@@ -428,6 +442,8 @@ static void render_options(struct terminal_config_ui *terminal_config_ui) {
 
     i++;
     option++;
+
+    terminal_config_ui->terminal->callbacks->system_yield();
   }
 }
 
@@ -521,6 +537,7 @@ static void next_menu(struct terminal_config_ui *terminal_config_ui) {
 
 void terminal_config_ui_enter(struct terminal_config_ui *terminal_config_ui) {
   if (!terminal_config_ui->activated) {
+    terminal_config_ui->previous_key = KEY_F12;
     terminal_config_ui->activated = true;
     memcpy(&terminal_config_ui->terminal_config_copy,
            terminal_config_ui->terminal_config, sizeof(struct terminal_config));
@@ -595,6 +612,11 @@ static void apply(struct terminal_config_ui *terminal_config_ui) {
 
 void terminal_config_ui_handle_key(
     struct terminal_config_ui *terminal_config_ui, uint8_t key) {
+
+  if (terminal_config_ui->previous_key == key)
+    return;
+
+  terminal_config_ui->previous_key = key;
 
   switch (key) {
   case KEY_ENTER:
