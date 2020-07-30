@@ -9,6 +9,9 @@
 #define DECRQSS_PREFIX "$q"
 #define DECRQSS_PREFIX_LENGTH 2
 
+#define XOFF_LIMIT 256
+#define XON_LIMIT 128
+
 static void clear_esc_params(struct terminal *terminal) {
   memset(terminal->esc_params, 0, ESC_MAX_PARAMS_COUNT * ESC_MAX_PARAM_LENGTH);
   terminal->esc_params_count = 0;
@@ -640,7 +643,10 @@ static void receive_cha(struct terminal *terminal, character_t character) {
   int16_t col = get_esc_param(terminal, 0);
 
   terminal_screen_move_cursor_absolute(
-      terminal, get_terminal_screen_cursor_row(terminal), col - 1);
+      terminal,
+      get_terminal_screen_cursor_row(terminal) +
+          (terminal->vs.cursor_last_col ? 1 : 0),
+      col - 1);
   clear_receive_table(terminal);
 }
 
@@ -1595,6 +1601,17 @@ void terminal_uart_xon_off(struct terminal *terminal, enum xon_off xon_off) {
 #ifdef DEBUG_LOG_XON_OFF
     printf(xon_off == XOFF ? "XOFF\r\n" : "XON\r\n");
 #endif
+  }
+}
+
+void terminal_uart_flow_control(struct terminal *terminal,
+                                size_t receive_size) {
+  if (terminal->flow_control) {
+    if (receive_size > XOFF_LIMIT)
+      terminal_uart_xon_off(terminal, XOFF);
+
+    if (receive_size < XON_LIMIT)
+      terminal_uart_xon_off(terminal, XON);
   }
 }
 

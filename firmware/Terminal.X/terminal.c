@@ -49,6 +49,8 @@ void terminal_init(struct terminal *terminal,
   terminal->ansi_mode = config->ansi_mode;
   terminal->backspace_mode = config->backspace_mode;
 
+  terminal->flow_control = config->flow_control;
+
   terminal_keyboard_init(terminal);
   terminal_screen_init(terminal);
   terminal_uart_init(terminal);

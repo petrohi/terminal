@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "keys.h"
+#include "terminal_internal.h"
 
 #define PRINTF_BUFFER_SIZE 256
 
@@ -17,6 +18,7 @@ static void change_baud_rate(struct terminal_config_ui *terminal_config_ui,
   terminal_config_ui->terminal_config_copy.baud_rate = baud_rate;
 }
 
+#ifdef TERMINAL_SERIAL_WORD_LENGTH
 static size_t
 current_word_length(struct terminal_config_ui *terminal_config_ui) {
   return terminal_config_ui->terminal_config_copy.word_length;
@@ -26,6 +28,20 @@ static void change_word_length(struct terminal_config_ui *terminal_config_ui,
                                size_t word_length) {
   terminal_config_ui->terminal_config_copy.word_length = word_length;
 }
+#endif
+
+#ifdef TERMINAL_SERIAL_INVERTED
+static size_t
+current_serial_inverted(struct terminal_config_ui *terminal_config_ui) {
+  return terminal_config_ui->terminal_config_copy.serial_inverted;
+}
+
+static void
+change_serial_inverted(struct terminal_config_ui *terminal_config_ui,
+                       size_t serial_inverted) {
+  terminal_config_ui->terminal_config_copy.serial_inverted = serial_inverted;
+}
+#endif
 
 static size_t current_stop_bits(struct terminal_config_ui *terminal_config_ui) {
   return terminal_config_ui->terminal_config_copy.stop_bits;
@@ -61,6 +77,16 @@ static size_t current_charset(struct terminal_config_ui *terminal_config_ui) {
 static void change_charset(struct terminal_config_ui *terminal_config_ui,
                            size_t charset) {
   terminal_config_ui->terminal_config_copy.charset = charset;
+}
+
+static size_t
+current_flow_control(struct terminal_config_ui *terminal_config_ui) {
+  return terminal_config_ui->terminal_config_copy.flow_control;
+}
+
+static void change_flow_control(struct terminal_config_ui *terminal_config_ui,
+                                size_t flow_control) {
+  terminal_config_ui->terminal_config_copy.flow_control = flow_control;
 }
 
 static size_t current_c1_mode(struct terminal_config_ui *terminal_config_ui) {
@@ -197,10 +223,16 @@ static const struct terminal_ui_menu menus[] = {
               [BAUD_RATE_921600] = {"921600"},
               {NULL},
           }},
+#ifdef TERMINAL_SERIAL_WORD_LENGTH
          {"Word length", current_word_length, change_word_length,
           &(const struct terminal_ui_choice[]){[WORD_LENGTH_8B] = {"8 bits"},
                                                [WORD_LENGTH_9B] = {"9 bits"},
                                                {NULL}}},
+#endif
+#ifdef TERMINAL_SERIAL_INVERTED
+         {"Invert (RS232 levels)", current_serial_inverted,
+          change_serial_inverted, &off_on_choices},
+#endif
          {"Stop bits", current_stop_bits, change_stop_bits,
           &(const struct terminal_ui_choice[]){
               [STOP_BITS_1] = {"1 bit"}, [STOP_BITS_2] = {"2 bits"}, {NULL}}},
@@ -218,6 +250,8 @@ static const struct terminal_ui_menu menus[] = {
               {"UTF8"},
               {NULL},
           }},
+         {"XOFF/XON flow control", current_flow_control, change_flow_control,
+          &off_on_choices},
          {"Controls", current_c1_mode, change_c1_mode,
           &(const struct terminal_ui_choice[]){
               {"S7C1T"},
@@ -310,21 +344,21 @@ static const char *default_help[] = {
     "<F12> - Save and restart", NULL,
 };
 
-#define ROWS terminal_config_ui->terminal->format.rows
-#define COLS terminal_config_ui->terminal->format.cols
+#define UI_ROWS terminal_config_ui->terminal->format.rows
+#define UI_COLS terminal_config_ui->terminal->format.cols
 
 #define TITLE_ROW 2
 #define MENU_ROW 4
 #define TOP_ROW 5
 #define MAIN_ROW 8
-#define BOTTOM_ROW ROWS
+#define BOTTOM_ROW UI_ROWS
 
 #define LEFT_COL 1
 #define OPTIONS_COL 4
 #define CHOICES_COL 35
 #define DIVIDER_COL 50
 #define HELP_COL 52
-#define RIGHT_COL COLS
+#define RIGHT_COL UI_COLS
 
 static void clear_help(struct terminal_config_ui *terminal_config_ui) {
   const char **help =
@@ -333,7 +367,7 @@ static void clear_help(struct terminal_config_ui *terminal_config_ui) {
   size_t i = 0;
   while (*help) {
     move_cursor(terminal_config_ui, i + MAIN_ROW, HELP_COL);
-    screen_printf(terminal_config_ui, "\x1b[%dX", COLS - HELP_COL);
+    screen_printf(terminal_config_ui, "\x1b[%dX", UI_COLS - HELP_COL);
     help++;
     i++;
 

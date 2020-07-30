@@ -4,12 +4,6 @@
 
 static int32_t find_glyph_index(const struct bitmap_font *font,
                                 unsigned short codepoint) {
-  if (codepoint == 0)
-    return 0;
-
-  if (codepoint < 0x80)
-    return codepoint - 0x1f;
-
   size_t first = 0;
   size_t last = font->codepoints_length - 1;
   size_t middle = (first + last) / 2;

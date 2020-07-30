@@ -204,6 +204,8 @@ struct terminal {
   enum gset gset_received;
   enum xon_off xon_off;
 
+  bool flow_control;
+
 #ifdef DEBUG
 #define DEBUG_BUFFER_LENGTH 128
   character_t debug_buffer[DEBUG_BUFFER_LENGTH];
@@ -233,7 +235,7 @@ void terminal_uart_transmit_string(struct terminal *terminal,
 void terminal_uart_transmit_printf(struct terminal *terminal,
                                    const char *format, ...);
 
-void terminal_uart_xon_off(struct terminal *terminal, enum xon_off xon_off);
+void terminal_uart_flow_control(struct terminal *terminal, size_t receive_size);
 
 void terminal_timer_tick(struct terminal *terminal);
 void terminal_screen_update(struct terminal *terminal);

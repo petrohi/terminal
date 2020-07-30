@@ -25,10 +25,12 @@ enum baud_rate {
   BAUD_RATE_921600 = 13,
 };
 
+#ifdef TERMINAL_SERIAL_WORD_LENGTH
 enum word_length {
   WORD_LENGTH_8B = 0,
   WORD_LENGTH_9B = 1,
 };
+#endif
 
 enum stop_bits {
   STOP_BITS_1 = 0,
@@ -67,9 +69,15 @@ struct terminal_config {
   bool monochrome;
 
   enum baud_rate baud_rate;
+#ifdef TERMINAL_SERIAL_WORD_LENGTH
   enum word_length word_length;
+#endif
   enum stop_bits stop_bits;
   enum parity parity;
+  bool flow_control;
+#ifdef TERMINAL_SERIAL_INVERTED
+  bool serial_inverted;
+#endif
 
   enum charset charset;
   enum c1_mode c1_mode;

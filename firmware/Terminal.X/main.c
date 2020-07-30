@@ -58,6 +58,7 @@
 #include "screen.h"
 #include "vga.h"
 #include "normal.h"
+#include "bold.h"
 #include "ps2.h"
 #include "keys.h"
 
@@ -83,9 +84,6 @@ void BlinkLED(void);
 char SerialRxBuf[SERIAL_RX_BUF_SIZE];
 volatile int SerialRxBufHead = 0;
 volatile int SerialRxBufTail = 0;
-
-#define XOFF_LIMIT SERIAL_RX_BUF_SIZE / 16
-#define XON_LIMIT XOFF_LIMIT / 2
 
 #define SERIAL_TX_BUF_SIZE 256
 char SerialTxBuf[SERIAL_TX_BUF_SIZE];
@@ -125,6 +123,15 @@ static const struct bitmap_font normal_bitmap_font = {
     .codepoints_map = normal_font_codepoints_map,
 };
 
+static const struct bitmap_font bold_bitmap_font = {
+    .height = FONT_HEIGHT,
+    .width = FONT_WIDTH,
+    .data = bold_font_data,
+    .codepoints_length = sizeof(bold_font_codepoints) / sizeof(int),
+    .codepoints = bold_font_codepoints,
+    .codepoints_map = bold_font_codepoints_map,
+};
+
 #define CHAR_HEIGHT    16
 #define CHAR_WIDTH     8
 
@@ -138,7 +145,7 @@ static struct screen screen = {
     .char_height = CHAR_HEIGHT,
     .buffer = NULL,
     .normal_bitmap_font = &normal_bitmap_font,
-    .bold_bitmap_font = &normal_bitmap_font,
+    .bold_bitmap_font = &bold_bitmap_font,
 };
 
 struct screen *get_screen(struct format format) {
@@ -151,17 +158,19 @@ struct screen *get_screen(struct format format) {
 struct terminal *global_terminal = NULL;
 struct terminal_config_ui *global_terminal_config_ui = NULL;
 
-struct terminal_config terminal_config = {
-    .format = {
-      .cols = 80,
-      .rows = 24,
-    },
+__attribute__((aligned(1024), space(prog),
+               section(".nvm"))) struct terminal_config terminal_config = {
+    .format =
+        {
+            .cols = 80,
+            .rows = 24,
+        },
     .monochrome = true,
 
     .baud_rate = BAUD_RATE_115200,
-    .word_length = WORD_LENGTH_8B,
     .stop_bits = STOP_BITS_1,
     .parity = PARITY_NONE,
+    .serial_inverted = false,
 
     .charset = CHARSET_UTF8,
     .c1_mode = C1_MODE_7BIT,
@@ -176,6 +185,8 @@ struct terminal_config terminal_config = {
     .auto_repeat_mode = true,
     .ansi_mode = true,
     .backspace_mode = false,
+
+    .flow_control = true,
 
     .start_up = START_UP_MESSAGE,
 };
@@ -278,17 +289,11 @@ static void screen_test_callback(struct format format,
 
 static void
 system_write_config_callback(struct terminal_config *terminal_config_copy) {
-  /*HAL_FLASH_Unlock();
-  __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP | FLASH_FLAG_OPERR | FLASH_FLAG_WRPERR |
-                         FLASH_FLAG_PGAERR | FLASH_FLAG_PGSERR);
-  FLASH_Erase_Sector(FLASH_SECTOR_11, VOLTAGE_RANGE_3);
+  NVMErasePage(&terminal_config);
 
-  for (size_t i = 0; i < sizeof(struct terminal_config); ++i)
-    HAL_FLASH_Program(TYPEPROGRAM_BYTE,
-                      (uint32_t)((uint8_t *)&terminal_config + i),
-                      *(((uint8_t *)terminal_config_copy) + i));
-
-  HAL_FLASH_Lock();*/
+  for (size_t i = 0; i < sizeof(struct terminal_config) / 4; ++i)
+    NVMWriteWord(((uint32_t *)&terminal_config) + i,
+                 *(((uint32_t *)terminal_config_copy) + i));
 }
 
 static void keyboard_set_leds(struct lock_state state) {
@@ -363,7 +368,7 @@ int main(int argc, char* argv[]) {
     }
 
     if (config_ui_enter) {
-      terminal_config_ui_enter(global_terminal_config_ui);
+      terminal_config_ui_enter(&terminal_config_ui);
       config_ui_enter = false;
     }
 
@@ -391,14 +396,11 @@ int main(int argc, char* argv[]) {
       else
         size = SerialRxBufHead + (SERIAL_RX_BUF_SIZE - SerialRxBufTail);
 
-      if (size > XOFF_LIMIT)
-        terminal_uart_xon_off(&terminal, XOFF);
+      terminal_uart_flow_control(&terminal, size);
 
       while (size--) {
         yield();
-
-        if (size < XON_LIMIT)
-          terminal_uart_xon_off(&terminal, XON);
+        terminal_uart_flow_control(&terminal, size);
 
         character_t character = SerialRxBuf[SerialRxBufTail];
         SerialRxBufTail++;
@@ -408,7 +410,7 @@ int main(int argc, char* argv[]) {
           SerialRxBufTail = 0;
       }
     } else {
-      terminal_uart_xon_off(&terminal, XON);
+      terminal_uart_flow_control(&terminal, 0);
     }
   }
 }
@@ -421,33 +423,50 @@ int main(int argc, char* argv[]) {
 
 // initialize the UART2 serial port
 void initSerial(void) {
-    int cfg1, cfg2, baud = 0;
-    PPSInput(2, U2RX, RPB1); PPSOutput(4, RPB0, U2TX);
+  PPSInput(2, U2RX, RPB1);
+  PPSOutput(4, RPB0, U2TX);
 
-    cfg1 = UART_ENABLE_PINS_TX_RX_ONLY;
-    if(!Option[O_SERIALINV]) cfg1 |= (UART_INVERT_RECEIVE_POLARITY | UART_INVERT_TRANSMIT_POLARITY);
+  int cfg1 = UART_ENABLE_PINS_TX_RX_ONLY;
+  if (terminal_config.serial_inverted)
+    cfg1 |= (UART_INVERT_RECEIVE_POLARITY | UART_INVERT_TRANSMIT_POLARITY);
 
-    cfg2 = UART_DATA_SIZE_8_BITS;
-    switch(Option[O_PARITY]) {
-        case O_PARITY_NONE: cfg2 |= UART_PARITY_NONE;    break;
-        case O_PARITY_ODD:  cfg2 |= UART_PARITY_ODD;     break;
-        case O_PARITY_EVEN: cfg2 |= UART_PARITY_EVEN;    break;
-    }
-    cfg2 |= Option[O_1STOPBIT] ? UART_STOP_BITS_1 : UART_STOP_BITS_2;
-    baud = terminal_config_get_baud_rate(&terminal_config);
+  int cfg2 = UART_DATA_SIZE_8_BITS;
 
-    UARTConfigure(UART2, cfg1);
-    UARTSetFifoMode(UART2, UART_INTERRUPT_ON_TX_NOT_FULL | UART_INTERRUPT_ON_RX_NOT_EMPTY);
-    UARTSetLineControl(UART2, cfg2);
-    UARTSetDataRate(UART2, BUSFREQ, baud);
-    UARTEnable(UART2, UART_ENABLE_FLAGS(UART_PERIPHERAL | UART_RX | UART_TX));
+  switch (terminal_config.stop_bits) {
+  case STOP_BITS_1:
+    cfg2 |= UART_STOP_BITS_1;
+    break;
+  case STOP_BITS_2:
+    cfg2 |= UART_STOP_BITS_2;
+    break;
+  }
 
-    // Configure UART2 RX Interrupt (the Tx Interrupt is enabled in putSerial())
-    INTSetVectorPriority(INT_VECTOR_UART(UART2), INT_PRIORITY_LEVEL_3);
-    INTSetVectorSubPriority(INT_VECTOR_UART(UART2), INT_SUB_PRIORITY_LEVEL_0);
-    INTEnable(INT_SOURCE_UART_RX(UART2), INT_ENABLED);
+  switch (terminal_config.parity) {
+  case PARITY_NONE:
+    cfg2 |= UART_PARITY_NONE;
+    break;
+  case PARITY_EVEN:
+    cfg2 |= UART_PARITY_EVEN;
+    break;
+  case PARITY_ODD:
+    cfg2 |= UART_PARITY_ODD;
+    break;
+  }
+
+  int baud = terminal_config_get_baud_rate(&terminal_config);
+
+  UARTConfigure(UART2, cfg1);
+  UARTSetFifoMode(UART2, UART_INTERRUPT_ON_TX_NOT_FULL |
+                             UART_INTERRUPT_ON_RX_NOT_EMPTY);
+  UARTSetLineControl(UART2, cfg2);
+  UARTSetDataRate(UART2, BUSFREQ, baud);
+  UARTEnable(UART2, UART_ENABLE_FLAGS(UART_PERIPHERAL | UART_RX | UART_TX));
+
+  // Configure UART2 RX Interrupt (the Tx Interrupt is enabled in putSerial())
+  INTSetVectorPriority(INT_VECTOR_UART(UART2), INT_PRIORITY_LEVEL_3);
+  INTSetVectorSubPriority(INT_VECTOR_UART(UART2), INT_SUB_PRIORITY_LEVEL_0);
+  INTEnable(INT_SOURCE_UART_RX(UART2), INT_ENABLED);
 }
-
 
 // UART 2 interrupt handler
 void __ISR(_UART2_VECTOR, ipl3) IntUart2Handler(void) {
@@ -614,58 +633,3 @@ void BlinkLED(void) {
         LATBSET = (1<<5);
     }
 }
-
-
-
-
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Macro to reserve flash memory for saving/loading options and initialise to 0xFF's
-// creates an array of integers 'name' with 'nbr' elements
-// Note that 'nbr' need to be a multiple of 256 to fit the PIC32MX150/250 erase page size which is 1024 bytes
-#define NVM_ALLOCATE(name, nbr) int name[(nbr)] \
-	     __attribute__ ((aligned(1024),space(prog),section(".nvm"))) = \
-	     { [0 ...(nbr)-1] = 0xFFFFFFFF }
-
-// allocate space in flash for the options.  The start of the memory is aligned on erasable page boundary
-NVM_ALLOCATE(Option, 256);
-
-
-void ConfigBuffers() {
-    SerialRxBufHead = 0;
-    SerialRxBufTail = 0;
-    USBSerialRxBufTail = 0;
-}
-
-int GetFlashOption(const unsigned int *w) {
-    return O_KEYBOARD_US;
-}
-
-
-
-#ifdef __DEBUG
-
-void dump(char *p, int nbr) {
-	char inpbuf[100], buf1[60], buf2[30], *b1, *b2;
-	b1 = buf1; b2 = buf2;
-	b1 += sprintf(b1, "%8x: ", (unsigned int)p);
-	while(nbr > 0) {
-		b1 += sprintf(b1, "%02x ", *p);
-		b2 += sprintf(b2, "%c", (*p >= ' ' && *p < 0x7f) ? *p : ' ');
-		p++;
-		nbr--;
-		if((unsigned int)p % 16 == 0) {
-			sprintf(inpbuf, "%s   %s", buf1, buf2);
-//			MMPrintString(inpbuf);
-			b1 = buf1; b2 = buf2;
-			b1 += sprintf(b1, "\r\n%8x: ", (unsigned int)p);
-		}
-	}
-	if(b2 != buf2) {
-		sprintf(inpbuf, "%s   %s", buf1, buf2);
-//		MMPrintString(inpbuf);
-	}
-//	MMPrintString("\r\n");
-}
-
-#endif
