@@ -1,5 +1,4 @@
 EESchema Schematic File Version 4
-LIBS:terminal-cache
 EELAYER 30 0
 EELAYER END
 $Descr USLetter 11000 8500
@@ -69,7 +68,7 @@ Connection ~ 2950 2800
 Wire Wire Line
 	2950 2800 2950 2350
 $Comp
-L Device:CP C1
+L Device:C C1
 U 1 1 5D61AF5F
 P 2700 3000
 F 0 "C1" V 2445 3000 50  0000 C CNN
@@ -102,7 +101,7 @@ F 3 "" H 1500 7550 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Device:CP C2
+L Device:C C2
 U 1 1 5D61D25D
 P 2050 7400
 F 0 "C2" H 2168 7446 50  0000 L CNN
@@ -113,7 +112,7 @@ F 3 "~" H 2050 7400 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Device:CP C3
+L Device:C C3
 U 1 1 5D61E642
 P 900 7400
 F 0 "C3" H 1018 7446 50  0000 L CNN
