@@ -28,7 +28,7 @@ static void clear_cells_rows(struct terminal *terminal, int16_t from_row,
   for (uint16_t i = 0; i < rows; ++i, cells += COLS) {
     memset(cells, 0, CELLS_ROW_SIZE);
 
-    terminal->callbacks->system_yield();
+    terminal->callbacks->yield();
   }
 }
 
@@ -72,7 +72,7 @@ static void scroll_cells(struct terminal *terminal, enum scroll scroll,
     for (uint16_t i = 0; i < rows_diff; ++i, cells -= COLS) {
       memcpy(cells, cells - disp, CELLS_ROW_SIZE);
 
-      terminal->callbacks->system_yield();
+      terminal->callbacks->yield();
     }
 
     clear_cells_rows(terminal, from_row, from_row + rows);
@@ -83,7 +83,7 @@ static void scroll_cells(struct terminal *terminal, enum scroll scroll,
     for (uint16_t i = 0; i < rows_diff; ++i, cells += COLS) {
       memcpy(cells, cells + disp, CELLS_ROW_SIZE);
 
-      terminal->callbacks->system_yield();
+      terminal->callbacks->yield();
     }
 
     clear_cells_rows(terminal, to_row - rows, to_row);

@@ -25,7 +25,6 @@ struct terminal_config_ui {
   struct terminal_config *terminal_config;
   struct terminal_config terminal_config_copy;
   bool activated;
-  uint8_t previous_key;
 
   const struct terminal_ui_menu *current_menu;
   const struct terminal_ui_option *current_option;
@@ -35,6 +34,4 @@ struct terminal_config_ui {
 void terminal_config_ui_init(struct terminal_config_ui *terminal_config_ui,
                              struct terminal *terminal,
                              struct terminal_config *terminal_config);
-void terminal_config_ui_enter(struct terminal_config_ui *terminal_config_ui);
-void terminal_config_ui_handle_key(
-    struct terminal_config_ui *terminal_config_ui, uint8_t key);
+void terminal_config_ui_activate(struct terminal_config_ui *terminal_config_ui);

@@ -12,6 +12,8 @@
 #define XOFF_LIMIT 256
 #define XON_LIMIT 128
 
+#define DEFAULT_RECEIVE CHARACTER_MAX
+
 static void clear_esc_params(struct terminal *terminal) {
   memset(terminal->esc_params, 0, ESC_MAX_PARAMS_COUNT * ESC_MAX_PARAM_LENGTH);
   terminal->esc_params_count = 0;
@@ -226,7 +228,7 @@ static void receive_deckpnm(struct terminal *terminal, character_t character) {
 }
 
 static void receive_ris(struct terminal *terminal, character_t character) {
-  terminal->callbacks->system_reset();
+  terminal->callbacks->reset();
 }
 
 static const receive_table_t scs_receive_table;

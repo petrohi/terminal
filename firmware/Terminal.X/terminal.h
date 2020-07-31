@@ -59,14 +59,13 @@ struct terminal_callbacks {
   void (*screen_shift_left)(struct format format, size_t row, size_t col,
                             size_t cols, color_t inactive);
   void (*screen_test)(struct format format, enum screen_test screen_test);
-  void (*system_yield)();
-  void (*system_reset)();
-  void (*system_write_config)(struct terminal_config *terminal_config_copy);
+  void (*yield)();
+  void (*reset)();
+  void (*activate_config)();
+  void (*write_config)(struct terminal_config *terminal_config_copy);
 };
 
 struct terminal;
-
-#define DEFAULT_RECEIVE CHARACTER_MAX
 
 typedef void (*receive_t)(struct terminal *, character_t);
 typedef receive_t receive_table_t[CHARACTER_DECODER_TABLE_LENGTH];
@@ -127,6 +126,8 @@ struct control_data {
   size_t length;
 };
 
+struct keys_entry;
+
 struct terminal {
   const struct terminal_callbacks *callbacks;
 
@@ -142,6 +143,8 @@ struct terminal {
   uint8_t shift_state : 1;
   uint8_t alt_state : 1;
   uint8_t ctrl_state : 1;
+
+  const struct keys_entry *keys_entries;
 
   enum charset charset;
   enum c1_mode c1_mode;
@@ -218,10 +221,8 @@ void terminal_init(struct terminal *terminal,
                    const struct terminal_callbacks *callbacks,
                    const struct terminal_config *config,
                    character_t *transmit_buffer, size_t transmit_buffer_size);
-void terminal_keyboard_handle_key(struct terminal *terminal, uint8_t key);
-void terminal_keyboard_handle_shift(struct terminal *terminal, bool shift);
-void terminal_keyboard_handle_alt(struct terminal *terminal, bool alt);
-void terminal_keyboard_handle_ctrl(struct terminal *terminal, bool ctrl);
+void terminal_keyboard_handle_key(struct terminal *terminal, bool shift,
+                                  bool alt, bool ctrl, uint8_t key);
 
 void terminal_uart_receive_character(struct terminal *terminal,
                                      character_t character);

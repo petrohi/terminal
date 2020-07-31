@@ -4,8 +4,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "keys.h"
 #include "terminal_internal.h"
+#include "terminal_keyboard.h"
 
 #define PRINTF_BUFFER_SIZE 256
 
@@ -314,7 +314,6 @@ void terminal_config_ui_init(struct terminal_config_ui *terminal_config_ui,
   terminal_config_ui->terminal_config = terminal_config;
 
   terminal_config_ui->activated = false;
-  terminal_config_ui->previous_key = KEY_NONE;
 
   terminal_config_ui->current_menu = &menus[0];
   terminal_config_ui->current_option =
@@ -371,7 +370,7 @@ static void clear_help(struct terminal_config_ui *terminal_config_ui) {
     help++;
     i++;
 
-    terminal_config_ui->terminal->callbacks->system_yield();
+    terminal_config_ui->terminal->callbacks->yield();
   }
 }
 
@@ -386,7 +385,7 @@ static void render_help(struct terminal_config_ui *terminal_config_ui) {
     help++;
     i++;
 
-    terminal_config_ui->terminal->callbacks->system_yield();
+    terminal_config_ui->terminal->callbacks->yield();
   }
 }
 
@@ -403,7 +402,7 @@ static void render_menu(struct terminal_config_ui *terminal_config_ui) {
     col += (strlen(menu->title) + 4);
     menu++;
 
-    terminal_config_ui->terminal->callbacks->system_yield();
+    terminal_config_ui->terminal->callbacks->yield();
   }
 }
 
@@ -421,7 +420,7 @@ static void render_borders(struct terminal_config_ui *terminal_config_ui) {
     move_cursor(terminal_config_ui, row, RIGHT_COL);
     screen_printf(terminal_config_ui, "║");
 
-    terminal_config_ui->terminal->callbacks->system_yield();
+    terminal_config_ui->terminal->callbacks->yield();
   }
 
   move_cursor(terminal_config_ui, 24, LEFT_COL);
@@ -436,7 +435,7 @@ static void render_borders(struct terminal_config_ui *terminal_config_ui) {
     else
       screen_printf(terminal_config_ui, "═");
 
-    terminal_config_ui->terminal->callbacks->system_yield();
+    terminal_config_ui->terminal->callbacks->yield();
   }
 
   move_cursor(terminal_config_ui, BOTTOM_ROW, LEFT_COL + 1);
@@ -446,7 +445,7 @@ static void render_borders(struct terminal_config_ui *terminal_config_ui) {
     else
       screen_printf(terminal_config_ui, "═");
 
-    terminal_config_ui->terminal->callbacks->system_yield();
+    terminal_config_ui->terminal->callbacks->yield();
   }
 }
 
@@ -477,7 +476,7 @@ static void render_options(struct terminal_config_ui *terminal_config_ui) {
     i++;
     option++;
 
-    terminal_config_ui->terminal->callbacks->system_yield();
+    terminal_config_ui->terminal->callbacks->yield();
   }
 }
 
@@ -569,34 +568,6 @@ static void next_menu(struct terminal_config_ui *terminal_config_ui) {
   }
 }
 
-void terminal_config_ui_enter(struct terminal_config_ui *terminal_config_ui) {
-  if (!terminal_config_ui->activated) {
-    terminal_config_ui->previous_key = KEY_F12;
-    terminal_config_ui->activated = true;
-    memcpy(&terminal_config_ui->terminal_config_copy,
-           terminal_config_ui->terminal_config, sizeof(struct terminal_config));
-    terminal_uart_xon_off(terminal_config_ui->terminal, XOFF);
-    screen_printf(terminal_config_ui, "\x1b<"
-                                      "\x1b F"
-                                      "\x1b%%G"
-                                      "\x1b[2l"
-                                      "\x1b[4l"
-                                      "\x1b[12h"
-                                      "\x1b[20l"
-                                      "\x1b[?1l"
-                                      "\x1b[?2h"
-                                      "\x1b[?5l"
-                                      "\x1b[?6l"
-                                      "\x1b[?7l"
-                                      "\x1b[?8l"
-                                      "\x1b[?25l"
-                                      "\x1b[97;48;5;54m");
-
-    clear_screen(terminal_config_ui);
-    render_screen(terminal_config_ui);
-  }
-}
-
 static void enter(struct terminal_config_ui *terminal_config_ui) {
   clear_help(terminal_config_ui);
 
@@ -632,47 +603,88 @@ static void leave(struct terminal_config_ui *terminal_config_ui) {
 }
 
 static void apply(struct terminal_config_ui *terminal_config_ui) {
-  screen_printf(terminal_config_ui, "\x1b[0m");
-  clear_screen(terminal_config_ui);
-  move_cursor(terminal_config_ui, 1, 1);
-  screen_printf(terminal_config_ui, "Writing config...");
-  terminal_config_ui->terminal->callbacks->system_write_config(
-      &terminal_config_ui->terminal_config_copy);
+  if (!terminal_config_ui->current_choice) {
+    screen_printf(terminal_config_ui, "\x1b[0m");
+    clear_screen(terminal_config_ui);
+    move_cursor(terminal_config_ui, 1, 1);
+    screen_printf(terminal_config_ui, "Writing config...");
+    terminal_config_ui->terminal->callbacks->write_config(
+        &terminal_config_ui->terminal_config_copy);
 
-  terminal_uart_xon_off(terminal_config_ui->terminal, XON);
-  clear_screen(terminal_config_ui);
-  screen_printf(terminal_config_ui, "\033c");
+    terminal_uart_xon_off(terminal_config_ui->terminal, XON);
+    clear_screen(terminal_config_ui);
+    screen_printf(terminal_config_ui, "\033c");
+  }
 }
 
-void terminal_config_ui_handle_key(
-    struct terminal_config_ui *terminal_config_ui, uint8_t key) {
+extern struct terminal_config_ui *global_terminal_config_ui;
 
-  if (terminal_config_ui->previous_key == key)
-    return;
+static void handle_enter(struct terminal *terminal) {
+  enter(global_terminal_config_ui);
+}
 
-  terminal_config_ui->previous_key = key;
+static void handle_esc(struct terminal *terminal) {
+  leave(global_terminal_config_ui);
+}
 
-  switch (key) {
-  case KEY_ENTER:
-    enter(terminal_config_ui);
-    break;
-  case KEY_ESCAPE:
-    leave(terminal_config_ui);
-    break;
-  case KEY_UPARROW:
-    prev_option(terminal_config_ui);
-    break;
-  case KEY_DOWNARROW:
-    next_option(terminal_config_ui);
-    break;
-  case KEY_LEFTARROW:
-    prev_menu(terminal_config_ui);
-    break;
-  case KEY_RIGHTARROW:
-    next_menu(terminal_config_ui);
-    break;
-  case KEY_F12:
-    apply(terminal_config_ui);
-    break;
+static void handle_up(struct terminal *terminal) {
+  prev_option(global_terminal_config_ui);
+}
+
+static void handle_down(struct terminal *terminal) {
+  next_option(global_terminal_config_ui);
+}
+
+static void handle_left(struct terminal *terminal) {
+  prev_menu(global_terminal_config_ui);
+}
+
+static void handle_right(struct terminal *terminal) {
+  next_menu(global_terminal_config_ui);
+}
+
+static void handle_f12(struct terminal *terminal) {
+  apply(global_terminal_config_ui);
+}
+
+static const struct keys_entry *config_entries =
+    (struct keys_entry[]){
+        [KEY_ENTER] = KEY_HANDLER(handle_enter),
+        [KEY_ESCAPE] = KEY_HANDLER(handle_esc),
+        [KEY_UPARROW] = KEY_HANDLER(handle_up),
+        [KEY_DOWNARROW] = KEY_HANDLER(handle_down),
+        [KEY_LEFTARROW] = KEY_HANDLER(handle_left),
+        [KEY_RIGHTARROW] = KEY_HANDLER(handle_right),
+        [KEY_F12] = KEY_HANDLER(handle_f12),
+    };
+
+void terminal_config_ui_activate(struct terminal_config_ui *terminal_config_ui) {
+  if (!terminal_config_ui->activated) {
+    terminal_config_ui->activated = true;
+    memcpy(&terminal_config_ui->terminal_config_copy,
+           terminal_config_ui->terminal_config, sizeof(struct terminal_config));
+
+    terminal_uart_xon_off(terminal_config_ui->terminal, XOFF);
+    terminal_keyboard_set_keys_entries(terminal_config_ui->terminal,
+                                       config_entries);
+
+    screen_printf(terminal_config_ui, "\x1b<"
+                                      "\x1b F"
+                                      "\x1b%%G"
+                                      "\x1b[2l"
+                                      "\x1b[4l"
+                                      "\x1b[12h"
+                                      "\x1b[20l"
+                                      "\x1b[?1l"
+                                      "\x1b[?2h"
+                                      "\x1b[?5l"
+                                      "\x1b[?6l"
+                                      "\x1b[?7l"
+                                      "\x1b[?8l"
+                                      "\x1b[?25l"
+                                      "\x1b[97;48;5;54m");
+
+    clear_screen(terminal_config_ui);
+    render_screen(terminal_config_ui);
   }
 }

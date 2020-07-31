@@ -191,32 +191,18 @@ __attribute__((aligned(1024), space(prog),
     .start_up = START_UP_MESSAGE,
 };
 
-static bool config_ui_enter = false;
-static uint8_t config_ui_key = KEY_NONE;
-
 static void yield() {
   CheckUSB();
 
-  if (global_ps2) {
-    if (global_terminal_config_ui && global_terminal_config_ui->activated) {
-      config_ui_key = global_ps2->keys[0];
-
-    } else if (global_ps2->keys[0] == KEY_F12 &&
-               (global_ps2->lshift || global_ps2->rshift)) {
-      config_ui_enter = true;
-    } else if (global_terminal) {
-      terminal_keyboard_handle_shift(global_terminal,
-                                     global_ps2->lshift || global_ps2->rshift);
-      terminal_keyboard_handle_alt(global_terminal,
-                                   global_ps2->lalt || global_ps2->ralt);
-      terminal_keyboard_handle_ctrl(global_terminal,
-                                    global_ps2->lctrl || global_ps2->rctrl);
-      terminal_keyboard_handle_key(global_terminal, global_ps2->keys[0]);
-    }
-
-    if (global_ps2->keys[0] != KEY_NONE)
-      BlinkLED();
+  if (global_ps2 && global_terminal) {
+    terminal_keyboard_handle_key(
+        global_terminal, global_ps2->lshift || global_ps2->rshift,
+        global_ps2->lalt || global_ps2->ralt,
+        global_ps2->lctrl || global_ps2->rctrl, global_ps2->keys[0]);
   }
+
+  if (global_ps2->keys[0] != KEY_NONE)
+    BlinkLED();
 }
 
 static void uart_transmit(character_t *characters, size_t size, size_t head) {
@@ -287,8 +273,11 @@ static void screen_test_callback(struct format format,
   }
 }
 
-static void
-system_write_config_callback(struct terminal_config *terminal_config_copy) {
+static void activate_config() {
+  terminal_config_ui_activate(global_terminal_config_ui);
+}
+
+static void write_config(struct terminal_config *terminal_config_copy) {
   NVMErasePage(&terminal_config);
 
   for (size_t i = 0; i < sizeof(struct terminal_config) / 4; ++i)
@@ -336,10 +325,11 @@ int main(int argc, char* argv[]) {
       .screen_scroll = screen_scroll_callback,
       .screen_shift_left = screen_shift_left_callback,
       .screen_shift_right = screen_shift_right_callback,
-      .system_reset = SoftReset,
-      .system_yield = yield,
       .screen_test = screen_test_callback,
-      .system_write_config = system_write_config_callback};
+      .reset = SoftReset,
+      .yield = yield,
+      .activate_config = activate_config,
+      .write_config = write_config};
   terminal_init(&terminal, &callbacks, &terminal_config, SerialTxBuf,
                 SERIAL_TX_BUF_SIZE);
   global_terminal = &terminal;
@@ -362,15 +352,8 @@ int main(int argc, char* argv[]) {
     terminal_screen_update(&terminal);
     terminal_keyboard_repeat_key(&terminal);
 
-    if (terminal_config_ui.activated) {
-      terminal_config_ui_handle_key(&terminal_config_ui, config_ui_key);
+    if (terminal_config_ui.activated)
       continue;
-    }
-
-    if (config_ui_enter) {
-      terminal_config_ui_enter(&terminal_config_ui);
-      config_ui_enter = false;
-    }
 
     if (local_tail != local_head) {
       size_t size = 0;
@@ -400,6 +383,10 @@ int main(int argc, char* argv[]) {
 
       while (size--) {
         yield();
+
+        if (terminal_config_ui.activated)
+          break;
+
         terminal_uart_flow_control(&terminal, size);
 
         character_t character = SerialRxBuf[SerialRxBufTail];
