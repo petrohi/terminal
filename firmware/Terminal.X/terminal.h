@@ -147,7 +147,8 @@ struct terminal {
   const struct keys_entry *keys_entries;
 
   enum charset charset;
-  enum c1_mode c1_mode;
+  enum c1_mode receive_c1_mode;
+  enum c1_mode transmit_c1_mode;
 
   bool auto_wrap_mode;
   bool scrolling_mode; // TODO
@@ -190,6 +191,8 @@ struct terminal {
   size_t esc_last_param_length;
 
   character_t vt52_move_cursor_row;
+
+  codepoint_t prev_codepoint;
 
   character_t *transmit_buffer;
   size_t transmit_buffer_size;

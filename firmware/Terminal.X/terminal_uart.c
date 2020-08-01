@@ -26,19 +26,22 @@ static int16_t get_esc_param(struct terminal *terminal, size_t index) {
 }
 
 static const receive_table_t utf8_prefix_receive_table;
-static const receive_table_t ascii_receive_table;
+static const receive_table_t utf8_continuation_receive_table;
+static const receive_table_t one_byte_receive_table;
 
-static bool default_receive_table(struct terminal *terminal) {
+static bool codepoint_receive_table(struct terminal *terminal) {
   return (terminal->receive_table == &utf8_prefix_receive_table ||
-          terminal->receive_table == &ascii_receive_table);
+          terminal->receive_table == &utf8_continuation_receive_table ||
+          terminal->receive_table == &one_byte_receive_table);
 }
 
 static void clear_receive_table(struct terminal *terminal) {
   if (terminal->charset == CHARSET_UTF8)
     terminal->receive_table = &utf8_prefix_receive_table;
   else
-    terminal->receive_table = &ascii_receive_table;
+    terminal->receive_table = &one_byte_receive_table;
 
+  terminal->prev_codepoint = 0;
   clear_esc_params(terminal);
 
 #ifdef DEBUG
@@ -55,7 +58,7 @@ static const receive_table_t esc_receive_table;
 static const receive_table_t vt52_esc_receive_table;
 
 static void cancel_esc(struct terminal *terminal) {
-  if (!default_receive_table(terminal)) {
+  if (!codepoint_receive_table(terminal)) {
 #ifdef DEBUG
     terminal->unhandled = true;
 #endif
@@ -100,6 +103,44 @@ static void receive_tab(struct terminal *terminal, character_t character) {
     ;
   terminal_screen_move_cursor_absolute(
       terminal, get_terminal_screen_cursor_row(terminal), col);
+}
+
+static void receive_cht(struct terminal *terminal, character_t character) {
+  int16_t n = get_esc_param(terminal, 0);
+  int16_t col = get_terminal_screen_cursor_col(terminal);
+
+  if (!n)
+    n = 1;
+
+  while (n--) {
+    while (col < COLS - 1 && !terminal->tab_stops[++col])
+      ;
+  }
+
+  terminal_screen_move_cursor_absolute(
+      terminal, get_terminal_screen_cursor_row(terminal), col);
+  clear_receive_table(terminal);
+}
+
+static void receive_cbt(struct terminal *terminal, character_t character) {
+  int16_t n = get_esc_param(terminal, 0);
+  int16_t col = get_terminal_screen_cursor_col(terminal);
+
+  if (!n)
+    n = 1;
+
+  while (n--) {
+    while (col >= 0 && !terminal->tab_stops[--col])
+      ;
+  }
+
+  terminal_screen_move_cursor_absolute(
+      terminal, get_terminal_screen_cursor_row(terminal), col);
+  clear_receive_table(terminal);
+}
+
+static void receive_bell(struct terminal *terminal, character_t character) {
+  // TODO
 }
 
 static void receive_bs(struct terminal *terminal, character_t character) {
@@ -194,18 +235,18 @@ static void receive_percent(struct terminal *terminal, character_t character) {
 }
 
 static void receive_s7c1t(struct terminal *terminal, character_t character) {
-  terminal->c1_mode = C1_MODE_7BIT;
+  terminal->transmit_c1_mode = C1_MODE_7BIT;
   clear_receive_table(terminal);
 }
 
 static void receive_s8c1t(struct terminal *terminal, character_t character) {
-  terminal->c1_mode = C1_MODE_8BIT;
+  terminal->transmit_c1_mode = C1_MODE_8BIT;
   clear_receive_table(terminal);
 }
 
-static void receive_charset_ascii(struct terminal *terminal,
-                                  character_t character) {
-  terminal->charset = CHARSET_ASCII;
+static void receive_charset_iso_8859_1(struct terminal *terminal,
+                                       character_t character) {
+  terminal->charset = CHARSET_ISO_8859_1;
   clear_receive_table(terminal);
 }
 
@@ -249,6 +290,50 @@ static const codepoint_transformation_table_t dec_special_graphics_table = {
     [0x73] = 0x23bd, [0x74] = 0x251c, [0x75] = 0x2524, [0x76] = 0x2534,
     [0x77] = 0x252c, [0x78] = 0x2502, [0x79] = 0x2264, [0x7a] = 0x2265,
     [0x7b] = 0x03c0, [0x7c] = 0x2260, [0x7d] = 0x00a3, [0x7e] = 0x00b7,
+};
+
+static const codepoint_transformation_table_t ibm_pc_table =
+    {
+        [0x01] = 0x263a, [0x02] = 0x263b, [0x03] = 0x2665, [0x04] = 0x2666,
+        [0x05] = 0x2663, [0x06] = 0x2660, [0x07] = 0x2022, [0x08] = 0x25d8,
+        [0x09] = 0x25cb, [0x0a] = 0x25d9, [0x0b] = 0x2642, [0x0c] = 0x2640,
+        [0x0d] = 0x266a, [0x0e] = 0x266b, [0x0f] = 0x263c, [0x10] = 0x25ba,
+        [0x11] = 0x25c4, [0x12] = 0x2195, [0x13] = 0x203c, [0x14] = 0x00b6,
+        [0x15] = 0x00a7, [0x16] = 0x25ac, [0x17] = 0x21a8, [0x18] = 0x2191,
+        [0x19] = 0x2193, [0x1a] = 0x2192, [0x1b] = 0x2190, [0x1c] = 0x221f,
+        [0x1d] = 0x2194, [0x1e] = 0x25b2, [0x1f] = 0x25bc, [0x7f] = 0x2302,
+        [0x80] = 0x00c7, [0x81] = 0x00fc, [0x82] = 0x00e9, [0x83] = 0x00e2,
+        [0x84] = 0x00e4, [0x85] = 0x00e0, [0x86] = 0x00e5, [0x87] = 0x00e7,
+        [0x88] = 0x00ea, [0x89] = 0x00eb, [0x8a] = 0x00e8, [0x8b] = 0x00ef,
+        [0x8c] = 0x00ee, [0x8d] = 0x00ec, [0x8e] = 0x00c4, [0x8f] = 0x00c5,
+        [0x90] = 0x00c9, [0x91] = 0x00e6, [0x92] = 0x00c6, [0x93] = 0x00f4,
+        [0x94] = 0x00f6, [0x95] = 0x00f2, [0x96] = 0x00fb, [0x97] = 0x00f9,
+        [0x98] = 0x00ff, [0x99] = 0x00d6, [0x9a] = 0x00dc, [0x9b] = 0x00a2,
+        [0x9c] = 0x00a3, [0x9d] = 0x00a5, [0x9e] = 0x20a7, [0x9f] = 0x0192,
+        [0xa0] = 0x00e1, [0xa1] = 0x00ed, [0xa2] = 0x00f3, [0xa3] = 0x00fa,
+        [0xa4] = 0x00f1, [0xa5] = 0x00d1, [0xa6] = 0x00aa, [0xa7] = 0x00ba,
+        [0xa8] = 0x00bf, [0xa9] = 0x2310, [0xaa] = 0x00ac, [0xab] = 0x00bd,
+        [0xac] = 0x00bc, [0xad] = 0x00a1, [0xae] = 0x00ab, [0xaf] = 0x00bb,
+        [0xb0] = 0x2591, [0xb1] = 0x2592, [0xb2] = 0x2593, [0xb3] = 0x2502,
+        [0xb4] = 0x2524, [0xb5] = 0x2561, [0xb6] = 0x2562, [0xb7] = 0x2556,
+        [0xb8] = 0x2555, [0xb9] = 0x2563, [0xba] = 0x2551, [0xbb] = 0x2557,
+        [0xbc] = 0x255d, [0xbd] = 0x255c, [0xbe] = 0x255b, [0xbf] = 0x2510,
+        [0xc0] = 0x2514, [0xc1] = 0x2534, [0xc2] = 0x252c, [0xc3] = 0x251c,
+        [0xc4] = 0x2500, [0xc5] = 0x253c, [0xc6] = 0x255e, [0xc7] = 0x255f,
+        [0xc8] = 0x255a, [0xc9] = 0x2554, [0xca] = 0x2569, [0xcb] = 0x2566,
+        [0xcc] = 0x2560, [0xcd] = 0x2550, [0xce] = 0x256c, [0xcf] = 0x2567,
+        [0xd0] = 0x2568, [0xd1] = 0x2564, [0xd2] = 0x2565, [0xd3] = 0x2559,
+        [0xd4] = 0x2558, [0xd5] = 0x2552, [0xd6] = 0x2553, [0xd7] = 0x256b,
+        [0xd8] = 0x256a, [0xd9] = 0x2518, [0xda] = 0x250c, [0xdb] = 0x2588,
+        [0xdc] = 0x2584, [0xdd] = 0x258c, [0xde] = 0x2590, [0xdf] = 0x2580,
+        [0xe0] = 0x03b1, [0xe1] = 0x00df, [0xe2] = 0x0393, [0xe3] = 0x03c0,
+        [0xe4] = 0x03a3, [0xe5] = 0x03c3, [0xe6] = 0x00b5, [0xe7] = 0x03c4,
+        [0xe8] = 0x03a6, [0xe9] = 0x0398, [0xea] = 0x03a9, [0xeb] = 0x03b4,
+        [0xec] = 0x221e, [0xed] = 0x03c6, [0xee] = 0x03b5, [0xef] = 0x2229,
+        [0xf0] = 0x2261, [0xf1] = 0x00b1, [0xf2] = 0x2265, [0xf3] = 0x2264,
+        [0xf4] = 0x2320, [0xf5] = 0x2321, [0xf6] = 0x00f7, [0xf7] = 0x2248,
+        [0xf8] = 0x00b0, [0xf9] = 0x2219, [0xfa] = 0x00b7, [0xfb] = 0x221a,
+        [0xfc] = 0x207f, [0xfd] = 0x00b2, [0xfe] = 0x25a0, [0xff] = 0x00a0,
 };
 
 static const codepoint_transformation_table_t
@@ -301,6 +386,19 @@ static void receive_esc_param_delimiter(struct terminal *terminal,
   terminal->esc_last_param_length = 0;
 }
 
+static void receive_rep(struct terminal *terminal, character_t character) {
+  int16_t n = get_esc_param(terminal, 0);
+
+  if (!n)
+    n = 1;
+
+  if (terminal->prev_codepoint)
+    while (n--)
+      terminal_screen_put_codepoint(terminal, terminal->prev_codepoint);
+
+  clear_receive_table(terminal);
+}
+
 static void receive_da(struct terminal *terminal, character_t character) {
   terminal_uart_transmit_string(terminal, "\x1b[?65;1;9c");
   clear_receive_table(terminal);
@@ -337,11 +435,43 @@ static void receive_hpa(struct terminal *terminal, character_t character) {
   clear_receive_table(terminal);
 }
 
+static void receive_hpr(struct terminal *terminal, character_t character) {
+  int16_t n = get_esc_param(terminal, 0);
+
+  if (!n)
+    n = 1;
+
+  int16_t col = get_terminal_screen_cursor_col(terminal) + n;
+
+  if (col >= COLS)
+    col = COLS - 1;
+
+  terminal_screen_move_cursor_absolute(
+      terminal, get_terminal_screen_cursor_row(terminal), col);
+  clear_receive_table(terminal);
+}
+
 static void receive_vpa(struct terminal *terminal, character_t character) {
   int16_t row = get_esc_param(terminal, 0);
 
   terminal_screen_move_cursor_absolute(
       terminal, row - 1, get_terminal_screen_cursor_col(terminal));
+  clear_receive_table(terminal);
+}
+
+static void receive_vpr(struct terminal *terminal, character_t character) {
+  int16_t n = get_esc_param(terminal, 0);
+
+  if (!n)
+    n = 1;
+
+  int16_t row = get_terminal_screen_cursor_row(terminal) + n;
+
+  if (row >= ROWS)
+    row = ROWS - 1;
+
+  terminal_screen_move_cursor_absolute(
+      terminal, row, get_terminal_screen_cursor_col(terminal));
   clear_receive_table(terminal);
 }
 
@@ -1127,12 +1257,23 @@ static codepoint_t transform_codepoint(struct terminal *terminal,
     }
   }
 
+  if (terminal->charset == CHARSET_IBM_PC) {
+    codepoint_t transformed_codepoint = ibm_pc_table[codepoint];
+    if (transformed_codepoint)
+      return transformed_codepoint;
+  }
+
   return codepoint;
 }
 
-static void receive_ascii(struct terminal *terminal, character_t character) {
-  terminal_screen_put_codepoint(
-      terminal, transform_codepoint(terminal, (codepoint_t)character));
+static void receive_codepoint(struct terminal *terminal, codepoint_t codepoint) {
+  codepoint = transform_codepoint(terminal, codepoint);
+  terminal_screen_put_codepoint(terminal, codepoint);
+  terminal->prev_codepoint = codepoint;
+}
+
+static void receive_one_byte(struct terminal *terminal, character_t character) {
+  receive_codepoint(terminal, (codepoint_t)character);
 }
 
 static const receive_table_t utf8_continuation_receive_table;
@@ -1147,9 +1288,7 @@ static void receive_utf8_prefix(struct terminal *terminal,
     terminal->utf8_buffer[terminal->utf8_buffer_length++] = character;
     terminal->receive_table = &utf8_continuation_receive_table;
   } else if (length == 1)
-    terminal_screen_put_codepoint(
-        terminal,
-        transform_codepoint(terminal, decode_utf8_codepoint(&character, 1)));
+    receive_codepoint(terminal,decode_utf8_codepoint(&character, 1));
 }
 
 static void clear_utf8_buffer(struct terminal *terminal) {
@@ -1163,72 +1302,75 @@ static void receive_utf8_continuation(struct terminal *terminal,
 
   terminal->utf8_buffer[terminal->utf8_buffer_length++] = character;
   if (terminal->utf8_buffer_length == terminal->utf8_codepoint_length) {
-    terminal_screen_put_codepoint(
-        terminal,
-        transform_codepoint(
-            terminal, decode_utf8_codepoint(terminal->utf8_buffer,
-                                            terminal->utf8_codepoint_length)));
+    receive_codepoint(terminal,
+                      decode_utf8_codepoint(terminal->utf8_buffer,
+                                            terminal->utf8_codepoint_length));
 
     clear_utf8_buffer(terminal);
-    clear_receive_table(terminal);
+    terminal->receive_table = &utf8_prefix_receive_table;
   }
 }
 
 static void receive_8bit_control(struct terminal *terminal,
-                                 character_t character) {
+                                 character_t character,
+                                 character_t control_character) {
+  if (terminal->receive_c1_mode == C1_MODE_7BIT) {
+    receive_t receive = (*terminal->receive_table)[DEFAULT_RECEIVE];
+    receive(terminal, character);
+    return;
+  }
+
   receive_esc(terminal, 0x1b);
-  terminal_uart_receive_character(terminal, character);
+  terminal_uart_receive_character(terminal, control_character);
 }
 
 static void receive_8bit_ind(struct terminal *terminal, character_t character) {
-  receive_8bit_control(terminal, 'D');
+  receive_8bit_control(terminal, character, 'D');
 }
 
 static void receive_8bit_nel(struct terminal *terminal, character_t character) {
-  receive_8bit_control(terminal, 'E');
+  receive_8bit_control(terminal, character, 'E');
 }
 
 static void receive_8bit_hts(struct terminal *terminal, character_t character) {
-  receive_8bit_control(terminal, 'H');
+  receive_8bit_control(terminal, character, 'H');
 }
 
 static void receive_8bit_ri(struct terminal *terminal, character_t character) {
-  receive_8bit_control(terminal, 'M');
+  receive_8bit_control(terminal, character, 'M');
 }
 
 static void receive_8bit_ss2(struct terminal *terminal, character_t character) {
-  receive_8bit_control(terminal, 'N');
+  receive_8bit_control(terminal, character, 'N');
 }
 
 static void receive_8bit_ss3(struct terminal *terminal, character_t character) {
-  receive_8bit_control(terminal, 'O');
+  receive_8bit_control(terminal, character, 'O');
 }
 
 static void receive_8bit_dcs(struct terminal *terminal, character_t character) {
-  receive_8bit_control(terminal, 'P');
+  receive_8bit_control(terminal, character, 'P');
 }
 
 static void receive_8bit_da(struct terminal *terminal, character_t character) {
-  receive_8bit_control(terminal, 'Z');
+  receive_8bit_control(terminal, character, 'Z');
 }
 
 static void receive_8bit_csi(struct terminal *terminal, character_t character) {
-  receive_8bit_control(terminal, '[');
+  receive_8bit_control(terminal, character, '[');
 }
 
 static void receive_8bit_osc(struct terminal *terminal, character_t character) {
-  receive_8bit_control(terminal, ']');
+  receive_8bit_control(terminal, character, ']');
 }
 
 static void receive_8bit_pm(struct terminal *terminal, character_t character) {
-  receive_8bit_control(terminal, '^');
+  receive_8bit_control(terminal, character, '^');
 }
 
 static void receive_8bit_apc(struct terminal *terminal, character_t character) {
-  receive_8bit_control(terminal, '_');
+  receive_8bit_control(terminal, character, '_');
 }
-
-static void receive_ignore(struct terminal *terminal, character_t character) {}
 
 static void receive_unexpected(struct terminal *terminal,
                                character_t character) {
@@ -1248,7 +1390,7 @@ void terminal_uart_receive_character(struct terminal *terminal,
 
 #ifdef DEBUG
   // Keep zero for the end of the string for printf
-  if (!default_receive_table(terminal) &&
+  if (!codepoint_receive_table(terminal) &&
       terminal->debug_buffer_length < DEBUG_BUFFER_LENGTH - 1) {
     if (character < 0x20 || (character >= 0x7f && character <= 0xa0))
       terminal->debug_buffer_length += snprintf(
@@ -1277,70 +1419,28 @@ void terminal_uart_receive_string(struct terminal *terminal,
 #define DEFAULT_RECEIVE_HANDLER(h) [DEFAULT_RECEIVE] = h
 
 #define DEFAULT_RECEIVE_TABLE                                                  \
-  RECEIVE_HANDLER(0x00, receive_ignore),                                       \
-      RECEIVE_HANDLER(0x01, receive_ignore),                                   \
-      RECEIVE_HANDLER(0x02, receive_ignore),                                   \
-      RECEIVE_HANDLER(0x03, receive_ignore),                                   \
-      RECEIVE_HANDLER(0x04, receive_ignore),                                   \
-      RECEIVE_HANDLER(0x05, receive_ignore),                                   \
-      RECEIVE_HANDLER(0x06, receive_ignore),                                   \
-      RECEIVE_HANDLER(0x07, receive_ignore),                                   \
-      RECEIVE_HANDLER(0x08, receive_bs), RECEIVE_HANDLER(0x09, receive_tab),   \
-      RECEIVE_HANDLER(0x0a, receive_lf), RECEIVE_HANDLER(0x0b, receive_lf),    \
-      RECEIVE_HANDLER(0x0c, receive_lf), RECEIVE_HANDLER(0x0d, receive_cr),    \
-      RECEIVE_HANDLER(0x0e, receive_so), RECEIVE_HANDLER(0x0f, receive_si),    \
-      RECEIVE_HANDLER(0x10, receive_ignore),                                   \
-      RECEIVE_HANDLER(0x11, receive_ignore),                                   \
-      RECEIVE_HANDLER(0x12, receive_ignore),                                   \
-      RECEIVE_HANDLER(0x13, receive_ignore),                                   \
-      RECEIVE_HANDLER(0x14, receive_ignore),                                   \
-      RECEIVE_HANDLER(0x15, receive_ignore),                                   \
-      RECEIVE_HANDLER(0x16, receive_ignore),                                   \
-      RECEIVE_HANDLER(0x17, receive_ignore),                                   \
-      RECEIVE_HANDLER(0x18, receive_ignore),                                   \
-      RECEIVE_HANDLER(0x19, receive_ignore),                                   \
-      RECEIVE_HANDLER(0x1a, receive_sub), RECEIVE_HANDLER(0x1b, receive_esc),  \
-      RECEIVE_HANDLER(0x1c, receive_ignore),                                   \
-      RECEIVE_HANDLER(0x1d, receive_ignore),                                   \
-      RECEIVE_HANDLER(0x1e, receive_ignore),                                   \
-      RECEIVE_HANDLER(0x1f, receive_ignore),                                   \
-      RECEIVE_HANDLER(0x7f, receive_bs),                                       \
-      RECEIVE_HANDLER(0x80, receive_ignore),                                   \
-      RECEIVE_HANDLER(0x81, receive_ignore),                                   \
-      RECEIVE_HANDLER(0x82, receive_ignore),                                   \
-      RECEIVE_HANDLER(0x83, receive_ignore),                                   \
+  RECEIVE_HANDLER(0x07, receive_bell), RECEIVE_HANDLER(0x08, receive_bs),      \
+      RECEIVE_HANDLER(0x09, receive_tab), RECEIVE_HANDLER(0x0a, receive_lf),   \
+      RECEIVE_HANDLER(0x0b, receive_lf), RECEIVE_HANDLER(0x0c, receive_lf),    \
+      RECEIVE_HANDLER(0x0d, receive_cr), RECEIVE_HANDLER(0x0e, receive_so),    \
+      RECEIVE_HANDLER(0x0f, receive_si), RECEIVE_HANDLER(0x1a, receive_sub),   \
+      RECEIVE_HANDLER(0x1b, receive_esc), RECEIVE_HANDLER(0x7f, receive_bs),   \
       RECEIVE_HANDLER(0x84, receive_8bit_ind),                                 \
       RECEIVE_HANDLER(0x85, receive_8bit_nel),                                 \
-      RECEIVE_HANDLER(0x86, receive_ignore),                                   \
-      RECEIVE_HANDLER(0x87, receive_ignore),                                   \
       RECEIVE_HANDLER(0x88, receive_8bit_hts),                                 \
-      RECEIVE_HANDLER(0x89, receive_ignore),                                   \
-      RECEIVE_HANDLER(0x8a, receive_ignore),                                   \
-      RECEIVE_HANDLER(0x8b, receive_ignore),                                   \
-      RECEIVE_HANDLER(0x8c, receive_ignore),                                   \
       RECEIVE_HANDLER(0x8d, receive_8bit_ri),                                  \
       RECEIVE_HANDLER(0x8e, receive_8bit_ss2),                                 \
       RECEIVE_HANDLER(0x8f, receive_8bit_ss3),                                 \
       RECEIVE_HANDLER(0x90, receive_8bit_dcs),                                 \
-      RECEIVE_HANDLER(0x91, receive_ignore),                                   \
-      RECEIVE_HANDLER(0x92, receive_ignore),                                   \
-      RECEIVE_HANDLER(0x93, receive_ignore),                                   \
-      RECEIVE_HANDLER(0x94, receive_ignore),                                   \
-      RECEIVE_HANDLER(0x95, receive_ignore),                                   \
-      RECEIVE_HANDLER(0x96, receive_ignore),                                   \
-      RECEIVE_HANDLER(0x97, receive_ignore),                                   \
-      RECEIVE_HANDLER(0x98, receive_ignore),                                   \
-      RECEIVE_HANDLER(0x99, receive_ignore),                                   \
       RECEIVE_HANDLER(0x9a, receive_8bit_da),                                  \
       RECEIVE_HANDLER(0x9b, receive_8bit_csi),                                 \
-      RECEIVE_HANDLER(0x9c, receive_ignore),                                   \
       RECEIVE_HANDLER(0x9d, receive_8bit_osc),                                 \
       RECEIVE_HANDLER(0x9e, receive_8bit_pm),                                  \
       RECEIVE_HANDLER(0x9f, receive_8bit_apc)
 
-static const receive_table_t ascii_receive_table = {
+static const receive_table_t one_byte_receive_table = {
     DEFAULT_RECEIVE_TABLE,
-    DEFAULT_RECEIVE_HANDLER(receive_ascii),
+    DEFAULT_RECEIVE_HANDLER(receive_one_byte),
 };
 
 static const receive_table_t utf8_prefix_receive_table = {
@@ -1431,8 +1531,11 @@ static const receive_table_t csi_receive_table = {
     RECEIVE_HANDLER('`', receive_hpa),
     RECEIVE_HANDLER('@', receive_ich),
     RECEIVE_HANDLER('?', receive_csi_decmod),
+    RECEIVE_HANDLER('a', receive_hpr),
+    RECEIVE_HANDLER('b', receive_rep),
     RECEIVE_HANDLER('c', receive_da),
     RECEIVE_HANDLER('d', receive_vpa),
+    RECEIVE_HANDLER('e', receive_vpr),
     RECEIVE_HANDLER('f', receive_hvp),
     RECEIVE_HANDLER('g', receive_tbc),
     RECEIVE_HANDLER('h', receive_sm),
@@ -1450,6 +1553,7 @@ static const receive_table_t csi_receive_table = {
     RECEIVE_HANDLER('F', receive_cpl),
     RECEIVE_HANDLER('G', receive_cha),
     RECEIVE_HANDLER('H', receive_cup),
+    RECEIVE_HANDLER('I', receive_cht),
     RECEIVE_HANDLER('J', receive_ed),
     RECEIVE_HANDLER('K', receive_el),
     RECEIVE_HANDLER('L', receive_il),
@@ -1458,6 +1562,7 @@ static const receive_table_t csi_receive_table = {
     RECEIVE_HANDLER('S', receive_su),
     RECEIVE_HANDLER('T', receive_sd),
     RECEIVE_HANDLER('X', receive_ech),
+    RECEIVE_HANDLER('Z', receive_cbt),
     DEFAULT_RECEIVE_HANDLER(receive_unexpected),
 };
 
@@ -1494,7 +1599,7 @@ static const receive_table_t scs_receive_table = {
 
 static const receive_table_t esc_percent_receive_table = {
     DEFAULT_RECEIVE_TABLE,
-    RECEIVE_HANDLER('@', receive_charset_ascii),
+    RECEIVE_HANDLER('@', receive_charset_iso_8859_1),
     RECEIVE_HANDLER('G', receive_charset_utf8),
     DEFAULT_RECEIVE_HANDLER(receive_unexpected),
 };
@@ -1547,7 +1652,7 @@ void terminal_uart_transmit_string(struct terminal *terminal,
   size_t size = 0;
 
   while (*string) {
-    if (terminal->c1_mode == C1_MODE_8BIT && *string == 0x1b) {
+    if (terminal->transmit_c1_mode == C1_MODE_8BIT && *string == 0x1b) {
       const char *next = string + 1;
       character_t eight_bit_character =
           eight_bit_character_table[(size_t)*next];
@@ -1621,7 +1726,7 @@ void terminal_uart_init(struct terminal *terminal) {
   if (terminal->charset == CHARSET_UTF8)
     terminal->receive_table = &utf8_prefix_receive_table;
   else
-    terminal->receive_table = &ascii_receive_table;
+    terminal->receive_table = &one_byte_receive_table;
 
   clear_esc_params(terminal);
   clear_utf8_buffer(terminal);
@@ -1629,6 +1734,8 @@ void terminal_uart_init(struct terminal *terminal) {
   clear_control_data(&terminal->osc);
   clear_control_data(&terminal->apc);
   clear_control_data(&terminal->pm);
+
+  terminal->prev_codepoint = 0;
 
   terminal->gset_received = GSET_UNDEFINED;
   terminal->xon_off = XON;

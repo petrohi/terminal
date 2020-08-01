@@ -41,7 +41,8 @@ void terminal_init(struct terminal *terminal,
   terminal->transmit_buffer_head = 0;
 
   terminal->charset = config->charset;
-  terminal->c1_mode = config->c1_mode;
+  terminal->receive_c1_mode = config->receive_c1_mode;
+  terminal->transmit_c1_mode = config->transmit_c1_mode;
 
   terminal->auto_wrap_mode = config->auto_wrap_mode;
   terminal->scrolling_mode = false;

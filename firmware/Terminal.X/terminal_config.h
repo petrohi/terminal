@@ -49,8 +49,9 @@ enum c1_mode {
 };
 
 enum charset {
-  CHARSET_ASCII,
   CHARSET_UTF8,
+  CHARSET_ISO_8859_1,
+  CHARSET_IBM_PC,
 };
 
 enum start_up {
@@ -80,7 +81,8 @@ struct terminal_config {
 #endif
 
   enum charset charset;
-  enum c1_mode c1_mode;
+  enum c1_mode receive_c1_mode;
+  enum c1_mode transmit_c1_mode;
 
   bool auto_wrap_mode;
   bool screen_mode;

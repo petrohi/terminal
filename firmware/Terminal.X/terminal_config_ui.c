@@ -89,13 +89,26 @@ static void change_flow_control(struct terminal_config_ui *terminal_config_ui,
   terminal_config_ui->terminal_config_copy.flow_control = flow_control;
 }
 
-static size_t current_c1_mode(struct terminal_config_ui *terminal_config_ui) {
-  return terminal_config_ui->terminal_config_copy.c1_mode;
+static size_t
+current_receive_c1_mode(struct terminal_config_ui *terminal_config_ui) {
+  return terminal_config_ui->terminal_config_copy.receive_c1_mode;
 }
 
-static void change_c1_mode(struct terminal_config_ui *terminal_config_ui,
-                           size_t c1_mode) {
-  terminal_config_ui->terminal_config_copy.c1_mode = c1_mode;
+static void
+change_receive_c1_mode(struct terminal_config_ui *terminal_config_ui,
+                       size_t c1_mode) {
+  terminal_config_ui->terminal_config_copy.receive_c1_mode = c1_mode;
+}
+
+static size_t
+current_transmit_c1_mode(struct terminal_config_ui *terminal_config_ui) {
+  return terminal_config_ui->terminal_config_copy.transmit_c1_mode;
+}
+
+static void
+change_transmit_c1_mode(struct terminal_config_ui *terminal_config_ui,
+                        size_t c1_mode) {
+  terminal_config_ui->terminal_config_copy.transmit_c1_mode = c1_mode;
 }
 
 static size_t
@@ -187,6 +200,12 @@ static const struct terminal_ui_choice off_on_choices[] = {
     {NULL},
 };
 
+static const struct terminal_ui_choice c1_mode_choices[] = {
+    {"S7C1T"},
+    {"S8C1T"},
+    {NULL},
+};
+
 static const struct terminal_ui_menu menus[] = {
     {"General",
      &(const struct terminal_ui_option[]){{"Start up", current_start_up,
@@ -246,18 +265,17 @@ static const struct terminal_ui_menu menus[] = {
      &(const struct terminal_ui_option[]){
          {"Character set", current_charset, change_charset,
           &(const struct terminal_ui_choice[]){
-              {"ASCII"},
               {"UTF8"},
+              {"ISO 8859-1"},
+              {"IBM PC 437"},
               {NULL},
           }},
          {"XOFF/XON flow control", current_flow_control, change_flow_control,
           &off_on_choices},
-         {"Controls", current_c1_mode, change_c1_mode,
-          &(const struct terminal_ui_choice[]){
-              {"S7C1T"},
-              {"S8C1T"},
-              {NULL},
-          }},
+         {"Receive controls", current_receive_c1_mode, change_receive_c1_mode,
+          &c1_mode_choices},
+         {"Transmit controls", current_transmit_c1_mode,
+          change_transmit_c1_mode, &c1_mode_choices},
          {"Send/receive mode (SRM)", current_send_receive_mode,
           change_send_receive_mode,
           &(const struct terminal_ui_choice[]){
