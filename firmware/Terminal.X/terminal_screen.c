@@ -10,8 +10,8 @@
 #define BLINK_OFF_COUNTER 500
 
 #define CELL_SIZE sizeof(struct visual_cell)
-#define CELLS_ROW_SIZE CELL_SIZE *COLS
-#define CELLS_SIZE CELLS_ROW_SIZE *ROWS
+#define CELLS_ROW_SIZE (CELL_SIZE * COLS)
+#define CELLS_SIZE (CELLS_ROW_SIZE * ROWS)
 
 static void clear_cells_rows(struct terminal *terminal, int16_t from_row,
                              int16_t to_row) {
@@ -25,8 +25,13 @@ static void clear_cells_rows(struct terminal *terminal, int16_t from_row,
   size_t offset = from_row * COLS;
   struct visual_cell *cells = terminal->cells + offset;
 
-  for (uint16_t i = 0; i < rows; ++i, cells += COLS) {
+  for (uint16_t i = 0; i < rows; ++i) {
     memset(cells, 0, CELLS_ROW_SIZE);
+
+    for (size_t k = 0; k < COLS; ++k, cells++) {
+      cells->p.active_color = terminal->vs.p.active_color;
+      cells->p.inactive_color = terminal->vs.p.inactive_color;
+    }
 
     terminal->callbacks->yield();
   }
@@ -47,6 +52,11 @@ static void clear_cells_cols(struct terminal *terminal, int16_t row,
   struct visual_cell *cells = terminal->cells + offset;
 
   memset(cells, 0, CELL_SIZE * (to_col - from_col));
+
+  for (size_t i = 0; i < (to_col - from_col); ++i, cells++) {
+    cells->p.active_color = terminal->vs.p.active_color;
+    cells->p.inactive_color = terminal->vs.p.inactive_color;
+  }
 }
 
 static void scroll_cells(struct terminal *terminal, enum scroll scroll,
@@ -148,9 +158,8 @@ static void render_character(struct terminal *terminal, int16_t row,
                              int16_t col, bool cursor, bool blink) {
   struct visual_cell *cell = get_cell(terminal, row, col);
 
-  color_t active = cell->c ? cell->p.active_color : terminal->vs.p.active_color;
-  color_t inactive =
-      cell->c ? cell->p.inactive_color : terminal->vs.p.inactive_color;
+  color_t active = cell->p.active_color;
+  color_t inactive = cell->p.inactive_color;
 
   if (cell->p.negative != terminal->screen_mode)
     swap_colors(&active, &inactive);
