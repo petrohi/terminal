@@ -106,8 +106,8 @@ static void receive_tab(struct terminal *terminal, character_t character) {
 }
 
 static void receive_cht(struct terminal *terminal, character_t character) {
-  int16_t n = get_esc_param(terminal, 0);
   int16_t col = get_terminal_screen_cursor_col(terminal);
+  int16_t n = get_esc_param(terminal, 0);
 
   if (!n)
     n = 1;
@@ -123,8 +123,8 @@ static void receive_cht(struct terminal *terminal, character_t character) {
 }
 
 static void receive_cbt(struct terminal *terminal, character_t character) {
-  int16_t n = get_esc_param(terminal, 0);
   int16_t col = get_terminal_screen_cursor_col(terminal);
+  int16_t n = get_esc_param(terminal, 0);
 
   if (!n)
     n = 1;
@@ -430,29 +430,29 @@ static void receive_tbc(struct terminal *terminal, character_t character) {
 static void receive_hpa(struct terminal *terminal, character_t character) {
   int16_t col = get_esc_param(terminal, 0);
 
+  terminal_screen_wrap_last_col(terminal);
+
   terminal_screen_move_cursor_absolute(
       terminal, get_terminal_screen_cursor_row(terminal), col - 1);
   clear_receive_table(terminal);
 }
 
 static void receive_hpr(struct terminal *terminal, character_t character) {
-  int16_t n = get_esc_param(terminal, 0);
+  int16_t cols = get_esc_param(terminal, 0);
 
-  if (!n)
-    n = 1;
+  if (!cols)
+    cols = 1;
 
-  int16_t col = get_terminal_screen_cursor_col(terminal) + n;
+  terminal_screen_wrap_last_col(terminal);
 
-  if (col >= COLS)
-    col = COLS - 1;
-
-  terminal_screen_move_cursor_absolute(
-      terminal, get_terminal_screen_cursor_row(terminal), col);
+  terminal_screen_move_cursor(terminal, 0, cols);
   clear_receive_table(terminal);
 }
 
 static void receive_vpa(struct terminal *terminal, character_t character) {
   int16_t row = get_esc_param(terminal, 0);
+
+  terminal_screen_wrap_last_col(terminal);
 
   terminal_screen_move_cursor_absolute(
       terminal, row - 1, get_terminal_screen_cursor_col(terminal));
@@ -460,18 +460,14 @@ static void receive_vpa(struct terminal *terminal, character_t character) {
 }
 
 static void receive_vpr(struct terminal *terminal, character_t character) {
-  int16_t n = get_esc_param(terminal, 0);
+  int16_t rows = get_esc_param(terminal, 0);
 
-  if (!n)
-    n = 1;
+  if (!rows)
+    rows = 1;
 
-  int16_t row = get_terminal_screen_cursor_row(terminal) + n;
+  terminal_screen_wrap_last_col(terminal);
 
-  if (row >= ROWS)
-    row = ROWS - 1;
-
-  terminal_screen_move_cursor_absolute(
-      terminal, row, get_terminal_screen_cursor_col(terminal));
+  terminal_screen_move_cursor(terminal, rows, 0);
   clear_receive_table(terminal);
 }
 
@@ -774,11 +770,10 @@ static void receive_cpl(struct terminal *terminal, character_t character) {
 static void receive_cha(struct terminal *terminal, character_t character) {
   int16_t col = get_esc_param(terminal, 0);
 
+  terminal_screen_wrap_last_col(terminal);
+
   terminal_screen_move_cursor_absolute(
-      terminal,
-      get_terminal_screen_cursor_row(terminal) +
-          (terminal->vs.cursor_last_col ? 1 : 0),
-      col - 1);
+      terminal, get_terminal_screen_cursor_row(terminal), col - 1);
   clear_receive_table(terminal);
 }
 
@@ -802,6 +797,8 @@ static void receive_su(struct terminal *terminal, character_t character) {
 
 static void receive_ed(struct terminal *terminal, character_t character) {
   uint16_t code = get_esc_param(terminal, 0);
+
+  terminal_screen_cancel_wrap_last_col(terminal);
 
   switch (code) {
   case 0:
@@ -835,6 +832,8 @@ static void receive_ed(struct terminal *terminal, character_t character) {
 static void receive_el(struct terminal *terminal, character_t character) {
   uint16_t code = get_esc_param(terminal, 0);
 
+  terminal_screen_cancel_wrap_last_col(terminal);
+
   switch (code) {
   case 0:
     terminal_screen_clear_to_right(terminal);
@@ -864,6 +863,8 @@ static void receive_ich(struct terminal *terminal, character_t character) {
   if (!cols)
     cols = 1;
 
+  terminal_screen_cancel_wrap_last_col(terminal);
+
   terminal_screen_insert(terminal, cols);
   clear_receive_table(terminal);
 }
@@ -873,6 +874,8 @@ static void receive_dch(struct terminal *terminal, character_t character) {
   if (!cols)
     cols = 1;
 
+  terminal_screen_cancel_wrap_last_col(terminal);
+
   terminal_screen_delete(terminal, cols);
   clear_receive_table(terminal);
 }
@@ -881,6 +884,8 @@ static void receive_ech(struct terminal *terminal, character_t character) {
   int16_t cols = get_esc_param(terminal, 0);
   if (!cols)
     cols = 1;
+
+  terminal_screen_cancel_wrap_last_col(terminal);
 
   terminal_screen_erase(terminal, cols);
   clear_receive_table(terminal);

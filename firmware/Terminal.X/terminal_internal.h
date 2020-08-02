@@ -71,3 +71,7 @@ void terminal_screen_insert(struct terminal *terminal, size_t cols);
 void terminal_screen_erase(struct terminal *terminal, size_t cols);
 
 void terminal_screen_set_screen_mode(struct terminal *terminal, bool mode);
+
+void terminal_screen_wrap_last_col(struct terminal *terminal);
+
+void terminal_screen_cancel_wrap_last_col(struct terminal *terminal);

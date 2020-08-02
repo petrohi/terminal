@@ -468,10 +468,13 @@ void terminal_screen_index(struct terminal *terminal, int16_t rows) {
       update_blink(terminal);
     } else
       terminal->vs.cursor_row += rows;
+
+    terminal_screen_cancel_wrap_last_col(terminal);
   } else
     terminal_screen_move_cursor_absolute(
         terminal, terminal->vs.cursor_row + rows, terminal->vs.cursor_col);
 
+  terminal->vs.cursor_last_col = false;
   update_cursor(terminal);
 }
 
@@ -488,6 +491,8 @@ void terminal_screen_reverse_index(struct terminal *terminal, int16_t rows) {
       update_blink(terminal);
     } else
       terminal->vs.cursor_row -= rows;
+
+    terminal_screen_cancel_wrap_last_col(terminal);
   } else
     terminal_screen_move_cursor_absolute(
         terminal, terminal->vs.cursor_row - rows, terminal->vs.cursor_col);
@@ -495,12 +500,21 @@ void terminal_screen_reverse_index(struct terminal *terminal, int16_t rows) {
   update_cursor(terminal);
 }
 
-void terminal_screen_put_codepoint(struct terminal *terminal,
-                                   codepoint_t codepoint) {
+void terminal_screen_wrap_last_col(struct terminal *terminal) {
   if (terminal->vs.cursor_last_col) {
     terminal_screen_carriage_return(terminal);
     terminal_screen_index(terminal, 1);
+    terminal->vs.cursor_last_col = false;
   }
+}
+
+void terminal_screen_cancel_wrap_last_col(struct terminal *terminal) {
+  terminal->vs.cursor_last_col = false;
+}
+
+void terminal_screen_put_codepoint(struct terminal *terminal,
+                                   codepoint_t codepoint) {
+  terminal_screen_wrap_last_col(terminal);
 
   if (terminal->insert_mode)
     terminal_screen_insert(terminal, 1);
