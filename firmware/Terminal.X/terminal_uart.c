@@ -404,6 +404,15 @@ static void receive_da(struct terminal *terminal, character_t character) {
   clear_receive_table(terminal);
 }
 
+static void receive_sec_da(struct terminal *terminal, character_t character) {
+  int16_t mode = get_esc_param(terminal, 0);
+
+  if (mode == 0)
+    terminal_uart_transmit_string(terminal, "\x1b[>65;6003;1c");
+
+  clear_receive_table(terminal);
+}
+
 static void receive_hvp(struct terminal *terminal, character_t character) {
   int16_t row = get_esc_param(terminal, 0);
   int16_t col = get_esc_param(terminal, 1);
@@ -960,11 +969,28 @@ static void receive_decaln(struct terminal *terminal, character_t character) {
   clear_receive_table(terminal);
 }
 
-static const receive_table_t csi_decmod_receive_table;
+static const receive_table_t csi_qm_receive_table;
 
-static void receive_csi_decmod(struct terminal *terminal,
+static void receive_csi_qm(struct terminal *terminal,
                                character_t character) {
-  terminal->receive_table = &csi_decmod_receive_table;
+  terminal->receive_table = &csi_qm_receive_table;
+}
+
+static const receive_table_t csi_em_receive_table;
+
+static void receive_csi_em(struct terminal *terminal,
+                               character_t character) {
+  terminal->receive_table = &csi_em_receive_table;
+}
+
+static void receive_decstr(struct terminal *terminal, character_t character) {
+  terminal->callbacks->reset();
+}
+
+static const receive_table_t csi_gt_receive_table;
+
+static void receive_csi_gt(struct terminal *terminal, character_t character) {
+  terminal->receive_table = &csi_gt_receive_table;
 }
 
 static void receive_decsm(struct terminal *terminal, character_t character) {
@@ -1535,7 +1561,9 @@ static const receive_table_t csi_receive_table = {
     ESC_PARAM_RECEIVE_TABLE,
     RECEIVE_HANDLER('`', receive_hpa),
     RECEIVE_HANDLER('@', receive_ich),
-    RECEIVE_HANDLER('?', receive_csi_decmod),
+    RECEIVE_HANDLER('?', receive_csi_qm),
+    RECEIVE_HANDLER('!', receive_csi_em),
+    RECEIVE_HANDLER('>', receive_csi_gt),
     RECEIVE_HANDLER('a', receive_hpr),
     RECEIVE_HANDLER('b', receive_rep),
     RECEIVE_HANDLER('c', receive_da),
@@ -1571,11 +1599,25 @@ static const receive_table_t csi_receive_table = {
     DEFAULT_RECEIVE_HANDLER(receive_unexpected),
 };
 
-static const receive_table_t csi_decmod_receive_table = {
+static const receive_table_t csi_qm_receive_table = {
     DEFAULT_RECEIVE_TABLE,
     ESC_PARAM_RECEIVE_TABLE,
     RECEIVE_HANDLER('h', receive_decsm),
     RECEIVE_HANDLER('l', receive_decrm),
+    DEFAULT_RECEIVE_HANDLER(receive_unexpected),
+};
+
+static const receive_table_t csi_em_receive_table = {
+    DEFAULT_RECEIVE_TABLE,
+    ESC_PARAM_RECEIVE_TABLE,
+    RECEIVE_HANDLER('p', receive_decstr),
+    DEFAULT_RECEIVE_HANDLER(receive_unexpected),
+};
+
+static const receive_table_t csi_gt_receive_table =  {
+    DEFAULT_RECEIVE_TABLE,
+    ESC_PARAM_RECEIVE_TABLE,
+    RECEIVE_HANDLER('c', receive_sec_da),
     DEFAULT_RECEIVE_HANDLER(receive_unexpected),
 };
 
