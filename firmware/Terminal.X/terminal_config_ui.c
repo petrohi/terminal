@@ -9,6 +9,16 @@
 
 #define PRINTF_BUFFER_SIZE 256
 
+static size_t
+current_format_rows(struct terminal_config_ui *terminal_config_ui) {
+  return terminal_config_ui->terminal_config_copy.format_rows;
+}
+
+static void change_format_rows(struct terminal_config_ui *terminal_config_ui,
+                               size_t format_rows) {
+  terminal_config_ui->terminal_config_copy.format_rows = format_rows;
+}
+
 static size_t current_baud_rate(struct terminal_config_ui *terminal_config_ui) {
   return terminal_config_ui->terminal_config_copy.baud_rate;
 }
@@ -311,6 +321,15 @@ static const struct terminal_ui_menu menus[] = {
          {"Backspace mode (DECBKM)", current_backspace_mode,
           change_backspace_mode, &off_on_choices},
          {NULL}}},
+    {"Video",
+     &(const struct terminal_ui_option[]){{"Rows", current_format_rows,
+                                           change_format_rows,
+                                           &(const struct terminal_ui_choice[]){
+                                               {"24"},
+                                               {"30"},
+                                               {NULL},
+                                           }},
+                                          {NULL}}},
     {NULL}};
 
 void screen_printf(struct terminal_config_ui *terminal_config_ui,
@@ -441,9 +460,9 @@ static void render_borders(struct terminal_config_ui *terminal_config_ui) {
     terminal_config_ui->terminal->callbacks->yield();
   }
 
-  move_cursor(terminal_config_ui, 24, LEFT_COL);
+  move_cursor(terminal_config_ui, UI_ROWS, LEFT_COL);
   screen_printf(terminal_config_ui, "╚");
-  move_cursor(terminal_config_ui, 24, RIGHT_COL);
+  move_cursor(terminal_config_ui, UI_ROWS, RIGHT_COL);
   screen_printf(terminal_config_ui, "╝");
 
   move_cursor(terminal_config_ui, TOP_ROW, LEFT_COL + 1);

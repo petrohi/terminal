@@ -27,15 +27,17 @@ void terminal_init(struct terminal *terminal,
                    character_t *transmit_buffer, size_t transmit_buffer_size) {
   terminal->callbacks = callbacks;
 
-  terminal->format = config->format;
+  switch (config->format_rows) {
+    case FORMAT_24_ROWS:
+      terminal->format.rows = 24;
+      break;
+    case FORMAT_30_ROWS:
+      terminal->format.rows = 30;
+      break;
+  }
+
+  terminal->format.cols = 80;
   terminal->monochrome = config->monochrome;
-
-  if (terminal->format.rows > MAX_ROWS)
-    terminal->format.rows = MAX_ROWS;
-
-  if (terminal->format.cols > MAX_COLS)
-    terminal->format.cols = MAX_COLS;
-
   terminal->transmit_buffer = transmit_buffer;
   terminal->transmit_buffer_size = transmit_buffer_size;
   terminal->transmit_buffer_head = 0;

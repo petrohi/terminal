@@ -4,12 +4,12 @@
 #include <string.h>
 
 #include "vga.h"
+#include "terminal.h"
 
 #define VGA_LINES 525
 #define VGA_V_SYNC 2
-#define VGA_V_PADDING 48
-#define VGA_V_FRONT_PORCH (10 + VGA_V_PADDING)
-#define VGA_V_BACK_PORCH (33 + VGA_V_PADDING)
+#define VGA_V_FRONT_PORCH_MIN 10
+#define VGA_V_BACK_PORCH_MIN 33
 
 #define VGA_PIXELS 800
 #define VGA_H_SYNC 96
@@ -19,28 +19,31 @@
 #define VGA_LINE_T (VGA_PIXELS * 2)
 #define VGA_H_SYNC_T (VGA_H_SYNC * 2)
 
-#define VGA_V_LINES                                                            \
-  (VGA_LINES - VGA_V_FRONT_PORCH - VGA_V_SYNC - VGA_V_BACK_PORCH)
-#define VGA_H_PIXELS                                                           \
-  (VGA_PIXELS - VGA_H_FRONT_PORCH - VGA_H_SYNC - VGA_H_BACK_PORCH)
+#define VGA_V_LINES_MAX                                                       \
+  (VGA_LINES - VGA_V_FRONT_PORCH_MIN - VGA_V_SYNC - VGA_V_BACK_PORCH_MIN)
 
-#define VGA_H_BACK_PORCH_BYTES (VGA_H_BACK_PORCH / 8)
-#define VGA_H_FRONT_PORCH_BYTES (VGA_H_FRONT_PORCH / 8)
-#define VGA_H_BYTES                                                            \
-  (VGA_H_BACK_PORCH_BYTES + (VGA_H_PIXELS / 8) + VGA_H_FRONT_PORCH_BYTES)
+#define VGA_H_BYTES ((VGA_PIXELS - VGA_H_SYNC) / 8)
 
+#define VGA_BUFFER_BYTES (VGA_H_BYTES * VGA_V_LINES_MAX)
+
+#define VGA_V_PADDING 48
+#define VGA_V_FRONT_PORCH (VGA_V_FRONT_PORCH_MIN + vga_v_front_porch_padding)
+#define VGA_V_BACK_PORCH (VGA_V_BACK_PORCH_MIN + vga_v_back_porch_padding)
 #define VGA_V_FRONT_PORCH_SYNC (VGA_V_FRONT_PORCH + VGA_V_SYNC)
 #define VGA_V_FRONT_PORCH_SYNC_BACK_PORCH                                      \
   (VGA_V_FRONT_PORCH_SYNC + VGA_V_BACK_PORCH)
 
-#define VGA_BUFFER_BYTES (VGA_H_BYTES * VGA_V_LINES)
-
 uint8_t vga_buffer[VGA_BUFFER_BYTES];
 volatile size_t vga_cur_line = 0;
+size_t vga_v_front_porch_padding = 0;
+size_t vga_v_back_porch_padding = 0;
 
 #define BIT_13 (1 << 13)
 
-uint8_t *init_vga() {
+uint8_t *init_vga(enum format_rows format_rows) {
+  vga_v_front_porch_padding = vga_v_back_porch_padding =
+      format_rows == FORMAT_24_ROWS ? VGA_V_PADDING : 0;
+
   memset((void *)vga_buffer, 0, VGA_BUFFER_BYTES);
 
   TRISBCLR = BIT_13; // B13 is the vertical sync output

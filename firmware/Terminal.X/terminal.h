@@ -18,6 +18,11 @@ enum font {
   FONT_THIN = 2,
 };
 
+struct format {
+  uint8_t rows;
+  uint8_t cols;
+};
+
 enum scroll { SCROLL_UP, SCROLL_DOWN };
 typedef uint8_t color_t;
 typedef uint8_t character_t;
@@ -29,7 +34,7 @@ typedef uint16_t codepoint_t;
 #define CHARACTER_DECODER_TABLE_LENGTH CHARACTER_MAX + 1
 
 #define MAX_COLS 80
-#define MAX_ROWS 24
+#define MAX_ROWS 30
 
 enum screen_test {
   SCREEN_TEST_FONT1,

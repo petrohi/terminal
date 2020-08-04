@@ -3,9 +3,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-struct format {
-  uint8_t rows;
-  uint8_t cols;
+enum format_rows {
+  FORMAT_24_ROWS = 0,
+  FORMAT_30_ROWS = 1,
 };
 
 enum baud_rate {
@@ -44,29 +44,29 @@ enum parity {
 };
 
 enum c1_mode {
-  C1_MODE_7BIT,
-  C1_MODE_8BIT,
+  C1_MODE_7BIT = 0,
+  C1_MODE_8BIT = 1,
 };
 
 enum charset {
-  CHARSET_UTF8,
-  CHARSET_ISO_8859_1,
-  CHARSET_IBM_PC,
+  CHARSET_UTF8 = 0,
+  CHARSET_ISO_8859_1 = 1,
+  CHARSET_IBM_PC = 2,
 };
 
 enum start_up {
-  START_UP_NONE,
-  START_UP_MESSAGE,
-  START_UP_TEST_FONT1,
-  START_UP_TEST_FONT2,
+  START_UP_NONE = 0,
+  START_UP_MESSAGE = 1,
+  START_UP_TEST_FONT1 = 2,
+  START_UP_TEST_FONT2 = 3,
 #ifdef TERMINAL_8BIT_COLOR
-  START_UP_TEST_COLOR1,
-  START_UP_TEST_COLOR2,
+  START_UP_TEST_COLOR1 = 4,
+  START_UP_TEST_COLOR2 = 5,
 #endif
 };
 
 struct terminal_config {
-  struct format format;
+  enum format_rows format_rows;
   bool monochrome;
 
   enum baud_rate baud_rate;

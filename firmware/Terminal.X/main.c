@@ -80,7 +80,7 @@ void CheckUSB(void);
 void initTimer(void);
 
 void BlinkLED(void);
-#define SERIAL_RX_BUF_SIZE (1024 * 4)
+#define SERIAL_RX_BUF_SIZE (1024 * 2)
 char SerialRxBuf[SERIAL_RX_BUF_SIZE];
 volatile int SerialRxBufHead = 0;
 volatile int SerialRxBufTail = 0;
@@ -135,7 +135,7 @@ static const struct bitmap_font bold_bitmap_font = {
 #define CHAR_HEIGHT    16
 #define CHAR_WIDTH     8
 
-static struct screen screen = {
+static struct screen screen_24_rows = {
     .format =
         {
             .rows = 24,
@@ -148,9 +148,26 @@ static struct screen screen = {
     .bold_bitmap_font = &bold_bitmap_font,
 };
 
+static struct screen screen_30_rows = {
+    .format =
+        {
+            .rows = 30,
+            .cols = 80,
+        },
+    .char_width = CHAR_WIDTH,
+    .char_height = CHAR_HEIGHT,
+    .buffer = NULL,
+    .normal_bitmap_font = &normal_bitmap_font,
+    .bold_bitmap_font = &bold_bitmap_font,
+};
+
 struct screen *get_screen(struct format format) {
-  if (format.rows == screen.format.rows && format.cols == screen.format.cols)
-    return &screen;
+  if (format.cols == 80) {
+    if (format.rows == 24)
+      return &screen_24_rows;
+    else if (format.rows == 30)
+      return &screen_30_rows;
+  }
 
   return NULL;
 }
@@ -160,11 +177,7 @@ struct terminal_config_ui *global_terminal_config_ui = NULL;
 
 __attribute__((aligned(1024), space(prog),
                section(".nvm"))) struct terminal_config terminal_config = {
-    .format =
-        {
-            .cols = 80,
-            .rows = 24,
-        },
+    .format_rows = FORMAT_24_ROWS,
     .monochrome = true,
 
     .baud_rate = BAUD_RATE_115200,
@@ -314,7 +327,8 @@ int main(int argc, char* argv[]) {
 
   USBDeviceInit();
   initKeyboard();
-  screen.buffer = init_vga();
+  screen_24_rows.buffer = screen_30_rows.buffer =
+      init_vga(terminal_config.format_rows);
 
   struct terminal terminal;
   struct terminal_callbacks callbacks = {
