@@ -6,6 +6,12 @@ enum keys_entry_type {
   IGNORE,
   CHR,
   STR,
+  ESC,
+  CSI,
+  CSI_MOD_1,
+  CSI_MOD_1_1,
+  SS3,
+  SS3_MOD_CSI,
   HANDLER,
   ROUTER,
 };
@@ -37,6 +43,30 @@ struct keys_entry {
   {                                                                            \
     STR, { .string = s }                                                       \
   }
+#define KEY_ESC(s)                                                             \
+  {                                                                            \
+    ESC, { .string = s }                                                       \
+  }
+#define KEY_CSI(s)                                                             \
+  {                                                                            \
+    CSI, { .string = s }                                                       \
+  }
+#define KEY_CSI_MOD_1(s)                                                       \
+  {                                                                            \
+    CSI_MOD_1, { .string = s }                                                 \
+  }
+#define KEY_CSI_MOD_1_1(s)                                                     \
+  {                                                                            \
+    CSI_MOD_1_1, { .string = s }                                               \
+  }
+#define KEY_SS3(s)                                                             \
+  {                                                                            \
+    SS3, { .string = s }                                                       \
+  }
+#define KEY_SS3_MOD_CSI(s)                                                     \
+  {                                                                            \
+    SS3_MOD_CSI, { .string = s }                                               \
+  }
 #define KEY_HANDLER(h)                                                         \
   {                                                                            \
     HANDLER, { .handler = h }                                                  \
@@ -44,8 +74,8 @@ struct keys_entry {
 #define KEY_ROUTER(r, ...)                                                     \
   {                                                                            \
     ROUTER, {                                                                  \
-      .router = &(const struct keys_router) {                         \
-        r, (const struct keys_entry[]) { __VA_ARGS__ }                \
+      .router = &(const struct keys_router) {                                  \
+        r, (const struct keys_entry[]) { __VA_ARGS__ }                         \
       }                                                                        \
     }                                                                          \
   }
