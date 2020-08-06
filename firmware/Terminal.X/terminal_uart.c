@@ -1044,6 +1044,21 @@ static void receive_decsm(struct terminal *terminal, character_t character) {
     terminal_update_keyboard_leds(terminal);
     break;
 
+#ifdef TERMINAL_ALT_CELLS
+  case 47:
+  case 1047:
+    terminal_screen_use_alt_cells(terminal);
+    break;
+#endif
+
+  case 1049:
+#ifdef TERMINAL_ALT_CELLS
+    terminal_screen_use_alt_cells(terminal);
+#endif
+  case 1048:
+    terminal_screen_save_visual_state(terminal);
+    break;
+
 #ifdef DEBUG
   default:
     terminal->unhandled = true;
@@ -1102,6 +1117,21 @@ static void receive_decrm(struct terminal *terminal, character_t character) {
   case 66: // DECNKM
     terminal->lock_state.num = 1;
     terminal_update_keyboard_leds(terminal);
+    break;
+
+#ifdef TERMINAL_ALT_CELLS
+  case 47:
+  case 1047:
+    terminal_screen_restore_default_cells(terminal);
+    break;
+#endif
+
+  case 1049:
+#ifdef TERMINAL_ALT_CELLS
+    terminal_screen_restore_default_cells(terminal);
+#endif
+  case 1048:
+    terminal_screen_restore_visual_state(terminal);
     break;
 
 #ifdef DEBUG

@@ -75,3 +75,9 @@ void terminal_screen_set_screen_mode(struct terminal *terminal, bool mode);
 void terminal_screen_wrap_last_col(struct terminal *terminal);
 
 void terminal_screen_cancel_wrap_last_col(struct terminal *terminal);
+
+#ifdef TERMINAL_ALT_CELLS
+void terminal_screen_use_alt_cells(struct terminal *terminal);
+
+void terminal_screen_restore_default_cells(struct terminal *terminal);
+#endif

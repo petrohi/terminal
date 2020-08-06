@@ -189,7 +189,12 @@ struct terminal {
   volatile bool blink_on;
   bool blink_drawn;
 
-  struct visual_cell cells[MAX_ROWS * MAX_COLS];
+  struct visual_cell *cells;
+
+  struct visual_cell default_cells[MAX_ROWS * MAX_COLS];
+#ifdef TERMINAL_ALT_CELLS
+  struct visual_cell alt_cells[MAX_ROWS * MAX_COLS];
+#endif
 
   const receive_table_t *receive_table;
 

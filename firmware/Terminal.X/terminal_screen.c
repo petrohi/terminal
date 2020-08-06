@@ -684,6 +684,18 @@ void terminal_screen_set_screen_mode(struct terminal *terminal, bool mode) {
   }
 }
 
+#ifdef TERMINAL_ALT_CELLS
+void terminal_screen_use_alt_cells(struct terminal *terminal) {
+  terminal->cells = terminal->alt_cells;
+  terminal_screen_clear_all(terminal);
+}
+
+void terminal_screen_restore_default_cells(struct terminal *terminal) {
+  terminal->cells = terminal->default_cells;
+  draw_screen(terminal);
+}
+#endif
+
 void terminal_screen_init(struct terminal *terminal) {
   terminal->vs.cursor_row = 0;
   terminal->vs.cursor_col = 0;
@@ -713,6 +725,7 @@ void terminal_screen_init(struct terminal *terminal) {
   terminal->blink_on = true;
   terminal->blink_drawn = false;
 
+  terminal->cells = terminal->default_cells;
   terminal_screen_clear_all(terminal);
   update_cursor(terminal);
 }
