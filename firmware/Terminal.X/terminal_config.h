@@ -65,9 +65,18 @@ enum start_up {
 #endif
 };
 
+#ifndef TERMINAL_8BIT_COLOR
+enum monochrome_transform {
+  MONOCHROME_TRANSFORM_SIMPLE = 0,
+  MONOCHROME_TRANSFORM_LUMINANCE = 1,
+};
+#endif
+
 struct terminal_config {
   enum format_rows format_rows;
-  bool monochrome;
+#ifndef TERMINAL_8BIT_COLOR
+  enum monochrome_transform monochrome_transform;
+#endif
 
   enum baud_rate baud_rate;
 #ifdef TERMINAL_SERIAL_WORD_LENGTH

@@ -37,7 +37,9 @@ void terminal_init(struct terminal *terminal,
   }
 
   terminal->format.cols = 80;
-  terminal->monochrome = config->monochrome;
+#ifndef TERMINAL_8BIT_COLOR
+  terminal->monochrome_transform = config->monochrome_transform;
+#endif
   terminal->transmit_buffer = transmit_buffer;
   terminal->transmit_buffer_size = transmit_buffer_size;
   terminal->transmit_buffer_head = 0;

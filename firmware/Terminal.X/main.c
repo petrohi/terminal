@@ -80,7 +80,7 @@ void CheckUSB(void);
 void initTimer(void);
 
 void BlinkLED(void);
-#define SERIAL_RX_BUF_SIZE (1024 * 2)
+#define SERIAL_RX_BUF_SIZE (1024 * 1)
 char SerialRxBuf[SERIAL_RX_BUF_SIZE];
 volatile int SerialRxBufHead = 0;
 volatile int SerialRxBufTail = 0;
@@ -178,7 +178,7 @@ struct terminal_config_ui *global_terminal_config_ui = NULL;
 __attribute__((aligned(1024), space(prog),
                section(".nvm"))) struct terminal_config terminal_config = {
     .format_rows = FORMAT_24_ROWS,
-    .monochrome = true,
+    .monochrome_transform = MONOCHROME_TRANSFORM_LUMINANCE,
 
     .baud_rate = BAUD_RATE_115200,
     .stop_bits = STOP_BITS_1,

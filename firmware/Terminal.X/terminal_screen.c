@@ -154,6 +154,28 @@ static void swap_colors(color_t *color1, color_t *color2) {
   *color2 = tmp;
 }
 
+#ifndef TERMINAL_8BIT_COLOR
+static void to_monochrome(struct terminal *terminal, color_t *active, color_t *inactive) {
+  switch (terminal->monochrome_transform) {
+    case MONOCHROME_TRANSFORM_SIMPLE:
+      if (*active == *inactive) {
+        if (*active != DEFAULT_INACTIVE_COLOR)
+          *active = *inactive = DEFAULT_ACTIVE_COLOR;
+      } else if (*inactive == DEFAULT_INACTIVE_COLOR) {
+        *active = DEFAULT_ACTIVE_COLOR;
+      } else {
+        *active = DEFAULT_INACTIVE_COLOR;
+        *inactive = DEFAULT_ACTIVE_COLOR;
+      }
+      break;
+
+    case MONOCHROME_TRANSFORM_LUMINANCE:
+      luminance_to_monochrome(active, inactive);
+      break;
+  }
+}
+#endif
+
 static void render_character(struct terminal *terminal, int16_t row,
                              int16_t col, bool cursor, bool blink) {
   struct visual_cell *cell = get_cell(terminal, row, col);
@@ -173,8 +195,9 @@ static void render_character(struct terminal *terminal, int16_t row,
     active = inactive;
   }
 
-  if (terminal->monochrome)
-    luminance_to_monochrome(&active, &inactive);
+#ifndef TERMINAL_8BIT_COLOR
+  to_monochrome(terminal, &active, &inactive);
+#endif
 
   terminal->callbacks->screen_draw_codepoint(
       terminal->format, row, col, cell->c, cell->p.font, cell->p.italic,
@@ -264,8 +287,9 @@ static color_t inactive_color(struct terminal *terminal) {
   color_t active = terminal->vs.p.active_color;
   color_t inactive = terminal->vs.p.inactive_color;
 
-  if (terminal->monochrome)
-    luminance_to_monochrome(&active, &inactive);
+#ifndef TERMINAL_8BIT_COLOR
+  to_monochrome(terminal, &active, &inactive);
+#endif
 
   return terminal->screen_mode ? active : inactive;
 }

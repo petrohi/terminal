@@ -137,7 +137,9 @@ struct terminal {
   const struct terminal_callbacks *callbacks;
 
   struct format format;
-  bool monochrome;
+#ifndef TERMINAL_8BIT_COLOR
+  enum monochrome_transform monochrome_transform;
+#endif
 
   uint8_t pressed_key_code;
   volatile uint16_t repeat_counter;

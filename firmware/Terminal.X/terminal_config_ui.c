@@ -19,6 +19,20 @@ static void change_format_rows(struct terminal_config_ui *terminal_config_ui,
   terminal_config_ui->terminal_config_copy.format_rows = format_rows;
 }
 
+#ifndef TERMINAL_8BIT_COLOR
+static size_t
+current_monochrome_transform(struct terminal_config_ui *terminal_config_ui) {
+  return terminal_config_ui->terminal_config_copy.monochrome_transform;
+}
+
+static void
+change_monochrome_transform(struct terminal_config_ui *terminal_config_ui,
+                            size_t monochrome_transform) {
+  terminal_config_ui->terminal_config_copy.monochrome_transform =
+      monochrome_transform;
+}
+#endif
+
 static size_t current_baud_rate(struct terminal_config_ui *terminal_config_ui) {
   return terminal_config_ui->terminal_config_copy.baud_rate;
 }
@@ -322,14 +336,23 @@ static const struct terminal_ui_menu menus[] = {
           change_backspace_mode, &off_on_choices},
          {NULL}}},
     {"Video",
-     &(const struct terminal_ui_option[]){{"Rows", current_format_rows,
-                                           change_format_rows,
-                                           &(const struct terminal_ui_choice[]){
-                                               {"24"},
-                                               {"30"},
-                                               {NULL},
-                                           }},
-                                          {NULL}}},
+     &(const struct terminal_ui_option[]){
+         {"Rows", current_format_rows, change_format_rows,
+          &(const struct terminal_ui_choice[]){
+              {"24"},
+              {"30"},
+              {NULL},
+          }},
+#ifndef TERMINAL_8BIT_COLOR
+         {"Monochrome transformation", current_monochrome_transform,
+          change_monochrome_transform,
+          &(const struct terminal_ui_choice[]){
+              {"Simple"},
+              {"Luminance"},
+              {NULL},
+          }},
+#endif
+         {NULL}}},
     {NULL}};
 
 void screen_printf(struct terminal_config_ui *terminal_config_ui,
@@ -719,7 +742,10 @@ void terminal_config_ui_activate(struct terminal_config_ui *terminal_config_ui) 
                                       "\x1b[?7l"
                                       "\x1b[?8l"
                                       "\x1b[?25l"
-                                      "\x1b[97;48;5;54m");
+#ifdef TERMINAL_8BIT_COLOR
+                                      "\x1b[97;48;5;54m"
+#endif
+                                      );
 
     clear_screen(terminal_config_ui);
     render_screen(terminal_config_ui);
