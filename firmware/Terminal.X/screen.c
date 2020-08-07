@@ -15,23 +15,13 @@
 
 #ifdef TERMINAL_8BIT_COLOR
 #define PIXELS_SHIFT 0
-#define LEFT_PADDING_PIXELS 0
-#define RIGHT_PADDING_PIXELS 0
 #else
 #define PIXELS_SHIFT 3
-#define LEFT_PADDING_PIXELS 48
-#define RIGHT_PADDING_PIXELS 16
 #endif
 
-#define LEFT_PADDING_BYTES (LEFT_PADDING_PIXELS >> PIXELS_SHIFT)
-#define RIGHT_PADDING_BYTES (RIGHT_PADDING_PIXELS >> PIXELS_SHIFT)
 #define CHAR_WIDTH_BYTES (CHAR_WIDTH_PIXELS >> PIXELS_SHIFT)
-
-#define SCREEN_WIDTH_PIXELS                                                    \
-  (LEFT_PADDING_PIXELS + COLS * CHAR_WIDTH_PIXELS + RIGHT_PADDING_PIXELS)
-#define SCREEN_WIDTH_BYTES                                                     \
-  (LEFT_PADDING_BYTES + COLS * CHAR_WIDTH_BYTES + RIGHT_PADDING_BYTES)
-
+#define SCREEN_WIDTH_PIXELS (COLS * CHAR_WIDTH_PIXELS)
+#define SCREEN_WIDTH_BYTES (COLS * CHAR_WIDTH_BYTES)
 #define SCREEN_HEIGHT_LINES (ROWS * CHAR_HEIGHT_LINES)
 
 static inline void clear_line(color_t inactive, uint8_t *buffer, size_t size) {
@@ -77,7 +67,7 @@ void screen_clear_cols(struct screen *screen, size_t row, size_t from_col,
 
   size_t size = CHAR_WIDTH_BYTES * (to_col - from_col);
   size_t offset = SCREEN_WIDTH_BYTES * CHAR_HEIGHT_LINES * row +
-                  CHAR_WIDTH_BYTES * from_col + LEFT_PADDING_BYTES;
+                  CHAR_WIDTH_BYTES * from_col;
   uint8_t *buffer = screen->buffer + offset;
 
   for (size_t i = 0; i < CHAR_HEIGHT_LINES; ++i, buffer += SCREEN_WIDTH_BYTES) {
@@ -99,8 +89,8 @@ void screen_shift_right(struct screen *screen, size_t row, size_t col,
     return;
 
   size_t size = CHAR_WIDTH_BYTES * (COLS - col - cols);
-  size_t offset = SCREEN_WIDTH_BYTES * CHAR_HEIGHT_LINES * row +
-                  CHAR_WIDTH_BYTES * col + LEFT_PADDING_BYTES;
+  size_t offset =
+      SCREEN_WIDTH_BYTES * CHAR_HEIGHT_LINES * row + CHAR_WIDTH_BYTES * col;
   size_t disp = CHAR_WIDTH_BYTES * cols;
   uint8_t *buffer = screen->buffer + offset;
 
@@ -128,8 +118,8 @@ void screen_shift_left(struct screen *screen, size_t row, size_t col,
     return;
 
   size_t size = CHAR_WIDTH_BYTES * (COLS - col - cols);
-  size_t offset = SCREEN_WIDTH_BYTES * CHAR_HEIGHT_LINES * row +
-                  CHAR_WIDTH_BYTES * col + LEFT_PADDING_BYTES;
+  size_t offset =
+      SCREEN_WIDTH_BYTES * CHAR_HEIGHT_LINES * row + CHAR_WIDTH_BYTES * col;
   size_t disp = CHAR_WIDTH_BYTES * cols;
   uint8_t *buffer = screen->buffer + offset;
 
@@ -186,8 +176,7 @@ void screen_scroll(struct screen *screen, enum scroll scroll, size_t from_row,
 
 static inline size_t pixel_offset(struct screen *screen, size_t line,
                                   size_t pixel) {
-  return (SCREEN_WIDTH_BYTES * line) + (pixel >> PIXELS_SHIFT) +
-         LEFT_PADDING_BYTES;
+  return (SCREEN_WIDTH_BYTES * line) + (pixel >> PIXELS_SHIFT);
 }
 
 void screen_draw_codepoint(struct screen *screen, size_t row, size_t col,
@@ -295,10 +284,7 @@ static float mandelbrot(float complex z) {
   return 0.0;
 }
 
-#define MARGIN_X                                                               \
-  ((SCREEN_WIDTH_PIXELS - LEFT_PADDING_PIXELS - RIGHT_PADDING_PIXELS -         \
-    SCREEN_HEIGHT_LINES) /                                                     \
-   2)
+#define MARGIN_X ((SCREEN_WIDTH_PIXELS - SCREEN_HEIGHT_LINES) / 2)
 
 void screen_test_mandelbrot(struct screen *screen, float window_x,
                             float window_y, float window_r, bool (*cancel)()) {

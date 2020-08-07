@@ -18,11 +18,13 @@
 
 #define VGA_LINE_T (VGA_PIXELS * 2)
 #define VGA_H_SYNC_T (VGA_H_SYNC * 2)
+#define VGA_H_FRONT_PORCH_T (VGA_H_FRONT_PORCH * 2)
+#define VGA_H_BACK_PORCH_T (VGA_H_BACK_PORCH * 2)
 
 #define VGA_V_LINES_MAX                                                       \
   (VGA_LINES - VGA_V_FRONT_PORCH_MIN - VGA_V_SYNC - VGA_V_BACK_PORCH_MIN)
 
-#define VGA_H_BYTES ((VGA_PIXELS - VGA_H_SYNC) / 8)
+#define VGA_H_BYTES ((VGA_PIXELS - VGA_H_FRONT_PORCH - VGA_H_SYNC - VGA_H_BACK_PORCH) / 8)
 
 #define VGA_BUFFER_BYTES (VGA_H_BYTES * VGA_V_LINES_MAX)
 
@@ -51,10 +53,13 @@ uint8_t *init_vga(enum format_rows format_rows) {
 
   PPSOutput(3, RPA4, SDO2); // A4 is the video output
   PPSInput(4, SS2, RPB9);   // B9 is the framing input
-  PPSOutput(4, RPB14,
-            OC3); // B14 is the horizontal sync output (ie, the output from OC3)
+  PPSOutput(4, RPB14, OC3); // B14 is the HSYNC
+  PPSOutput(3, RPB2, OC4); // B2 is the framing output
 
-  OpenOC3(OC_ON | OC_TIMER3_SRC | OC_CONTINUE_PULSE, 0, VGA_H_SYNC_T);
+  OpenOC3(OC_ON | OC_TIMER3_SRC | OC_CONTINUE_PULSE, VGA_H_FRONT_PORCH_T,
+          VGA_H_FRONT_PORCH_T + VGA_H_SYNC_T);
+  OpenOC4(OC_ON | OC_TIMER3_SRC | OC_CONTINUE_PULSE, 0,
+          VGA_H_FRONT_PORCH_T + VGA_H_SYNC_T + VGA_H_BACK_PORCH_T);
   OpenTimer3(T3_ON | T3_PS_1_1 | T3_SOURCE_INT, VGA_LINE_T - 1);
   SpiChnOpenEx(SPI_CHANNEL2,
                SPI_OPEN_ENHBUF | SPI_OPEN_TBE_HALF_EMPTY | SPI_OPEN_MODE8 |
