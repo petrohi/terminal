@@ -80,7 +80,7 @@ void CheckUSB(void);
 void initTimer(void);
 
 void BlinkLED(void);
-#define SERIAL_RX_BUF_SIZE (1024 * 1)
+#define SERIAL_RX_BUF_SIZE (1024 * 4)
 char SerialRxBuf[SERIAL_RX_BUF_SIZE];
 volatile int SerialRxBufHead = 0;
 volatile int SerialRxBufTail = 0;
