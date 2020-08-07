@@ -73,7 +73,7 @@ U 1 1 5D61AF5F
 P 2700 3000
 F 0 "C1" V 2445 3000 50  0000 C CNN
 F 1 "10uF" V 2536 3000 50  0000 C CNN
-F 2 "Capacitor_THT:CP_Radial_Tantal_D5.0mm_P5.00mm" H 2738 2850 50  0001 C CNN
+F 2 "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm" H 2738 2850 50  0001 C CNN
 F 3 "~" H 2700 3000 50  0001 C CNN
 	1    2700 3000
 	0    1    1    0   
@@ -106,7 +106,7 @@ U 1 1 5D61D25D
 P 2050 7400
 F 0 "C2" H 2168 7446 50  0000 L CNN
 F 1 "10uF" H 2168 7355 50  0000 L CNN
-F 2 "Capacitor_THT:CP_Radial_Tantal_D5.0mm_P5.00mm" H 2088 7250 50  0001 C CNN
+F 2 "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm" H 2088 7250 50  0001 C CNN
 F 3 "~" H 2050 7400 50  0001 C CNN
 	1    2050 7400
 	1    0    0    -1  
@@ -117,7 +117,7 @@ U 1 1 5D61E642
 P 900 7400
 F 0 "C3" H 1018 7446 50  0000 L CNN
 F 1 "10uF" H 1018 7355 50  0000 L CNN
-F 2 "Capacitor_THT:CP_Radial_Tantal_D5.0mm_P5.00mm" H 938 7250 50  0001 C CNN
+F 2 "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm" H 938 7250 50  0001 C CNN
 F 3 "~" H 900 7400 50  0001 C CNN
 	1    900  7400
 	1    0    0    -1  
@@ -457,14 +457,7 @@ Wire Wire Line
 Text GLabel 9100 2900 2    50   Input ~ 0
 VGA_HSYNCH
 Wire Wire Line
-	8950 2900 9050 2900
-Wire Wire Line
-	9050 2900 9050 2500
-Wire Wire Line
 	9050 2500 8950 2500
-Connection ~ 9050 2900
-Wire Wire Line
-	9050 2900 9100 2900
 $Comp
 L Device:R R1
 U 1 1 5D62622D
@@ -962,11 +955,16 @@ Wire Wire Line
 Connection ~ 9550 4850
 Wire Wire Line
 	9550 4850 9650 4850
-NoConn ~ 8950 1900
 Wire Wire Line
 	3150 1750 3550 1750
 NoConn ~ 8950 2000
 NoConn ~ 8950 2100
 Wire Wire Line
 	8950 2200 9750 2200
+Wire Wire Line
+	8950 2900 9100 2900
+Wire Wire Line
+	9050 2500 9050 1900
+Wire Wire Line
+	9050 1900 8950 1900
 $EndSCHEMATC
