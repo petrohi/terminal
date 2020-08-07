@@ -273,8 +273,12 @@ static const struct terminal_ui_menu menus[] = {
                                                {NULL}}},
 #endif
 #ifdef TERMINAL_SERIAL_INVERTED
-         {"Invert (RS232 levels)", current_serial_inverted,
-          change_serial_inverted, &off_on_choices},
+         {"Signal levels", current_serial_inverted, change_serial_inverted,
+          &(const struct terminal_ui_choice[]){
+              {"TTL"},
+              {"RS232"},
+              {NULL},
+          }},
 #endif
          {"Stop bits", current_stop_bits, change_stop_bits,
           &(const struct terminal_ui_choice[]){
@@ -337,7 +341,7 @@ static const struct terminal_ui_menu menus[] = {
          {NULL}}},
     {"Video",
      &(const struct terminal_ui_option[]){
-         {"Rows", current_format_rows, change_format_rows,
+         {"Number of lines", current_format_rows, change_format_rows,
           &(const struct terminal_ui_choice[]){
               {"24"},
               {"30"},
