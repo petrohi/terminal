@@ -1119,16 +1119,22 @@ static void receive_decrm(struct terminal *terminal, character_t character) {
     terminal_update_keyboard_leds(terminal);
     break;
 
-#ifdef TERMINAL_ALT_CELLS
   case 47:
   case 1047:
+#ifdef TERMINAL_ALT_CELLS
     terminal_screen_restore_default_cells(terminal);
-    break;
+#else
+    terminal_screen_clear_all(terminal);
+    terminal_screen_move_cursor_absolute(terminal, 0, 0);
 #endif
+    break;
 
   case 1049:
 #ifdef TERMINAL_ALT_CELLS
     terminal_screen_restore_default_cells(terminal);
+#else
+    terminal_screen_clear_all(terminal);
+    terminal_screen_move_cursor_absolute(terminal, 0, 0);
 #endif
   case 1048:
     terminal_screen_restore_visual_state(terminal);
