@@ -45,6 +45,10 @@ static size_t get_num(struct terminal *terminal) {
   return terminal->lock_state.num;
 }
 
+static size_t get_keyboard_compatibility(struct terminal *terminal) {
+  return terminal->keyboard_compatibility;
+}
+
 void terminal_update_keyboard_leds(struct terminal *terminal) {
   terminal->callbacks->keyboard_set_leds(terminal->lock_state);
 }
@@ -235,11 +239,17 @@ static const struct keys_entry *default_entries = (struct keys_entry[]){
     [KEY_F12] = KEY_CSI("24~"),
     [KEY_SCROLL_LOCK] = KEY_HANDLER(handle_scroll_lock),
     [KEY_INSERT] = KEY_CSI("2~"),
-    [KEY_HOME] = KEY_ROUTER(get_cursor_key_mode, KEY_CSI_MOD_1_1("H"), KEY_SS3("H")),
+    [KEY_HOME] = KEY_ROUTER(
+        get_keyboard_compatibility,
+        KEY_ROUTER(get_cursor_key_mode, KEY_CSI_MOD_1_1("H"), KEY_SS3("H")),
+        KEY_CSI("1~")),
     [KEY_PAGEUP] = KEY_CSI("5~"),
     [KEY_DELETE] = KEY_ROUTER(get_ctrl_alt, KEY_CSI("3~"),
                               KEY_HANDLER(handle_ctrl_alt_delete)),
-    [KEY_END1] = KEY_ROUTER(get_cursor_key_mode, KEY_CSI_MOD_1("F"), KEY_SS3("F")),
+    [KEY_END1] = KEY_ROUTER(
+        get_keyboard_compatibility,
+        KEY_ROUTER(get_cursor_key_mode, KEY_CSI_MOD_1("F"), KEY_SS3("F")),
+        KEY_CSI("4~")),
     [KEY_PAGEDOWN] = KEY_CSI("6~"),
     [KEY_RIGHTARROW] = KEY_ROUTER(
         get_ansi_mode, KEY_ESC("C"),
@@ -254,31 +264,89 @@ static const struct keys_entry *default_entries = (struct keys_entry[]){
         get_ansi_mode, KEY_ESC("A"),
         KEY_ROUTER(get_cursor_key_mode, KEY_CSI_MOD_1("A"), KEY_SS3("A"))),
     [KEY_KEYPAD_NUM_LOCK_AND_CLEAR] = KEY_HANDLER(handle_num_lock),
-    [KEY_KEYPAD_SLASH] = KEY_ROUTER(get_num, KEY_SS3("o"), KEY_CHR('/')),
-    [KEY_KEYPAD_ASTERIKS] = KEY_ROUTER(get_num, KEY_SS3("j"), KEY_CHR('*')),
-    [KEY_KEYPAD_MINUS] = KEY_ROUTER(get_num, KEY_SS3("m"), KEY_CHR('-')),
-    [KEY_KEYPAD_PLUS] = KEY_ROUTER(get_num, KEY_SS3("k"), KEY_CHR('+')),
+    [KEY_KEYPAD_SLASH] = KEY_ROUTER(
+        get_num, KEY_ROUTER(get_ansi_mode, KEY_ESC("?o"), KEY_SS3("o")),
+        KEY_CHR('/')),
+    [KEY_KEYPAD_ASTERIKS] = KEY_ROUTER(
+        get_num, KEY_ROUTER(get_ansi_mode, KEY_ESC("?j"), KEY_SS3("j")),
+        KEY_CHR('*')),
+    [KEY_KEYPAD_MINUS] = KEY_ROUTER(
+        get_num, KEY_ROUTER(get_ansi_mode, KEY_ESC("?m"), KEY_SS3("m")),
+        KEY_CHR('-')),
+    [KEY_KEYPAD_PLUS] = KEY_ROUTER(
+        get_num, KEY_ROUTER(get_ansi_mode, KEY_ESC("?k"), KEY_SS3("k")),
+        KEY_CHR('+')),
     [KEY_KEYPAD_ENTER] = KEY_ROUTER(
-        get_num, KEY_SS3("M"),
+        get_num, KEY_ROUTER(get_ansi_mode, KEY_ESC("?M"), KEY_SS3("M")),
         KEY_ROUTER(get_new_line_mode, KEY_CHR('\x0d'), KEY_STR("\x0d\x0a"))),
-    [KEY_KEYPAD_1_END] = KEY_ROUTER(get_num, KEY_SS3("F"), KEY_CHR('1')),
-    [KEY_KEYPAD_2_DOWN_ARROW] =
-        KEY_ROUTER(get_num, KEY_CSI_MOD_1("B"), KEY_CHR('2')),
-    [KEY_KEYPAD_3_PAGEDN] = KEY_ROUTER(get_num, KEY_CSI("6~"), KEY_CHR('3')),
-    [KEY_KEYPAD_4_LEFT_ARROW] =
-        KEY_ROUTER(get_num, KEY_CSI_MOD_1("D"), KEY_CHR('4')),
-    [KEY_KEYPAD_5] = KEY_ROUTER(get_num, KEY_CSI_MOD_1("E"), KEY_CHR('5')),
-    [KEY_KEYPAD_6_RIGHT_ARROW] =
-        KEY_ROUTER(get_num, KEY_CSI_MOD_1("C"), KEY_CHR('6')),
-    [KEY_KEYPAD_7_HOME] = KEY_ROUTER(get_num, KEY_SS3("H"), KEY_CHR('7')),
-    [KEY_KEYPAD_8_UP_ARROW] = KEY_ROUTER(get_num, KEY_CSI_MOD_1("A"), KEY_CHR('8')),
-    [KEY_KEYPAD_9_PAGEUP] = KEY_ROUTER(get_num, KEY_CSI("5~"), KEY_CHR('9')),
-    [KEY_KEYPAD_0_INSERT] = KEY_ROUTER(get_num, KEY_CSI("2~"), KEY_CHR('0')),
-    [KEY_KEYPAD_DECIMAL_SEPARATOR_DELETE] =
+    [KEY_KEYPAD_1_END] =
         KEY_ROUTER(get_num,
-                   KEY_ROUTER(get_ctrl_alt, KEY_CSI("3~"),
-                              KEY_HANDLER(handle_ctrl_alt_delete)),
-                   KEY_CHR('.')),
+                   KEY_ROUTER(get_ansi_mode, KEY_ESC("?q"),
+                              KEY_ROUTER(get_keyboard_compatibility,
+                                         KEY_SS3("F"), KEY_SS3("q"))),
+                   KEY_CHR('1')),
+    [KEY_KEYPAD_2_DOWN_ARROW] =
+        KEY_ROUTER(get_num,
+                   KEY_ROUTER(get_ansi_mode, KEY_ESC("?r"),
+                              KEY_ROUTER(get_keyboard_compatibility,
+                                         KEY_SS3("B"), KEY_SS3("r"))),
+                   KEY_CHR('2')),
+    [KEY_KEYPAD_3_PAGEDN] =
+        KEY_ROUTER(get_num,
+                   KEY_ROUTER(get_ansi_mode, KEY_ESC("?s"),
+                              KEY_ROUTER(get_keyboard_compatibility,
+                                         KEY_CSI("6~"), KEY_SS3("s"))),
+                   KEY_CHR('3')),
+    [KEY_KEYPAD_4_LEFT_ARROW] =
+        KEY_ROUTER(get_num,
+                   KEY_ROUTER(get_ansi_mode, KEY_ESC("?t"),
+                              KEY_ROUTER(get_keyboard_compatibility,
+                                         KEY_SS3("D"), KEY_SS3("t"))),
+                   KEY_CHR('4')),
+    [KEY_KEYPAD_5] =
+        KEY_ROUTER(get_num,
+                   KEY_ROUTER(get_ansi_mode, KEY_ESC("?u"),
+                              KEY_ROUTER(get_keyboard_compatibility,
+                                         KEY_SS3("E"), KEY_SS3("u"))),
+                   KEY_CHR('5')),
+    [KEY_KEYPAD_6_RIGHT_ARROW] =
+        KEY_ROUTER(get_num,
+                   KEY_ROUTER(get_ansi_mode, KEY_ESC("?v"),
+                              KEY_ROUTER(get_keyboard_compatibility,
+                                         KEY_SS3("C"), KEY_SS3("v"))),
+                   KEY_CHR('6')),
+    [KEY_KEYPAD_7_HOME] =
+        KEY_ROUTER(get_num,
+                   KEY_ROUTER(get_ansi_mode, KEY_ESC("?w"),
+                              KEY_ROUTER(get_keyboard_compatibility,
+                                         KEY_SS3("H"), KEY_SS3("w"))),
+                   KEY_CHR('7')),
+    [KEY_KEYPAD_8_UP_ARROW] =
+        KEY_ROUTER(get_num,
+                   KEY_ROUTER(get_ansi_mode, KEY_ESC("?x"),
+                              KEY_ROUTER(get_keyboard_compatibility,
+                                         KEY_SS3("A"), KEY_SS3("x"))),
+                   KEY_CHR('8')),
+    [KEY_KEYPAD_9_PAGEUP] =
+        KEY_ROUTER(get_num,
+                   KEY_ROUTER(get_ansi_mode, KEY_ESC("?y"),
+                              KEY_ROUTER(get_keyboard_compatibility,
+                                         KEY_CSI("5~"), KEY_SS3("y"))),
+                   KEY_CHR('9')),
+    [KEY_KEYPAD_0_INSERT] =
+        KEY_ROUTER(get_num,
+                   KEY_ROUTER(get_ansi_mode, KEY_ESC("?p"),
+                              KEY_ROUTER(get_keyboard_compatibility,
+                                         KEY_CSI("2~"), KEY_SS3("p"))),
+                   KEY_CHR('0')),
+    [KEY_KEYPAD_DECIMAL_SEPARATOR_DELETE] = KEY_ROUTER(
+        get_num,
+        KEY_ROUTER(get_ctrl_alt,
+                   KEY_ROUTER(get_ansi_mode, KEY_ESC("?n"),
+                              KEY_ROUTER(get_keyboard_compatibility,
+                                         KEY_CSI("3~"), KEY_SS3("n"))),
+                   KEY_HANDLER(handle_ctrl_alt_delete)),
+        KEY_CHR('.')),
 };
 
 static void transmit_escape_key(struct terminal *terminal, character_t control,

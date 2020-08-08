@@ -186,6 +186,7 @@ __attribute__((aligned(1024), space(prog),
     .serial_inverted = false,
 
     .charset = CHARSET_UTF8,
+    .keyboard_compatibility = KEYBOARD_COMPATIBILITY_PC,
     .receive_c1_mode = C1_MODE_8BIT,
     .transmit_c1_mode = C1_MODE_7BIT,
 

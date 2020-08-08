@@ -154,6 +154,7 @@ struct terminal {
   const struct keys_entry *keys_entries;
 
   enum charset charset;
+  enum keyboard_compatibility keyboard_compatibility;
   enum c1_mode receive_c1_mode;
   enum c1_mode transmit_c1_mode;
 

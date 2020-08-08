@@ -104,6 +104,18 @@ static void change_charset(struct terminal_config_ui *terminal_config_ui,
 }
 
 static size_t
+current_keyboard_compatibility(struct terminal_config_ui *terminal_config_ui) {
+  return terminal_config_ui->terminal_config_copy.keyboard_compatibility;
+}
+
+static void
+change_keyboard_compatibility(struct terminal_config_ui *terminal_config_ui,
+                              size_t keyboard_compatibility) {
+  terminal_config_ui->terminal_config_copy.keyboard_compatibility =
+      keyboard_compatibility;
+}
+
+static size_t
 current_flow_control(struct terminal_config_ui *terminal_config_ui) {
   return terminal_config_ui->terminal_config_copy.flow_control;
 }
@@ -296,6 +308,13 @@ static const struct terminal_ui_menu menus[] = {
               {"UTF8"},
               {"ISO 8859-1"},
               {"IBM PC 437"},
+              {NULL},
+          }},
+         {"Keyboard compatibility", current_keyboard_compatibility,
+          change_keyboard_compatibility,
+          &(const struct terminal_ui_choice[]){
+              {"PC/Sun"},
+              {"VT220"},
               {NULL},
           }},
          {"XOFF/XON flow control", current_flow_control, change_flow_control,

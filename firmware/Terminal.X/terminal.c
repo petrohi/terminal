@@ -45,6 +45,7 @@ void terminal_init(struct terminal *terminal,
   terminal->transmit_buffer_head = 0;
 
   terminal->charset = config->charset;
+  terminal->keyboard_compatibility = config->keyboard_compatibility;
   terminal->receive_c1_mode = config->receive_c1_mode;
   terminal->transmit_c1_mode = config->transmit_c1_mode;
 

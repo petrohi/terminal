@@ -54,6 +54,11 @@ enum charset {
   CHARSET_IBM_PC = 2,
 };
 
+enum keyboard_compatibility {
+  KEYBOARD_COMPATIBILITY_PC = 0,
+  KEYBOARD_COMPATIBILITY_VT220 = 1,
+};
+
 enum start_up {
   START_UP_NONE = 0,
   START_UP_MESSAGE = 1,
@@ -90,6 +95,7 @@ struct terminal_config {
 #endif
 
   enum charset charset;
+  enum keyboard_compatibility keyboard_compatibility;
   enum c1_mode receive_c1_mode;
   enum c1_mode transmit_c1_mode;
 
