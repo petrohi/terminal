@@ -80,17 +80,17 @@ void CheckUSB(void);
 void initTimer(void);
 
 void BlinkLED(void);
-#define SERIAL_RX_BUF_SIZE (1024 * 4)
+#define SERIAL_RX_BUF_SIZE 6144
 char SerialRxBuf[SERIAL_RX_BUF_SIZE];
 volatile int SerialRxBufHead = 0;
 volatile int SerialRxBufTail = 0;
 
-#define SERIAL_TX_BUF_SIZE 256
+#define SERIAL_TX_BUF_SIZE 64
 char SerialTxBuf[SERIAL_TX_BUF_SIZE];
 int SerialTxBufHead = 0;
 int SerialTxBufTail = 0;
 
-#define LOCAL_BUFFER_SIZE 256
+#define LOCAL_BUFFER_SIZE 64
 static character_t local_buffer[LOCAL_BUFFER_SIZE];
 
 static size_t local_head = 0;
@@ -160,6 +160,13 @@ static struct screen screen_30_rows = {
     .normal_bitmap_font = &normal_bitmap_font,
     .bold_bitmap_font = &bold_bitmap_font,
 };
+
+#define MAX_COLS 80
+#define MAX_ROWS 30
+#define TAB_STOPS_SIZE (MAX_COLS / 8)
+
+static struct visual_cell visual_cells[MAX_ROWS * MAX_COLS];
+uint8_t tab_stops[TAB_STOPS_SIZE];
 
 struct screen *get_screen(struct format format) {
   if (format.cols == 80) {
@@ -346,8 +353,8 @@ int main(int argc, char* argv[]) {
       .yield = yield,
       .activate_config = activate_config,
       .write_config = write_config};
-  terminal_init(&terminal, &callbacks, &terminal_config, SerialTxBuf,
-                SERIAL_TX_BUF_SIZE);
+  terminal_init(&terminal, &callbacks, visual_cells, tab_stops, TAB_STOPS_SIZE,
+                &terminal_config, SerialTxBuf, SERIAL_TX_BUF_SIZE);
   global_terminal = &terminal;
 
   INTEnableSystemMultiVectoredInt();

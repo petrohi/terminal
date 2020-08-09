@@ -23,17 +23,28 @@ void terminal_timer_tick(struct terminal *terminal) {
 
 void terminal_init(struct terminal *terminal,
                    const struct terminal_callbacks *callbacks,
+                   struct visual_cell *default_cells,
+#ifdef TERMINAL_ALT_CELLS
+                   struct visual_cell *alt_cells,
+#endif
+                   uint8_t *tab_stops, size_t tab_stops_size,
                    const struct terminal_config *config,
                    character_t *transmit_buffer, size_t transmit_buffer_size) {
   terminal->callbacks = callbacks;
+  terminal->default_cells = default_cells;
+#ifdef TERMINAL_ALT_CELLS
+  terminal->alt_cells = alt_cells;
+#endif
+  terminal->tab_stops = tab_stops;
+  terminal->tab_stops_size = tab_stops_size;
 
   switch (config->format_rows) {
-    case FORMAT_24_ROWS:
-      terminal->format.rows = 24;
-      break;
-    case FORMAT_30_ROWS:
-      terminal->format.rows = 30;
-      break;
+  case FORMAT_24_ROWS:
+    terminal->format.rows = 24;
+    break;
+  case FORMAT_30_ROWS:
+    terminal->format.rows = 30;
+    break;
   }
 
   terminal->format.cols = 80;

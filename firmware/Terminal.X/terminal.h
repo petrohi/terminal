@@ -33,9 +33,6 @@ typedef uint16_t codepoint_t;
 #define CHARACTER_MAX 0xff
 #define CHARACTER_DECODER_TABLE_LENGTH CHARACTER_MAX + 1
 
-#define MAX_COLS 80
-#define MAX_ROWS 30
-
 enum screen_test {
   SCREEN_TEST_FONT1,
   SCREEN_TEST_FONT2,
@@ -180,7 +177,8 @@ struct terminal {
   int16_t margin_top;
   int16_t margin_bottom;
 
-  bool tab_stops[MAX_COLS];
+  uint8_t *tab_stops;
+  size_t tab_stops_size;
 
   volatile uint16_t cursor_counter;
   volatile bool cursor_on;
@@ -192,9 +190,9 @@ struct terminal {
 
   struct visual_cell *cells;
 
-  struct visual_cell default_cells[MAX_ROWS * MAX_COLS];
+  struct visual_cell *default_cells;
 #ifdef TERMINAL_ALT_CELLS
-  struct visual_cell alt_cells[MAX_ROWS * MAX_COLS];
+  struct visual_cell *alt_cells;
 #endif
 
   const receive_table_t *receive_table;
@@ -235,6 +233,11 @@ struct terminal {
 
 void terminal_init(struct terminal *terminal,
                    const struct terminal_callbacks *callbacks,
+                   struct visual_cell *default_cells,
+#ifdef TERMINAL_ALT_CELLS
+                   struct visual_cell *alt_cells,
+#endif
+                   uint8_t *tab_stops, size_t tab_stops_size,
                    const struct terminal_config *config,
                    character_t *transmit_buffer, size_t transmit_buffer_size);
 void terminal_keyboard_handle_key(struct terminal *terminal, bool shift,
