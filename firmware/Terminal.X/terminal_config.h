@@ -109,6 +109,7 @@ struct terminal_config {
   bool auto_repeat_mode;
   bool ansi_mode;
   bool backspace_mode;
+  bool application_keypad_mode;
 
   enum start_up start_up;
 };

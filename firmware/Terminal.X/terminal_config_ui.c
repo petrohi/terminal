@@ -230,6 +230,18 @@ static void change_backspace_mode(struct terminal_config_ui *terminal_config_ui,
   terminal_config_ui->terminal_config_copy.backspace_mode = backspace_mode;
 }
 
+static size_t
+current_application_keypad_mode(struct terminal_config_ui *terminal_config_ui) {
+  return terminal_config_ui->terminal_config_copy.application_keypad_mode;
+}
+
+static void
+change_application_keypad_mode(struct terminal_config_ui *terminal_config_ui,
+                               size_t application_keypad_mode) {
+  terminal_config_ui->terminal_config_copy.application_keypad_mode =
+      application_keypad_mode;
+}
+
 static const struct terminal_ui_choice off_on_choices[] = {
     {"off"},
     {"on"},
@@ -339,6 +351,8 @@ static const struct terminal_ui_menu menus[] = {
               {"application"},
               {NULL},
           }},
+         {"Keypad mode (DECNKM)", current_application_keypad_mode,
+          change_application_keypad_mode, &off_on_choices},
          {"ANSI mode (DECANM)", current_ansi_mode, change_ansi_mode,
           &(const struct terminal_ui_choice[]){
               {"VT52"},

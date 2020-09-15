@@ -495,11 +495,9 @@ void terminal_keyboard_init(struct terminal *terminal) {
   terminal->repeat_counter = 0;
   terminal->repeat_pressed_key = false;
 
-  terminal->lock_state.caps = 0;
-  terminal->lock_state.scroll = 0;
-  terminal->lock_state.num = 0;
-
   terminal->keys_entries = default_entries;
+
+  terminal_update_keyboard_leds(terminal);
 }
 
 void terminal_keyboard_set_keys_entries(

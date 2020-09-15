@@ -207,6 +207,7 @@ __attribute__((aligned(1024), space(prog),
     .auto_repeat_mode = true,
     .ansi_mode = true,
     .backspace_mode = false,
+    .application_keypad_mode = false,
 
     .flow_control = true,
 
