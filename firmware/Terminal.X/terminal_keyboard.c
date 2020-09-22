@@ -496,8 +496,6 @@ void terminal_keyboard_init(struct terminal *terminal) {
   terminal->repeat_pressed_key = false;
 
   terminal->keys_entries = default_entries;
-
-  terminal_update_keyboard_leds(terminal);
 }
 
 void terminal_keyboard_set_keys_entries(

@@ -80,7 +80,7 @@ void CheckUSB(void);
 void initTimer(void);
 
 void BlinkLED(void);
-#define SERIAL_RX_BUF_SIZE 6144
+#define SERIAL_RX_BUF_SIZE 5120
 char SerialRxBuf[SERIAL_RX_BUF_SIZE];
 volatile int SerialRxBufHead = 0;
 volatile int SerialRxBufTail = 0;
@@ -365,11 +365,13 @@ int main(int argc, char* argv[]) {
 
   INTEnableInterrupts();
 
-  uSec(100000);
+  uSec(1000000);
 
   struct terminal_config_ui terminal_config_ui;
   global_terminal_config_ui = &terminal_config_ui;
   terminal_config_ui_init(&terminal_config_ui, &terminal, &terminal_config);
+
+  terminal_update_keyboard_leds(&terminal);
 
   while (1) {
     yield();
