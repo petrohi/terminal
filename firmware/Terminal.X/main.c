@@ -53,8 +53,14 @@
 #include <ctype.h>
 #include "config.h"                     // config pragmas
 #include "main.h"
+#include "terminal.h"
+#include "terminal_config_ui.h"
+#include "screen.h"
 #include "vga.h"
-#include "vt100.h"
+#include "normal.h"
+#include "bold.h"
+#include "ps2.h"
+#include "keys.h"
 
 //** USB INCLUDES ***********************************************************
 #include "./USB/Microchip/Include/USB/usb.h"
@@ -66,33 +72,36 @@
 #include "./USB/usb_config.h"
 #include "./USB/Microchip/Include/USB/usb_device.h"
 
+#define KEYBOARD_RETRIES 3
 
-// declare the serial I/O functions
+extern void keyboard_init(void);
+extern bool keyboard_set_leds(int num, int caps, int scroll);
+extern bool keyboard_test();
+
+extern struct ps2 *global_ps2;
+
 void initSerial(void);
-int getSerial(void);
-void putSerial(int c);
 
-// declare the USB I/O functions
 void CheckUSB(void);
 
 void initTimer(void);
 
 void BlinkLED(void);
-void SetUp(void);
-
-#define DEFAULT_BAUD 9600
-#define MIN_BAUD 48
-#define MAX_BAUD 3125000
-
-#define SERIAL_RX_BUF_SIZE 256
+#define SERIAL_RX_BUF_SIZE 5120
 char SerialRxBuf[SERIAL_RX_BUF_SIZE];
 volatile int SerialRxBufHead = 0;
 volatile int SerialRxBufTail = 0;
 
-#define SERIAL_TX_BUF_SIZE 256
+#define SERIAL_TX_BUF_SIZE 64
 char SerialTxBuf[SERIAL_TX_BUF_SIZE];
 int SerialTxBufHead = 0;
 int SerialTxBufTail = 0;
+
+#define LOCAL_BUFFER_SIZE 64
+static character_t local_buffer[LOCAL_BUFFER_SIZE];
+
+static size_t local_head = 0;
+static size_t local_tail = 0;
 
 // declare the USB buffers
 // these buffers are used by the USB I/O hardware
@@ -106,94 +115,336 @@ char UsbDeviceTxBuf[USB_DEVICE_TX_BUFFER_SIZE];
 // The only pointer that we need is this one which keep track of where we are while reading the serial Rx buffer
 int USBSerialRxBufTail = 0;
 
-#define CURSOR_OFF		350											// cursor off time in mS
-#define CURSOR_ON		650											// cursor on time in mS
-
 volatile int LEDTimer = 0;
-volatile int CursorTimer = 0;
 volatile int GeneralTimer;
-int CursorOff = 0;
 
-#define MES_SIGNON  "ASCII Terminal Version " VERSION "\r\n"\
-					"Copyright (C) 2014-" YEAR " Geoff Graham and Peter Hizalev\r\n"\
-                    "https://github.com/petrohi/terminal\r\n\r\n"
+#define FONT_WIDTH 8
+#define FONT_HEIGHT 16
+
+static const struct bitmap_font normal_bitmap_font = {
+    .height = FONT_HEIGHT,
+    .width = FONT_WIDTH,
+    .data = normal_font_data,
+    .codepoints_length = sizeof(normal_font_codepoints) / sizeof(int),
+    .codepoints = normal_font_codepoints,
+    .codepoints_map = normal_font_codepoints_map,
+};
+
+static const struct bitmap_font bold_bitmap_font = {
+    .height = FONT_HEIGHT,
+    .width = FONT_WIDTH,
+    .data = bold_font_data,
+    .codepoints_length = sizeof(bold_font_codepoints) / sizeof(int),
+    .codepoints = bold_font_codepoints,
+    .codepoints_map = bold_font_codepoints_map,
+};
+
+#define CHAR_HEIGHT    16
+#define CHAR_WIDTH     8
+
+static struct screen screen_24_rows = {
+    .format =
+        {
+            .rows = 24,
+            .cols = 80,
+        },
+    .char_width = CHAR_WIDTH,
+    .char_height = CHAR_HEIGHT,
+    .buffer = NULL,
+    .normal_bitmap_font = &normal_bitmap_font,
+    .bold_bitmap_font = &bold_bitmap_font,
+};
+
+static struct screen screen_30_rows = {
+    .format =
+        {
+            .rows = 30,
+            .cols = 80,
+        },
+    .char_width = CHAR_WIDTH,
+    .char_height = CHAR_HEIGHT,
+    .buffer = NULL,
+    .normal_bitmap_font = &normal_bitmap_font,
+    .bold_bitmap_font = &bold_bitmap_font,
+};
+
+#define MAX_COLS 80
+#define MAX_ROWS 30
+#define TAB_STOPS_SIZE (MAX_COLS / 8)
+
+static struct visual_cell visual_cells[MAX_ROWS * MAX_COLS];
+uint8_t tab_stops[TAB_STOPS_SIZE];
+
+struct screen *get_screen(struct format format) {
+  if (format.cols == 80) {
+    if (format.rows == 24)
+      return &screen_24_rows;
+    else if (format.rows == 30)
+      return &screen_30_rows;
+  }
+
+  return NULL;
+}
+
+struct terminal *global_terminal = NULL;
+struct terminal_config_ui *global_terminal_config_ui = NULL;
+
+__attribute__((aligned(1024), space(prog),
+               section(".nvm"))) struct terminal_config terminal_config = {
+    .format_rows = FORMAT_24_ROWS,
+    .monochrome_transform = MONOCHROME_TRANSFORM_LUMINANCE,
+
+    .baud_rate = BAUD_RATE_115200,
+    .stop_bits = STOP_BITS_1,
+    .parity = PARITY_NONE,
+    .serial_inverted = false,
+
+    .charset = CHARSET_UTF8,
+    .keyboard_compatibility = KEYBOARD_COMPATIBILITY_PC,
+    .receive_c1_mode = C1_MODE_8BIT,
+    .transmit_c1_mode = C1_MODE_7BIT,
+
+    .auto_wrap_mode = true,
+    .screen_mode = false,
+
+    .send_receive_mode = true,
+
+    .new_line_mode = false,
+    .cursor_key_mode = false,
+    .auto_repeat_mode = true,
+    .ansi_mode = true,
+    .backspace_mode = false,
+    .application_keypad_mode = false,
+
+    .flow_control = true,
+
+    .start_up = START_UP_MESSAGE,
+};
+
+static void yield() {
+  CheckUSB();
+
+  if (global_ps2 && global_terminal) {
+    terminal_keyboard_handle_key(
+        global_terminal, global_ps2->lshift || global_ps2->rshift,
+        global_ps2->lalt || global_ps2->ralt,
+        global_ps2->lctrl || global_ps2->rctrl, global_ps2->keys[0]);
+  }
+
+  if (global_ps2->keys[0] != KEY_NONE)
+    BlinkLED();
+}
+
+static void uart_transmit(character_t *characters, size_t size, size_t head) {
+  if (!global_terminal->send_receive_mode) {
+    while (size--) {
+      local_buffer[local_head] = *characters;
+      local_head++;
+      characters++;
+
+      if (local_head == LOCAL_BUFFER_SIZE)
+        local_head = 0;
+    }
+  }
+
+  SerialTxBufHead = head;
+  INTEnable(INT_SOURCE_UART_TX(UART2), INT_ENABLED);
+}
+
+static void screen_draw_codepoint_callback(struct format format, size_t row,
+                                           size_t col, codepoint_t codepoint,
+                                           enum font font, bool italic,
+                                           bool underlined, bool crossedout,
+                                           color_t active, color_t inactive) {
+  screen_draw_codepoint(get_screen(format), row, col, codepoint, font,
+                        italic, underlined, crossedout, active, inactive);
+}
+
+static void screen_clear_rows_callback(struct format format, size_t from_row,
+                                       size_t to_row, color_t inactive) {
+  screen_clear_rows(get_screen(format), from_row, to_row, inactive, yield);
+}
+
+static void screen_clear_cols_callback(struct format format, size_t row,
+                                       size_t from_col, size_t to_col,
+                                       color_t inactive) {
+  screen_clear_cols(get_screen(format), row, from_col, to_col, inactive, yield);
+}
+
+static void screen_scroll_callback(struct format format, enum scroll scroll,
+                                   size_t from_row, size_t to_row, size_t rows,
+                                   color_t inactive) {
+  screen_scroll(get_screen(format), scroll, from_row, to_row, rows, inactive,
+                yield);
+}
+
+static void screen_shift_right_callback(struct format format, size_t row,
+                                        size_t col, size_t cols,
+                                        color_t inactive) {
+  screen_shift_right(get_screen(format), row, col, cols, inactive, yield);
+}
+
+static void screen_shift_left_callback(struct format format, size_t row,
+                                       size_t col, size_t cols,
+                                       color_t inactive) {
+  screen_shift_left(get_screen(format), row, col, cols, inactive, yield);
+}
+
+static void screen_test_callback(struct format format,
+                                 enum screen_test screen_test) {
+  struct screen *screen = get_screen(format);
+  switch (screen_test) {
+  case SCREEN_TEST_FONT1:
+    screen_test_fonts(screen, FONT_NORMAL);
+    break;
+  case SCREEN_TEST_FONT2:
+    screen_test_fonts(screen, FONT_BOLD);
+    break;
+  }
+}
+
+static void activate_config() {
+  terminal_config_ui_activate(global_terminal_config_ui);
+}
+
+static void write_config(struct terminal_config *terminal_config_copy) {
+  NVMErasePage(&terminal_config);
+
+  for (size_t i = 0; i < sizeof(struct terminal_config) / 4; ++i)
+    NVMWriteWord(((uint32_t *)&terminal_config) + i,
+                 *(((uint32_t *)terminal_config_copy) + i));
+}
+
+static void keyboard_set_leds_callback(struct lock_state state) {
+  size_t retries = KEYBOARD_RETRIES;
+  while (retries-- && !keyboard_set_leds(state.caps, state.num, state.scroll))
+    ;
+}
 
 int main(int argc, char* argv[]) {
-    int ch;
+  int ch;
 
-	// initial setup of the I/O ports
-    ANSELA = 0; ANSELB = 0;			                                // Default all pins to digital
-    mJTAGPortEnable(0);                                             // turn off jtag
+  // initial setup of the I/O ports
+  ANSELA = 0;
+  ANSELB = 0;         // Default all pins to digital
+  mJTAGPortEnable(0); // turn off jtag
 
- 	// setup the CPU
-    SYSTEMConfigPerformance(CLOCKFREQ);    							// System config performance
-	mOSCSetPBDIV(OSC_PB_DIV_1);									    // fix the peripheral bus to the main clock speed
+  // setup the CPU
+  SYSTEMConfigPerformance(CLOCKFREQ); // System config performance
+  mOSCSetPBDIV(OSC_PB_DIV_1); // fix the peripheral bus to the main clock speed
 
-    // clear all port I/O (they are not cleared by a software reset)
-    LATA = LATB = 0;
-    TRISA = TRISB = 0xffffffff;
-    CNENA = CNENB = CNCONA = CNCONB = 0;
-    CNPUA = CNPUB = CNPDA = CNPDB = 0;
+  // clear all port I/O (they are not cleared by a software reset)
+  LATA = LATB = 0;
+  TRISA = TRISB = 0xffffffff;
+  CNENA = CNENB = CNCONA = CNCONB = 0;
+  CNPUA = CNPUB = CNPDA = CNPDB = 0;
 
-    CNPUBSET = (1 << 4); CNPUBSET = (1 << 3); CNPUASET = (1 << 1);  // set pullups on the baudrate jumpers
-    TRISBbits.TRISB5 = 0; LATBCLR = (1<<5);                         // turn on the power LED
-    uSec(1000);                                                     // settling time
+  TRISBbits.TRISB5 = 0;
+  LATBCLR = (1 << 5); // turn on the power LED
+  uSec(1000);         // settling time
 
-    INTEnableSystemMultiVectoredInt();                              // allow vectored interrupts
-    initTimer();                                                    // initialise the millisecond timer
-    InitVga(Option[O_LINES24] ? 3 : 0);                             // initialise the video and associated interrupt
-    initVT100();                                                    // initialise the vt100/vt52 decoding engine
-    initSerial();                                                   // initialise the UART used for the serial I/O
-    USBDeviceInit();												// Initialise USB module SFRs and firmware
-    initKeyboard();                                                 // initialise the keyboard and associated interrupt
+  USBDeviceInit();
+  keyboard_init();
+  screen_24_rows.buffer = screen_30_rows.buffer =
+      init_vga(terminal_config.format_rows);
 
-    INTEnableInterrupts();
+  struct terminal terminal;
+  struct terminal_callbacks callbacks = {
+      .keyboard_set_leds = keyboard_set_leds_callback,
+      .uart_transmit = uart_transmit,
+      .screen_draw_codepoint = screen_draw_codepoint_callback,
+      .screen_clear_rows = screen_clear_rows_callback,
+      .screen_clear_cols = screen_clear_cols_callback,
+      .screen_scroll = screen_scroll_callback,
+      .screen_shift_left = screen_shift_left_callback,
+      .screen_shift_right = screen_shift_right_callback,
+      .screen_test = screen_test_callback,
+      .reset = SoftReset,
+      .yield = yield,
+      .activate_config = activate_config,
+      .write_config = write_config};
+  terminal_init(&terminal, &callbacks, visual_cells, tab_stops, TAB_STOPS_SIZE,
+                &terminal_config, SerialTxBuf, SERIAL_TX_BUF_SIZE);
+  global_terminal = &terminal;
 
-    uSec(100000);                                                   // allow everything to settle
-	if(Option[O_STARTUPMSG]) VideoPrintString(MES_SIGNON); 			// print signon message
+  INTEnableSystemMultiVectoredInt();
 
-    while(1) {
-        CheckUSB();
-        ShowCursor(!(CursorOff || CursorTimer > CURSOR_ON));
+  initTimer();
+  initSerial();
 
-        ch = getSerial();
-        if(ch != -1) {
-            VT100Putc(ch);
-        }
+  INTEnableInterrupts();
 
-        if(KeyDown != -1) {
-            switch(KeyDown) {
-                case UP:        putSerialString(mode == VT100 ? "\033[A" : "\033A");      break;
-                case DOWN:      putSerialString(mode == VT100 ? "\033[B" : "\033B");      break;
-                case LEFT:      putSerialString(mode == VT100 ? "\033[D" : "\033D");      break;
-                case RIGHT:     putSerialString(mode == VT100 ? "\033[C" : "\033C");      break;
-                case HOME:      putSerialString("\033[1~");     break;
-                case INSERT:    putSerialString("\033[2~");     break;
-                case DEL:       putSerialString("\033[3~");     break;
-                case END:       putSerialString("\033[4~");     break;
-                case PUP:       putSerialString("\033[5~");     break;
-                case PDOWN:     putSerialString("\033[6~");     break;
-                case F1:        putSerialString("\033[11~");    break;
-                case F2:        putSerialString("\033[12~");    break;
-                case F3:        putSerialString("\033[13~");    break;
-                case F4:        putSerialString("\033[14~");    break;
-                case F5:        putSerialString("\033[15~");    break;
-                case F6:        putSerialString("\033[17~");    break;
-                case F7:        putSerialString("\033[18~");    break;
-                case F8:        putSerialString("\033[19~");    break;
-                case F9:        putSerialString("\033[20~");    break;
-                case F10:       putSerialString("\033[21~");    break;
-                case F11:       putSerialString("\033[23~");    break;
-                case F12:       putSerialString("\033[24~");    break;
-                case F3+0x20:   putSerialString("\033[25~");    break;
-                case F12+0x20:  SetUp();                        break;
-                default:        putSerial(KeyDown);             break;
-            }
-            KeyDown = -1;
-            BlinkLED();
-        }
+  uSec(1000000);
 
+  struct terminal_config_ui terminal_config_ui;
+  global_terminal_config_ui = &terminal_config_ui;
+  terminal_config_ui_init(&terminal_config_ui, &terminal, &terminal_config);
+
+  bool keyboard_detected = false;
+  size_t retries = KEYBOARD_RETRIES;
+  while (retries-- && !(keyboard_detected = keyboard_test()))
+    ;
+
+  if (keyboard_detected) {
+    terminal_keyboard_update_leds(&terminal);
+  } else {
+    terminal_uart_receive_string(&terminal,
+                                 "PS/2 keyboard is not detected!\r\n");
+  }
+
+  while (1) {
+    yield();
+    terminal_screen_update(&terminal);
+    terminal_keyboard_repeat_key(&terminal);
+
+    if (terminal_config_ui.activated)
+      continue;
+
+    if (local_tail != local_head) {
+      size_t size = 0;
+      if (local_tail < local_head)
+        size = local_head - local_tail;
+      else
+        size = local_head + (LOCAL_BUFFER_SIZE - local_tail);
+
+      while (size--) {
+        character_t character = local_buffer[local_tail];
+        terminal_uart_receive_character(&terminal, character);
+        local_tail++;
+
+        if (local_tail == LOCAL_BUFFER_SIZE)
+          local_tail = 0;
+      }
     }
+
+    if (SerialRxBufHead != SerialRxBufTail) {
+      int size = 0;
+      if (SerialRxBufTail < SerialRxBufHead)
+        size = SerialRxBufHead - SerialRxBufTail;
+      else
+        size = SerialRxBufHead + (SERIAL_RX_BUF_SIZE - SerialRxBufTail);
+
+      terminal_uart_flow_control(&terminal, size);
+
+      while (size--) {
+        yield();
+
+        if (terminal_config_ui.activated)
+          break;
+
+        terminal_uart_flow_control(&terminal, size);
+
+        character_t character = SerialRxBuf[SerialRxBufTail];
+        SerialRxBufTail++;
+
+        terminal_uart_receive_character(&terminal, character);
+        if (SerialRxBufTail == SERIAL_RX_BUF_SIZE)
+          SerialRxBufTail = 0;
+      }
+    } else {
+      terminal_uart_flow_control(&terminal, 0);
+    }
+  }
 }
 
 
@@ -204,33 +455,50 @@ int main(int argc, char* argv[]) {
 
 // initialize the UART2 serial port
 void initSerial(void) {
-    int cfg1, cfg2, baud = 0;
-    PPSInput(2, U2RX, RPB1); PPSOutput(4, RPB0, U2TX);
+  PPSInput(2, U2RX, RPB1);
+  PPSOutput(4, RPB0, U2TX);
 
-    cfg1 = UART_ENABLE_PINS_TX_RX_ONLY;
-    if(!Option[O_SERIALINV]) cfg1 |= (UART_INVERT_RECEIVE_POLARITY | UART_INVERT_TRANSMIT_POLARITY);
+  int cfg1 = UART_ENABLE_PINS_TX_RX_ONLY;
+  if (terminal_config.serial_inverted)
+    cfg1 |= (UART_INVERT_RECEIVE_POLARITY | UART_INVERT_TRANSMIT_POLARITY);
 
-    cfg2 = UART_DATA_SIZE_8_BITS;
-    switch(Option[O_PARITY]) {
-        case O_PARITY_NONE: cfg2 |= UART_PARITY_NONE;    break;
-        case O_PARITY_ODD:  cfg2 |= UART_PARITY_ODD;     break;
-        case O_PARITY_EVEN: cfg2 |= UART_PARITY_EVEN;    break;
-    }
-    cfg2 |= Option[O_1STOPBIT] ? UART_STOP_BITS_1 : UART_STOP_BITS_2;
-    baud = Option[O_BAUDRATE] == -1 ? DEFAULT_BAUD : Option[O_BAUDRATE];
+  int cfg2 = UART_DATA_SIZE_8_BITS;
 
-    UARTConfigure(UART2, cfg1);
-    UARTSetFifoMode(UART2, UART_INTERRUPT_ON_TX_NOT_FULL | UART_INTERRUPT_ON_RX_NOT_EMPTY);
-    UARTSetLineControl(UART2, cfg2);
-    UARTSetDataRate(UART2, BUSFREQ, baud);
-    UARTEnable(UART2, UART_ENABLE_FLAGS(UART_PERIPHERAL | UART_RX | UART_TX));
+  switch (terminal_config.stop_bits) {
+  case STOP_BITS_1:
+    cfg2 |= UART_STOP_BITS_1;
+    break;
+  case STOP_BITS_2:
+    cfg2 |= UART_STOP_BITS_2;
+    break;
+  }
 
-    // Configure UART2 RX Interrupt (the Tx Interrupt is enabled in putSerial())
-    INTSetVectorPriority(INT_VECTOR_UART(UART2), INT_PRIORITY_LEVEL_3);
-    INTSetVectorSubPriority(INT_VECTOR_UART(UART2), INT_SUB_PRIORITY_LEVEL_0);
-    INTEnable(INT_SOURCE_UART_RX(UART2), INT_ENABLED);
+  switch (terminal_config.parity) {
+  case PARITY_NONE:
+    cfg2 |= UART_PARITY_NONE;
+    break;
+  case PARITY_EVEN:
+    cfg2 |= UART_PARITY_EVEN;
+    break;
+  case PARITY_ODD:
+    cfg2 |= UART_PARITY_ODD;
+    break;
+  }
+
+  int baud = terminal_config_get_baud_rate(&terminal_config);
+
+  UARTConfigure(UART2, cfg1);
+  UARTSetFifoMode(UART2, UART_INTERRUPT_ON_TX_NOT_FULL |
+                             UART_INTERRUPT_ON_RX_NOT_EMPTY);
+  UARTSetLineControl(UART2, cfg2);
+  UARTSetDataRate(UART2, BUSFREQ, baud);
+  UARTEnable(UART2, UART_ENABLE_FLAGS(UART_PERIPHERAL | UART_RX | UART_TX));
+
+  // Configure UART2 RX Interrupt (the Tx Interrupt is enabled in putSerial())
+  INTSetVectorPriority(INT_VECTOR_UART(UART2), INT_PRIORITY_LEVEL_3);
+  INTSetVectorSubPriority(INT_VECTOR_UART(UART2), INT_SUB_PRIORITY_LEVEL_0);
+  INTEnable(INT_SOURCE_UART_RX(UART2), INT_ENABLED);
 }
-
 
 // UART 2 interrupt handler
 void __ISR(_UART2_VECTOR, ipl3) IntUart2Handler(void) {
@@ -263,34 +531,6 @@ void __ISR(_UART2_VECTOR, ipl3) IntUart2Handler(void) {
     }
 }
 
-
-
-// send a character to the Console serial port
-void putSerial(int c) {
-    SerialTxBuf[SerialTxBufHead++] = c;								// add the char
-    SerialTxBufHead = SerialTxBufHead % SERIAL_TX_BUF_SIZE;         // advance the head of the queue
-    INTEnable(INT_SOURCE_UART_TX(UART2), INT_ENABLED);              // enable Tx interrupt in case it was off
-}
-
-
-void putSerialString(char *p) {
-    while(*p) putSerial(*p++);
-}
-
-
-// get a char from the UART1 serial port
-// will return immediately with -1 if there is no character waiting
-int getSerial(void) {
-    char c;
-    if(SerialRxBufHead == SerialRxBufTail) return -1;
-    c = SerialRxBuf[SerialRxBufTail++];
-    if(SerialRxBufTail >= SERIAL_RX_BUF_SIZE) SerialRxBufTail = 0;
-    return c;
-}
-
-
-
-
 /*********************************************************************************************
 * USB I/O functions
 **********************************************************************************************/
@@ -315,7 +555,7 @@ void CheckUSB(void) {
                 numBytesRead = getsUSBUSART(UsbDeviceRxBuf,USB_DEVICE_RX_BUFFER_SIZE);// check for data to be read
                 if(numBytesRead > 0) {                                             // if we have some data,
                     for(i = 0; i < numBytesRead; i++)
-                        putSerial(UsbDeviceRxBuf[i]);	                           // copy it into the serial output queue
+                        terminal_uart_transmit_character(global_terminal, UsbDeviceRxBuf[i]); // copy it into the serial output queue
                     BlinkLED();
                 }
             }
@@ -411,9 +651,9 @@ void __ISR( _TIMER_4_VECTOR, ipl1) T4Interrupt(void) {
         if(--LEDTimer < 25) LATBCLR = (1<<5);
 
     if(GeneralTimer) GeneralTimer--;
-
-    if(++CursorTimer > CURSOR_OFF + CURSOR_ON) CursorTimer = 0;		// used to control cursor blink rate
-
+    
+    terminal_timer_tick(global_terminal);
+    
     // Clear the interrupt flag
     mT4ClearIntFlag();
 }
@@ -425,177 +665,3 @@ void BlinkLED(void) {
         LATBSET = (1<<5);
     }
 }
-
-
-
-
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Macro to reserve flash memory for saving/loading options and initialise to 0xFF's
-// creates an array of integers 'name' with 'nbr' elements
-// Note that 'nbr' need to be a multiple of 256 to fit the PIC32MX150/250 erase page size which is 1024 bytes
-#define NVM_ALLOCATE(name, nbr) int name[(nbr)] \
-	     __attribute__ ((aligned(1024),space(prog),section(".nvm"))) = \
-	     { [0 ...(nbr)-1] = 0xFFFFFFFF }
-
-// allocate space in flash for the options.  The start of the memory is aligned on erasable page boundary
-NVM_ALLOCATE(Option, 256);
-
-
-
-void Prompt(int x, char *msg) {
-    int i;
-    for(i = 0; i < x; i++) VT100Putc(' ');
-    VideoPrintString(msg);
-}
-
-
-void PPrompt(char *msg, char *current) {
-    int i;
-     for(i = 0; i < 14; i++) VT100Putc(' ');
-    VideoPrintString(msg);
-    for(i = 0; i < 38 - strlen(msg); i++) VT100Putc(' ');
-    VideoPrintString("(currently ");
-    VideoPrintString(current);
-    VideoPrintString(")     \r\n");
-}
-
-
-int GetInput(char *msg, int min, int max) {
-    int i;
-    for(i = 0; i < (74 - strlen(msg))/2; i++) VT100Putc(' ');
-    VideoPrintString(msg);
-    cmd_ClearEOS();
-    while(toupper(KeyDown) < min || toupper(KeyDown) > max) ShowCursor(true);
-    i = toupper(KeyDown);
-    KeyDown = -1;
-    VT100Putc(i);
-    VideoPrintString("\r\n");
-    return i;
-}
-
-void ConfigBuffers() {
-    SerialRxBufHead = 0;
-    SerialRxBufTail = 0;
-    USBSerialRxBufTail = 0;
-}
-
-void SetUp(void) {
-    const char *kblang[8] = {"US", "FR", "GR", "IT", "BE", "UK", "RS" };
-    const char *oparity[3] = {"8 NONE", "7 ODD", "7 EVEN" };
-    char baud[10];
-    #define NBR_SAVED   20
-    int saved[NBR_SAVED], i;
-
-    for(i = 0; i < NBR_SAVED; i++) saved[i] = Option[i];
-
-    cmd_Reset();
-    ConfigBuffers();
-    ShowCursor(false);                                              // turn off the cursor to prevent it from getting confused
-    ClearScreen();
-
-    while(1) {
-        MoveCursor(1, 1);
-        if (!Option[O_LINES24]) VideoPrintString("\r\n\r\n\r\n");
-        Prompt(35, "");
-        UnderlineChar = true;
-        VideoPrintString("SET-UP MENU\r\n");
-        UnderlineChar = false;
-        VideoPrintString("\r\n\r\n\r\n");
-        PPrompt("A = Number of lines", saved[O_LINES24] ? "24" : "30");
-        PPrompt("C = Keyboard language", (char *)kblang[saved[O_KEYBOARD] + 1]);
-        VideoPrintString("\r\n");
-        PPrompt("D = Number of bits and parity", (char *)oparity[saved[O_PARITY] + 1]);
-        PPrompt("E = Number of stop bits", saved[O_1STOPBIT] ? "ONE" : "TWO");
-        PPrompt("F = Invert Serial (for RS232)", saved[O_SERIALINV] ? "OFF" : "INVERT");
-        sprintf(baud, "%d", saved[O_BAUDRATE] == -1 ? DEFAULT_BAUD : saved[O_BAUDRATE]);
-        PPrompt("G = Configurable baudrate", baud);
-        VideoPrintString("\r\n");
-        PPrompt("H = Display start up message", saved[O_STARTUPMSG] ? "ON" : "HIDE");
-        VideoPrintString("\r\n");
-        Prompt(14, "I = Reset to the original defaults\r\n");
-        Prompt(14, "J = Discard all changes and exit\r\n");
-        Prompt(14, "K = Save changes and restart terminal\r\n");
-
-        VideoPrintString("\r\n\r\n\r\n");
-
-        switch(GetInput("Select item (enter C to K) : ", 'A', 'K')) {
-            case 'A': saved[O_LINES24] = GetInput("Enter 1 for 24 lines or 2 for 30 lines : ", '1', '2') - '2';
-                      break;
-            case 'B':
-                      break;
-            case 'C': saved[O_KEYBOARD] = GetInput("Language 1=US, 2=FR, 3=GR, 4=IT, 5=BE, 6=UK, 7=RS : ", '1', '7') - '2';
-                      break;
-            case 'D': saved[O_PARITY] = GetInput("1 = 8bit NONE, 2 = 7bit ODD, 3 = 7bit EVEN : ", '1', '7') - '2';
-                      break;
-            case 'E': saved[O_1STOPBIT] = GetInput("Enter the number of stop bits : ", '1', '2') - '2';
-                      break;
-            case 'F': saved[O_SERIALINV] = GetInput("Enter 1 for normal or 2 for inverted : ", '1', '2') - '2';
-                      break;
-            case 'G': for(i = 0; i < (74 - strlen("Enter baudrate as a number followed by ENTER : "))/2; i++) VT100Putc(' ');
-                      VideoPrintString("Enter baudrate as a number followed by ENTER : ");
-                      cmd_ClearEOS();
-                      i = 0;
-                      while(1) {
-                          int j;
-                          mINT3IntEnable(false);       				// disable interrupt while we play
-                          j = KeyDown;
-                          KeyDown = -1;
-                          mINT3IntEnable(true);
-                          ShowCursor(true);
-                          if(j == '\r') break;
-                          if(j == '\b') { i = i /10; VideoPrintString("\b \b"); }
-                          if(j >= '0' && j <= '9') { VT100Putc(j); i = (i * 10) + j - '0'; }
-                      }
-                      if(i == 0) i = saved[O_BAUDRATE];
-                      if(i < MIN_BAUD) i = MIN_BAUD;
-                      if(i > MAX_BAUD) i = MAX_BAUD;
-                      saved[O_BAUDRATE] = i;
-                      break;
-            case 'H': saved[O_STARTUPMSG] = GetInput("Enter 1 to display or 2 to hide : ", '1', '2') - '2';
-                      break;
-            case 'I': for(i = 0; i < NBR_SAVED; i++) saved[i] = -1;
-                      break;
-            case 'J': cmd_Reset();
-                      return;
-            case 'K': NVMErasePage((char *)Option);
-                      for(i = 0; i < NBR_SAVED; i++) NVMWriteWord((void *)(&Option[i]), saved[i]);
-                      SoftReset();
-        }
-    }
-}
-
-
-
-int GetFlashOption(const unsigned int *w) {
-    return O_KEYBOARD_US;
-}
-
-
-
-#ifdef __DEBUG
-
-void dump(char *p, int nbr) {
-	char inpbuf[100], buf1[60], buf2[30], *b1, *b2;
-	b1 = buf1; b2 = buf2;
-	b1 += sprintf(b1, "%8x: ", (unsigned int)p);
-	while(nbr > 0) {
-		b1 += sprintf(b1, "%02x ", *p);
-		b2 += sprintf(b2, "%c", (*p >= ' ' && *p < 0x7f) ? *p : ' ');
-		p++;
-		nbr--;
-		if((unsigned int)p % 16 == 0) {
-			sprintf(inpbuf, "%s   %s", buf1, buf2);
-//			MMPrintString(inpbuf);
-			b1 = buf1; b2 = buf2;
-			b1 += sprintf(b1, "\r\n%8x: ", (unsigned int)p);
-		}
-	}
-	if(b2 != buf2) {
-		sprintf(inpbuf, "%s   %s", buf1, buf2);
-//		MMPrintString(inpbuf);
-	}
-//	MMPrintString("\r\n");
-}
-
-#endif
