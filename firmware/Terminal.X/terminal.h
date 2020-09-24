@@ -243,6 +243,8 @@ void terminal_init(struct terminal *terminal,
 void terminal_keyboard_handle_key(struct terminal *terminal, bool shift,
                                   bool alt, bool ctrl, uint8_t key);
 
+void terminal_keyboard_update_leds(struct terminal *terminal);
+
 void terminal_uart_receive_character(struct terminal *terminal,
                                      character_t character);
 void terminal_uart_receive_string(struct terminal *terminal,

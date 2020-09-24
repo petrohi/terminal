@@ -49,18 +49,18 @@ static size_t get_keyboard_compatibility(struct terminal *terminal) {
   return terminal->keyboard_compatibility;
 }
 
-void terminal_update_keyboard_leds(struct terminal *terminal) {
+void terminal_keyboard_update_leds(struct terminal *terminal) {
   terminal->callbacks->keyboard_set_leds(terminal->lock_state);
 }
 
 static void handle_caps_lock(struct terminal *terminal) {
   terminal->lock_state.caps ^= 1;
-  terminal_update_keyboard_leds(terminal);
+  terminal_keyboard_update_leds(terminal);
 }
 
 static void handle_num_lock(struct terminal *terminal) {
   terminal->lock_state.num ^= 1;
-  terminal_update_keyboard_leds(terminal);
+  terminal_keyboard_update_leds(terminal);
 }
 
 static void handle_ctrl_alt_delete(struct terminal *terminal) {
@@ -69,7 +69,7 @@ static void handle_ctrl_alt_delete(struct terminal *terminal) {
 
 static void update_scroll_lock(struct terminal *terminal, bool scroll_lock) {
   terminal->lock_state.scroll = scroll_lock;
-  terminal_update_keyboard_leds(terminal);
+  terminal_keyboard_update_leds(terminal);
 
   if (terminal->lock_state.scroll)
     terminal_uart_transmit_character(terminal, CHAR_XOFF);

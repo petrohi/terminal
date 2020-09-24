@@ -16,8 +16,6 @@ void terminal_keyboard_init(struct terminal *terminal);
 
 void terminal_keyboard_update_repeat_counter(struct terminal *terminal);
 
-void terminal_update_keyboard_leds(struct terminal *terminal);
-
 void terminal_screen_init(struct terminal *terminal);
 
 int16_t get_terminal_screen_cursor_row(struct terminal *terminal);

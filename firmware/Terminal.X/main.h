@@ -67,10 +67,3 @@
 #define uSec(us) { unsigned int i = ((((unsigned int)(us) * 1000) - 600) / (2000000000/CLOCKFREQ)); WriteCoreTimer(0); while(ReadCoreTimer() < i); }
 
 extern volatile int GeneralTimer;
-
-// global keyboard functions, defines and variables
-extern void initKeyboard(void);
-
-extern void setLEDs(int num, int caps, int scroll);
-
-extern struct ps2 *global_ps2;

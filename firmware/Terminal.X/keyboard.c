@@ -74,10 +74,6 @@ const unsigned int KeyboardOption = 0xffffffff;						// used to store the keyboa
 #define PS2PARITY   2
 #define PS2STOP     3
 
-// PS2 KBD state machine and buffer
-int PS2State;
-unsigned char KBDBuf;
-int KState, KCount, KParity;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // Hardware definitions for the keyboard
@@ -100,21 +96,16 @@ int KState, KCount, KParity;
 initKeyboard
 Initialise the keyboard.
 ****************************************************************************************************/
-void initKeyboard(void) {
+void keyboard_init(void) {
+  P_PS2CLK_TRIS = 1;
+  P_PS2DAT_TRIS = 1; // make sure out inputs are in fact inputs
 
-    P_PS2CLK_TRIS = 1; P_PS2DAT_TRIS = 1;                           // make sure out inputs are in fact inputs
+  PPSInput(2, INT3, RPB8);
+  ConfigINT3(EXT_INT_PRI_2 | FALLING_EDGE_INT | EXT_INT_ENABLE);
 
-    PPSInput(2, INT3, RPB8);
-    ConfigINT3(EXT_INT_PRI_2 | FALLING_EDGE_INT | EXT_INT_ENABLE);
-
-    // initialise variabls
-    PS2State = PS2START;
-
-    ps2_init(&ps2);
-    global_ps2 = &ps2;
+  ps2_init(&ps2);
+  global_ps2 = &ps2;
 }
-
-
 
 /***************************************************************************************************
 sendCommand - Send a command to to keyboard.
@@ -122,103 +113,144 @@ sendCommand - Send a command to to keyboard.
  pullup will ensure a high.  When we want to signal a logic low we turn the pin into an output and
  because we have loaded the output latch with a zero the output will be pulled low.
 ****************************************************************************************************/
-void sendCommand(int cmd) {
-    int i, j;
+static bool send_command(int cmd) {
+  int i, j;
+  bool success = false;
 
-    // calculate the parity and add to the command as the 9th bit
-    for(j = i = 0; i < 8; i++) j += ((cmd >> i) & 1);
-    cmd = (cmd & 0xff) | (((j + 1) & 1) << 8);
+  // calculate the parity and add to the command as the 9th bit
+  for (j = i = 0; i < 8; i++)
+    j += ((cmd >> i) & 1);
+  cmd = (cmd & 0xff) | (((j + 1) & 1) << 8);
 
- 	P_PS2CLK_OUT = 0;                                               // when configured as an output the clock line will be low
- 	P_PS2DAT_OUT = 0;                                               // same for data
- 	P_PS2CLK_TRIS = 0;                                              // clock low
- 	uSec(150);
- 	P_PS2DAT_TRIS = 0;                                              // data low
- 	uSec(2);
- 	P_PS2CLK_TRIS = 1;                                              // release the clock (goes high)
- 	uSec(2);
+  P_PS2_INTERRUPT(false); // disable interrupt while we play
+  P_PS2CLK_OUT = 0;  // when configured as an output the clock line will be low
+  P_PS2DAT_OUT = 0;  // same for data
+  P_PS2CLK_TRIS = 0; // clock low
+  uSec(150);
+  P_PS2DAT_TRIS = 0; // data low
+  uSec(2);
+  P_PS2CLK_TRIS = 1; // release the clock (goes high)
+  uSec(2);
 
- 	GeneralTimer = 500;                                             // timeout of 500mS
- 	while(P_PS2CLK) if(GeneralTimer == 0) return;                   // wait for the keyboard to pull the clock low
+  GeneralTimer = 500; // timeout of 500mS
+  while (P_PS2CLK)
+    if (GeneralTimer == 0)
+      goto timeout; // wait for the keyboard to pull the clock low
 
- 	// send each bit including parity
- 	for(i = 0; i < 9; i++) {
-        P_PS2DAT_TRIS = (cmd & 1);                                  // set the data bit
-     	while(!P_PS2CLK) if(GeneralTimer == 0) return;              // wait for the keyboard to bring the clock high
-     	while(P_PS2CLK)  if(GeneralTimer == 0) return;              // wait for clock low
-     	cmd >>= 1;
-    }
+  // send each bit including parity
+  for (i = 0; i < 9; i++) {
+    P_PS2DAT_TRIS = (cmd & 1); // set the data bit
+    while (!P_PS2CLK)
+      if (GeneralTimer == 0)
+        goto timeout; // wait for the keyboard to bring the clock high
+    while (P_PS2CLK)
+      if (GeneralTimer == 0)
+        goto timeout; // wait for clock low
+    cmd >>= 1;
+  }
 
-    P_PS2DAT_TRIS = 1;                                              // release the data line
-    while(P_PS2DAT) if(GeneralTimer == 0) return;                   // wait for the keyboard to pull data low (ACK)
- 	while(P_PS2CLK) if(GeneralTimer == 0) return;                   // wait for the clock to go low
- 	while(!P_PS2CLK || !P_PS2DAT) if(GeneralTimer == 0) return;     // finally wait for both the clock and data to go high (idle state)
+  P_PS2DAT_TRIS = 1; // release the data line
+  while (P_PS2DAT)
+    if (GeneralTimer == 0)
+      goto timeout; // wait for the keyboard to pull data low (ACK)
+  while (P_PS2CLK)
+    if (GeneralTimer == 0)
+      goto timeout; // wait for the clock to go low
+  while (!P_PS2CLK || !P_PS2DAT)
+    if (GeneralTimer == 0)
+      goto timeout; // finally wait for both the clock and data to go high (idle
+                    // state)
+
+  success = true;
+
+timeout:
+  P_PS2CLK_TRIS = 1;
+  P_PS2DAT_TRIS = 1; // reset the data & clock to inputs in case a keyboard was
+                     // not plugged in
+  P_PS2_INTERRUPT(true); // re enable interrupt
+  uSec(5000);
+  return success;
 }
 
+bool keyboard_test() {
+  bool success = send_command(0xee);
+  if (!success)
+    return false;
+
+  GeneralTimer = 500;
+  while (ps2.response == 0 && GeneralTimer != 0)
+    ;
+  return (ps2.response == PS2_ECHO_ACK);
+}
 
 // set the keyboard LEDs
-void setLEDs(int caps, int num, int scroll) {
-    P_PS2_INTERRUPT(false);       								    // disable interrupt while we play
-    sendCommand(0xED);                                              // Set/Reset Status Indicators Command
-    uSec(50000);
-    sendCommand(((caps & 1) << 2) | ((num & 1) << 1) | (scroll & 1));// set the various LEDs
-    P_PS2CLK_TRIS = 1; P_PS2DAT_TRIS = 1;                           // reset the data & clock to inputs in case a keyboard was not plugged in
-    uSec(5000);
-    P_PS2_INTERRUPT(true);       								    // re enable interrupt
+bool keyboard_set_leds(bool caps, bool num, bool scroll) {
+  bool success = send_command(0xed); // Set/Reset Status Indicators Command
+  if (!success)
+    return false;
+
+  GeneralTimer = 500;
+  while (ps2.response == 0 && GeneralTimer != 0)
+    ;
+  if (ps2.response != PS2_COMMAND_ACK)
+    return false;
+
+  return send_command((((int)caps & 1) << 2) | (((int)num & 1) << 1) |
+                      ((int)scroll & 1)); // set the various LEDs
 }
-
-
 
 /***************************************************************************************************
 change notification interrupt service routine
 ****************************************************************************************************/
-void __ISR( _EXTERNAL_3_VECTOR , ipl2) INT3Interrupt(void) {
+void __ISR(_EXTERNAL_3_VECTOR, ipl2) INT3Interrupt(void) {
+  int d;
 
-    int d;
+  // PS2 KBD state machine and buffer
+  static int state = PS2START, count, parity;
+  static unsigned char code = 0;
 
-	static unsigned char Code = 0;
+  // Make sure it was a falling edge
+  if (P_PS2CLK == 0) {
+    // Sample the data
+    d = P_PS2DAT;
+    switch (state) {
+    default:
+    case PS2START:
+      if (!d) {      // PS2DAT == 0
+        count = 8;  // init bit counter
+        parity = 0; // init parity check
+        code = 0;
+        state = PS2BIT;
+      }
+      break;
 
-     // Make sure it was a falling edge
-    if(P_PS2CLK == 0)
-    {
-	    // Sample the data
-	    d = P_PS2DAT;
-        switch(PS2State){
-            default:
-            case PS2START:
-                if(!d) {                							// PS2DAT == 0
-                    KCount = 8;         							// init bit counter
-                    KParity = 0;        							// init parity check
-                    Code = 0;
-                    PS2State = PS2BIT;
-                }
-                break;
+    case PS2BIT:
+      code >>= 1; // shift in data bit
+      if (d)
+        code |= 0x80;  // PS2DAT == 1
+      parity ^= code; // calculate parity
+      if (--count <= 0)
+        state = PS2PARITY; // all bit read
+      break;
 
-            case PS2BIT:
-                Code >>= 1;            								// shift in data bit
-                if(d) Code |= 0x80;                					// PS2DAT == 1
-                KParity ^= Code;      								// calculate parity
-                if (--KCount <= 0) PS2State = PS2PARITY;   			// all bit read
-                break;
+    case PS2PARITY:
+      if (d)
+        parity ^= 0x80;  // PS2DAT == 1
+      if (parity & 0x80) // parity odd, continue
+        state = PS2STOP;
+      else
+        state = PS2START;
+      break;
 
-            case PS2PARITY:
-                if(d) KParity ^= 0x80;                				// PS2DAT == 1
-                if (KParity & 0x80)    								// parity odd, continue
-                    PS2State = PS2STOP;
-                else
-                    PS2State = PS2START;
-                break;
-
-            case PS2STOP:
-                if(d) {                 							// PS2DAT == 1
-                    ps2_handle_scancode(&ps2, Code);
-                    Code = 0;
-                }
-                PS2State = PS2START;
-                break;
-	    }
-	}
-    // clear interrupt flag
-    mINT3ClearIntFlag();    										// Clear the interrupt flag
-
+    case PS2STOP:
+      if (d) { // PS2DAT == 1
+        ps2_handle_code(&ps2, code);
+        code = 0;
+      }
+      state = PS2START;
+      break;
+    }
+  }
+  // clear interrupt flag
+  mINT3ClearIntFlag();
 }

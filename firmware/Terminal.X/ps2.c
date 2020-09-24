@@ -1,7 +1,7 @@
 #include "ps2.h"
 
-#include <string.h>
 #include "keys.h"
+#include <string.h>
 
 void ps2_init(struct ps2 *ps2) {
 
@@ -14,14 +14,16 @@ void ps2_init(struct ps2 *ps2) {
   ps2->lgui = 0;
   ps2->rgui = 0;
 
-  for (size_t i = 0; i < MAX_PRESSED_KEYS; ++i)
+  for (size_t i = 0; i < PS2_MAX_PRESSED_KEYS; ++i)
     ps2->keys[i] = KEY_NONE;
 
   ps2->keyup = false;
   ps2->e0 = false;
+
+  ps2->response = 0;
 }
 
-static const uint8_t scancode_decoder[0x100] = {
+static const uint8_t decoder[0x100] = {
     [0x1c] = KEY_A,
     [0x32] = KEY_B,
     [0x21] = KEY_C,
@@ -105,7 +107,7 @@ static const uint8_t scancode_decoder[0x100] = {
     [0x71] = KEY_KEYPAD_DECIMAL_SEPARATOR_DELETE,
 };
 
-static const uint8_t e0_scancode_decoder[0x100] = {
+static const uint8_t e0_decoder[0x100] = {
     [0x70] = KEY_INSERT,       [0x6c] = KEY_HOME,
     [0x7d] = KEY_PAGEUP,       [0x71] = KEY_DELETE,
     [0x69] = KEY_END1,         [0x7a] = KEY_PAGEDOWN,
@@ -114,95 +116,99 @@ static const uint8_t e0_scancode_decoder[0x100] = {
     [0x4a] = KEY_KEYPAD_SLASH, [0x5a] = KEY_KEYPAD_ENTER,
 };
 
-void handle_keyup(struct ps2 *ps2, uint8_t key) {
+static void handle_keyup(struct ps2 *ps2, uint8_t key) {
   if (key == KEY_NONE)
     return;
-  
-  for (size_t i = 0; i < MAX_PRESSED_KEYS; ++i)
+
+  for (size_t i = 0; i < PS2_MAX_PRESSED_KEYS; ++i)
     if (ps2->keys[i] == key) {
-      for (; i < MAX_PRESSED_KEYS - 1; ++i)
+      for (; i < PS2_MAX_PRESSED_KEYS - 1; ++i)
         ps2->keys[i] = ps2->keys[i + 1];
 
-      ps2->keys[MAX_PRESSED_KEYS - 1] = KEY_NONE;
+      ps2->keys[PS2_MAX_PRESSED_KEYS - 1] = KEY_NONE;
       break;
     }
 }
 
-void handle_keydown(struct ps2 *ps2, uint8_t key) {
+static void handle_keydown(struct ps2 *ps2, uint8_t key) {
   if (key == KEY_NONE)
     return;
-  
-  for (size_t i = 0; i < MAX_PRESSED_KEYS; ++i)
+
+  for (size_t i = 0; i < PS2_MAX_PRESSED_KEYS; ++i)
     if (ps2->keys[i] == key)
       return;
 
-  for (size_t i = MAX_PRESSED_KEYS - 1; i > 0; --i)
+  for (size_t i = PS2_MAX_PRESSED_KEYS - 1; i > 0; --i)
     if (ps2->keys[i - 1] != KEY_NONE)
       ps2->keys[i] = ps2->keys[i - 1];
 
   ps2->keys[0] = key;
 }
 
-void handle_key(struct ps2 *ps2, uint8_t key) {
+static void handle_key(struct ps2 *ps2, uint8_t key) {
   if (ps2->keyup)
     handle_keyup(ps2, key);
   else
     handle_keydown(ps2, key);
 }
 
-void ps2_handle_scancode(struct ps2 *ps2, uint8_t scancode) {
-  if (scancode == 0xaa) {
+void ps2_handle_code(struct ps2 *ps2, uint8_t code) {
+  if (code == 0xaa || code == 0xff) {
     return;
-  }
-  else if (scancode == 0xf0) {
+  } else if (code == 0xf0) {
     ps2->keyup = true;
     return;
-  }
-  else if (scancode == 0xe0) {
+  } else if (code == 0xe0) {
     ps2->e0 = true;
     return;
+  } else if (code == PS2_ECHO_ACK || code == PS2_COMMAND_ACK ||
+             code == PS2_COMMAND_RESEND) {
+    ps2->response = code;
+    return;
   }
-  
+
   if (ps2->e0) {
-    switch (scancode) {
-      case 0x14: // RCTRL
-        ps2->rctrl = ps2->keyup ? 0 : 1;
-        break;
-      case 0x11: // RALT
-        ps2->ralt = ps2->keyup ? 0 : 1;
-        break;
-      case 0x1f: // LGUI
-        ps2->lgui = ps2->keyup ? 0 : 1;
-        break;
-      case 0x27: // RGUI
-        ps2->rgui = ps2->keyup ? 0 : 1;
-        break;
-      default:
-        handle_key(ps2, e0_scancode_decoder[scancode]);
-        break;
+    switch (code) {
+    case 0x14: // RCTRL
+      ps2->rctrl = ps2->keyup ? 0 : 1;
+      break;
+    case 0x11: // RALT
+      ps2->ralt = ps2->keyup ? 0 : 1;
+      break;
+    case 0x1f: // LGUI
+      ps2->lgui = ps2->keyup ? 0 : 1;
+      break;
+    case 0x27: // RGUI
+      ps2->rgui = ps2->keyup ? 0 : 1;
+      break;
+    default:
+      handle_key(ps2, e0_decoder[code]);
+      break;
     }
     ps2->e0 = false;
-  }
-  else {
-    switch (scancode) {
-      case 0x12: // LSHIFT
-        ps2->lshift = ps2->keyup ? 0 : 1;
-        break;
-      case 0x59: // RSHIFT
-        ps2->rshift = ps2->keyup ? 0 : 1;
-        break;
-      case 0x14: // LCTRL
-        ps2->lctrl = ps2->keyup ? 0 : 1;
-        break;
-      case 0x11: // LALT
-        ps2->lalt = ps2->keyup ? 0 : 1;
-        break;
-      default:
-        handle_key(ps2, scancode_decoder[scancode]);
-        break;
+  } else {
+    switch (code) {
+    case 0x12: // LSHIFT
+      ps2->lshift = ps2->keyup ? 0 : 1;
+      break;
+    case 0x59: // RSHIFT
+      ps2->rshift = ps2->keyup ? 0 : 1;
+      break;
+    case 0x14: // LCTRL
+      ps2->lctrl = ps2->keyup ? 0 : 1;
+      break;
+    case 0x11: // LALT
+      ps2->lalt = ps2->keyup ? 0 : 1;
+      break;
+    default:
+      handle_key(ps2, decoder[code]);
+      break;
     }
   }
 
   if (ps2->keyup)
     ps2->keyup = false;
+
+  if (ps2->response)
+    ps2->response = 0;
 }

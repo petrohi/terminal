@@ -270,13 +270,13 @@ static void receive_charset_utf8(struct terminal *terminal,
 
 static void receive_deckpam(struct terminal *terminal, character_t character) {
   terminal->lock_state.num = 0;
-  terminal_update_keyboard_leds(terminal);
+  terminal_keyboard_update_leds(terminal);
   clear_receive_table(terminal);
 }
 
 static void receive_deckpnm(struct terminal *terminal, character_t character) {
   terminal->lock_state.num = 1;
-  terminal_update_keyboard_leds(terminal);
+  terminal_keyboard_update_leds(terminal);
   clear_receive_table(terminal);
 }
 
@@ -1050,7 +1050,7 @@ static void receive_decsm(struct terminal *terminal, character_t character) {
 
   case 66: // DECNKM
     terminal->lock_state.num = 0;
-    terminal_update_keyboard_leds(terminal);
+    terminal_keyboard_update_leds(terminal);
     break;
 
 #ifdef TERMINAL_ALT_CELLS
@@ -1125,7 +1125,7 @@ static void receive_decrm(struct terminal *terminal, character_t character) {
 
   case 66: // DECNKM
     terminal->lock_state.num = 1;
-    terminal_update_keyboard_leds(terminal);
+    terminal_keyboard_update_leds(terminal);
     break;
 
   case 47:

@@ -72,6 +72,13 @@
 #include "./USB/usb_config.h"
 #include "./USB/Microchip/Include/USB/usb_device.h"
 
+#define KEYBOARD_RETRIES 3
+
+extern void keyboard_init(void);
+extern bool keyboard_set_leds(int num, int caps, int scroll);
+extern bool keyboard_test();
+
+extern struct ps2 *global_ps2;
 
 void initSerial(void);
 
@@ -308,8 +315,10 @@ static void write_config(struct terminal_config *terminal_config_copy) {
                  *(((uint32_t *)terminal_config_copy) + i));
 }
 
-static void keyboard_set_leds(struct lock_state state) {
-  setLEDs(state.caps, state.num, state.scroll);
+static void keyboard_set_leds_callback(struct lock_state state) {
+  size_t retries = KEYBOARD_RETRIES;
+  while (retries-- && !keyboard_set_leds(state.caps, state.num, state.scroll))
+    ;
 }
 
 int main(int argc, char* argv[]) {
@@ -335,13 +344,13 @@ int main(int argc, char* argv[]) {
   uSec(1000);         // settling time
 
   USBDeviceInit();
-  initKeyboard();
+  keyboard_init();
   screen_24_rows.buffer = screen_30_rows.buffer =
       init_vga(terminal_config.format_rows);
 
   struct terminal terminal;
   struct terminal_callbacks callbacks = {
-      .keyboard_set_leds = keyboard_set_leds,
+      .keyboard_set_leds = keyboard_set_leds_callback,
       .uart_transmit = uart_transmit,
       .screen_draw_codepoint = screen_draw_codepoint_callback,
       .screen_clear_rows = screen_clear_rows_callback,
@@ -371,7 +380,17 @@ int main(int argc, char* argv[]) {
   global_terminal_config_ui = &terminal_config_ui;
   terminal_config_ui_init(&terminal_config_ui, &terminal, &terminal_config);
 
-  terminal_update_keyboard_leds(&terminal);
+  bool keyboard_detected = false;
+  size_t retries = KEYBOARD_RETRIES;
+  while (retries-- && !(keyboard_detected = keyboard_test()))
+    ;
+
+  if (keyboard_detected) {
+    terminal_keyboard_update_leds(&terminal);
+  } else {
+    terminal_uart_receive_string(&terminal,
+                                 "PS/2 keyboard is not detected!\r\n");
+  }
 
   while (1) {
     yield();
