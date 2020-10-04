@@ -228,7 +228,8 @@ static void yield() {
     terminal_keyboard_handle_key(
         global_terminal, global_ps2->lshift || global_ps2->rshift,
         global_ps2->lalt || global_ps2->ralt,
-        global_ps2->lctrl || global_ps2->rctrl, global_ps2->keys[0]);
+        global_ps2->lctrl || global_ps2->rctrl,
+        global_ps2->lgui || global_ps2->rgui, global_ps2->keys[0]);
   }
 
   if (global_ps2->keys[0] != KEY_NONE)
