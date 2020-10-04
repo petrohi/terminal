@@ -21,6 +21,8 @@ static size_t get_ctrl(struct terminal *terminal) {
   return terminal->ctrl_state;
 }
 
+static size_t get_gui(struct terminal *terminal) { return terminal->gui_state; }
+
 static size_t get_ctrl_alt(struct terminal *terminal) {
   return terminal->ctrl_state && terminal->alt_state;
 }
@@ -446,10 +448,12 @@ static void handle_key(struct terminal *terminal,
 }
 
 void terminal_keyboard_handle_key(struct terminal *terminal, bool shift,
-                                  bool alt, bool ctrl, uint8_t key_code) {
+                                  bool alt, bool ctrl, bool gui,
+                                  uint8_t key_code) {
   terminal->shift_state = shift;
   terminal->alt_state = alt;
   terminal->ctrl_state = ctrl;
+  terminal->gui_state = gui;
 
   if (terminal->keyboard_action_mode)
     return;
@@ -498,8 +502,8 @@ void terminal_keyboard_init(struct terminal *terminal) {
   terminal->keys_entries = default_entries;
 }
 
-void terminal_keyboard_set_keys_entries(
-    struct terminal *terminal, const struct keys_entry *keys_entries) {
-  terminal_keyboard_handle_key(terminal, false, false, false, KEY_NONE);
+void terminal_keyboard_set_keys_entries(struct terminal *terminal,
+                                        const struct keys_entry *keys_entries) {
+  terminal_keyboard_handle_key(terminal, false, false, false, false, KEY_NONE);
   terminal->keys_entries = keys_entries;
 }
