@@ -17,6 +17,7 @@ struct ps2 {
   volatile uint8_t ralt : 1;
   volatile uint8_t lgui : 1;
   volatile uint8_t rgui : 1;
+  volatile uint8_t menu : 1;
 
   volatile uint8_t keys[PS2_MAX_PRESSED_KEYS];
   volatile uint8_t response;
