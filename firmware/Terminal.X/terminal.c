@@ -82,7 +82,7 @@ void terminal_init(struct terminal *terminal,
   terminal->lock_state.scroll = 0;
   terminal->lock_state.num = config->application_keypad_mode ? 0 : 1;
 
-  terminal_keyboard_init(terminal);
+  terminal_keyboard_init(terminal, config->keyboard_layout);
   terminal_screen_init(terminal);
   terminal_uart_init(terminal);
 

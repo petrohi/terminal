@@ -116,6 +116,17 @@ change_keyboard_compatibility(struct terminal_config_ui *terminal_config_ui,
 }
 
 static size_t
+current_keyboard_layout(struct terminal_config_ui *terminal_config_ui) {
+  return terminal_config_ui->terminal_config_copy.keyboard_layout;
+}
+
+static void
+change_keyboard_layout(struct terminal_config_ui *terminal_config_ui,
+                       size_t keyboard_layout) {
+  terminal_config_ui->terminal_config_copy.keyboard_layout = keyboard_layout;
+}
+
+static size_t
 current_flow_control(struct terminal_config_ui *terminal_config_ui) {
   return terminal_config_ui->terminal_config_copy.flow_control;
 }
@@ -256,20 +267,26 @@ static const struct terminal_ui_choice c1_mode_choices[] = {
 
 static const struct terminal_ui_menu menus[] = {
     {"General",
-     &(const struct terminal_ui_option[]){{"Start up", current_start_up,
-                                           change_start_up,
-                                           &(const struct terminal_ui_choice[]){
-                                               {"none"},
-                                               {"message"},
-                                               {"font test1"},
-                                               {"font test2"},
+     &(const struct terminal_ui_option[]){
+         {"Start up", current_start_up, change_start_up,
+          &(const struct terminal_ui_choice[]){
+              {"none"},
+              {"message"},
+              {"font test1"},
+              {"font test2"},
 #ifdef TERMINAL_8BIT_COLOR
-                                               {"color test1"},
-                                               {"color test2"},
+              {"color test1"},
+              {"color test2"},
 #endif
-                                               {NULL},
-                                           }},
-                                          {NULL}}},
+              {NULL},
+          }},
+         {"Keyboard layout", current_keyboard_layout, change_keyboard_layout,
+          &(const struct terminal_ui_choice[]){
+              {"US"},
+              {"UK"},
+              {NULL},
+          }},
+         {NULL}}},
     {"Serial",
      &(const struct terminal_ui_option[]){
          {"Baud rate", current_baud_rate, change_baud_rate,
