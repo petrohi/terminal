@@ -59,6 +59,11 @@ enum keyboard_compatibility {
   KEYBOARD_COMPATIBILITY_VT220 = 1,
 };
 
+enum keyboard_layout {
+  KEYBOARD_LAYOUT_US = 0,
+  KEYBOARD_LAYOUT_UK = 1,
+};
+
 enum start_up {
   START_UP_NONE = 0,
   START_UP_MESSAGE = 1,
@@ -96,6 +101,7 @@ struct terminal_config {
 
   enum charset charset;
   enum keyboard_compatibility keyboard_compatibility;
+  enum keyboard_layout keyboard_layout;
   enum c1_mode receive_c1_mode;
   enum c1_mode transmit_c1_mode;
 

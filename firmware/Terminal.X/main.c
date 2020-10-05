@@ -201,6 +201,7 @@ __attribute__((aligned(1024), space(prog),
 
     .charset = CHARSET_UTF8,
     .keyboard_compatibility = KEYBOARD_COMPATIBILITY_PC,
+    .keyboard_layout = KEYBOARD_LAYOUT_US,
     .receive_c1_mode = C1_MODE_8BIT,
     .transmit_c1_mode = C1_MODE_7BIT,
 
