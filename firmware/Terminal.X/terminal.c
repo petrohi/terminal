@@ -2,7 +2,7 @@
 
 #define PRODUCT_NAME                                                           \
   "\33[1;91mA\33[92mS\33[93mC\33[94mI\33[95mI\33[39m Terminal\33[m\r\n"
-#define PRODUCT_VERSION "Version 3.0\r\n"
+#define PRODUCT_VERSION "Version 3.0.1\r\n"
 #ifdef TERMINAL_8BIT_COLOR
 #define PRODUCT_COPYRIGHT                                                      \
   "Copyright (C) 2019-2020 Peter Hizalev\r\n"                                  \
