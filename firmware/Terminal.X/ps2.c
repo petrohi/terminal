@@ -13,6 +13,7 @@ void ps2_init(struct ps2 *ps2) {
   ps2->ralt = 0;
   ps2->lgui = 0;
   ps2->rgui = 0;
+  ps2->menu = 0;
 
   for (size_t i = 0; i < PS2_MAX_PRESSED_KEYS; ++i)
     ps2->keys[i] = KEY_NONE;
@@ -180,6 +181,9 @@ void ps2_handle_code(struct ps2 *ps2, uint8_t code) {
       break;
     case 0x27: // RGUI
       ps2->rgui = ps2->keyup ? 0 : 1;
+      break;
+    case 0x2f: // MENU
+      ps2->menu = ps2->keyup ? 0 : 1;
       break;
     default:
       handle_key(ps2, e0_decoder[code]);
