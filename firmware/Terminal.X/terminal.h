@@ -148,6 +148,7 @@ struct terminal {
   uint8_t alt_state : 1;
   uint8_t ctrl_state : 1;
   uint8_t gui_state : 1;
+  uint8_t menu_state : 1;
 
   const struct keys_entry *keys_entries;
 
@@ -242,7 +243,8 @@ void terminal_init(struct terminal *terminal,
                    const struct terminal_config *config,
                    character_t *transmit_buffer, size_t transmit_buffer_size);
 void terminal_keyboard_handle_key(struct terminal *terminal, bool shift,
-                                  bool alt, bool ctrl, bool gui, uint8_t key);
+                                  bool alt, bool ctrl, bool gui, bool menu,
+                                  uint8_t key);
 
 void terminal_keyboard_update_leds(struct terminal *terminal);
 
