@@ -21,8 +21,8 @@ static size_t get_ctrl(struct terminal *terminal) {
   return terminal->ctrl_state;
 }
 
-static size_t get_ctrl_gui(struct terminal *terminal) {
-  return terminal->ctrl_state && terminal->gui_state;
+static size_t get_ctrl_menu(struct terminal *terminal) {
+  return terminal->ctrl_state && terminal->menu_state;
 }
 
 static size_t get_ctrl_alt(struct terminal *terminal) {
@@ -355,7 +355,7 @@ static const struct keys_entry *us_entries = (struct keys_entry[]){
 
 static const struct keys_entry *uk_entries = (struct keys_entry[]){
     [KEY_A] = KEY_ROUTER(
-        get_ctrl_gui,
+        get_ctrl_menu,
         KEY_ROUTER(get_ctrl, KEY_ROUTER(get_case, KEY_CHR('a'), KEY_CHR('A')),
                    KEY_CHR('\x01')),
         KEY_ROUTER(get_case, KEY_STR("á"), KEY_STR("Á"))),
@@ -369,7 +369,7 @@ static const struct keys_entry *uk_entries = (struct keys_entry[]){
         KEY_ROUTER(get_ctrl, KEY_ROUTER(get_case, KEY_CHR('d'), KEY_CHR('D')),
                    KEY_CHR('\x04')),
     [KEY_E] = KEY_ROUTER(
-        get_ctrl_gui,
+        get_ctrl_menu,
         KEY_ROUTER(get_ctrl, KEY_ROUTER(get_case, KEY_CHR('e'), KEY_CHR('E')),
                    KEY_CHR('\x05')),
         KEY_ROUTER(get_case, KEY_STR("é"), KEY_STR("É"))),
@@ -383,7 +383,7 @@ static const struct keys_entry *uk_entries = (struct keys_entry[]){
         KEY_ROUTER(get_ctrl, KEY_ROUTER(get_case, KEY_CHR('h'), KEY_CHR('H')),
                    KEY_CHR('\x08')),
     [KEY_I] = KEY_ROUTER(
-        get_ctrl_gui,
+        get_ctrl_menu,
         KEY_ROUTER(get_ctrl, KEY_ROUTER(get_case, KEY_CHR('i'), KEY_CHR('I')),
                    KEY_CHR('\x09')),
         KEY_ROUTER(get_case, KEY_STR("í"), KEY_STR("Í"))),
@@ -403,7 +403,7 @@ static const struct keys_entry *uk_entries = (struct keys_entry[]){
         KEY_ROUTER(get_ctrl, KEY_ROUTER(get_case, KEY_CHR('n'), KEY_CHR('N')),
                    KEY_CHR('\x0e')),
     [KEY_O] = KEY_ROUTER(
-        get_ctrl_gui,
+        get_ctrl_menu,
         KEY_ROUTER(get_ctrl, KEY_ROUTER(get_case, KEY_CHR('o'), KEY_CHR('O')),
                    KEY_CHR('\x0f')),
         KEY_ROUTER(get_case, KEY_STR("ó"), KEY_STR("Ó"))),
@@ -423,7 +423,7 @@ static const struct keys_entry *uk_entries = (struct keys_entry[]){
         KEY_ROUTER(get_ctrl, KEY_ROUTER(get_case, KEY_CHR('t'), KEY_CHR('T')),
                    KEY_CHR('\x14')),
     [KEY_U] = KEY_ROUTER(
-        get_ctrl_gui,
+        get_ctrl_menu,
         KEY_ROUTER(get_ctrl, KEY_ROUTER(get_case, KEY_CHR('u'), KEY_CHR('U')),
                    KEY_CHR('\x15')),
         KEY_ROUTER(get_case, KEY_STR("ú"), KEY_STR("Ú"))),
@@ -451,7 +451,7 @@ static const struct keys_entry *uk_entries = (struct keys_entry[]){
         KEY_ROUTER(get_ctrl, KEY_ROUTER(get_shift, KEY_CHR('3'), KEY_STR("£")),
                    KEY_CHR('\x1b')),
     [KEY_4_DOLLAR] = KEY_ROUTER(
-        get_ctrl_gui,
+        get_ctrl_menu,
         KEY_ROUTER(get_ctrl, KEY_ROUTER(get_shift, KEY_CHR('4'), KEY_CHR('$')),
                    KEY_CHR('\x1c')),
         KEY_STR("€")),
@@ -487,7 +487,7 @@ static const struct keys_entry *uk_entries = (struct keys_entry[]){
         KEY_ROUTER(get_ctrl, KEY_ROUTER(get_shift, KEY_CHR(']'), KEY_CHR('}')),
                    KEY_CHR('\x1d')),
     [KEY_BACKSLASH_VERTICAL_BAR] = KEY_ROUTER(
-        get_ctrl_gui,
+        get_ctrl_menu,
         KEY_ROUTER(get_ctrl, KEY_ROUTER(get_shift, KEY_CHR('#'), KEY_CHR('~')),
                    KEY_CHR('\x1c')),
         KEY_ROUTER(get_shift, KEY_CHR('\\'), KEY_CHR('|'))),
@@ -495,7 +495,7 @@ static const struct keys_entry *uk_entries = (struct keys_entry[]){
     [KEY_SINGLE_AND_DOUBLE_QUOTE] =
         KEY_ROUTER(get_shift, KEY_CHR('\''), KEY_CHR('@')),
     [KEY_GRAVE_ACCENT_AND_TILDE] = KEY_ROUTER(
-        get_ctrl_gui,
+        get_ctrl_menu,
         KEY_ROUTER(get_ctrl, KEY_ROUTER(get_shift, KEY_CHR('`'), KEY_STR("¬")),
                    KEY_CHR('\x1e')),
         KEY_STR("¦")),
@@ -726,12 +726,13 @@ static void handle_key(struct terminal *terminal,
 }
 
 void terminal_keyboard_handle_key(struct terminal *terminal, bool shift,
-                                  bool alt, bool ctrl, bool gui,
+                                  bool alt, bool ctrl, bool gui, bool menu,
                                   uint8_t key_code) {
   terminal->shift_state = shift;
   terminal->alt_state = alt;
   terminal->ctrl_state = ctrl;
   terminal->gui_state = gui;
+  terminal->menu_state = menu;
 
   if (terminal->keyboard_action_mode)
     return;
@@ -791,6 +792,7 @@ void terminal_keyboard_init(struct terminal *terminal,
 
 void terminal_keyboard_set_keys_entries(struct terminal *terminal,
                                         const struct keys_entry *keys_entries) {
-  terminal_keyboard_handle_key(terminal, false, false, false, false, KEY_NONE);
+  terminal_keyboard_handle_key(terminal, false, false, false, false, false,
+                               KEY_NONE);
   terminal->keys_entries = keys_entries;
 }
