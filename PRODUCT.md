@@ -21,7 +21,7 @@ If you only need the PCB you can buy it [here](https://www.tindie.com/products/p
 - PS/2 keyboard detection at startup;
 - Dedicated timer pin for pixel data SPI framing instead of using VSYNC;
 - Monochrome color is selectable with jumpers instead of solder bridges;
-- Only standard US keyboard layout is supported;
+- Only US and UK keyboard layouts are supported (new layouts are easy to add--just let me know);
 - Composite PAL/NTSC output is not supported;
 - Serial communication speed is not configurable with jumpers, the only available configuration is with SETUP utility;
 - Streamlined 4″x1.5″ board with VGA, PS/2 and USB ports on one side;
@@ -34,7 +34,7 @@ This is VT-100 and XTerm compatible video terminal implemented on the PIC32 micr
 **What is included?**
 
 - 2 layer PCB
-- PIC32MX270F256B-I/SP-ND microcontroller preprogrammed with 3.0 firmware
+- PIC32MX270F256B-I/SP-ND microcontroller preprogrammed with 3.0.1 firmware
 - MCP1700-3302E/TO-ND voltage regulator
 - Red LED
 - 20MHz Crystal
