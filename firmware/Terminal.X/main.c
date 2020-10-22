@@ -74,9 +74,9 @@
 
 #define KEYBOARD_RETRIES 3
 
-extern void keyboard_init(void);
-extern bool keyboard_set_leds(int num, int caps, int scroll);
-extern bool keyboard_test();
+extern void keyboard_init();
+extern bool keyboard_set_leds(int num, int caps, int scroll, void (*yield)());
+extern bool keyboard_test(void (*yield)());
 
 extern struct ps2 *global_ps2;
 
@@ -320,7 +320,7 @@ static void write_config(struct terminal_config *terminal_config_copy) {
 
 static void keyboard_set_leds_callback(struct lock_state state) {
   size_t retries = KEYBOARD_RETRIES;
-  while (retries-- && !keyboard_set_leds(state.caps, state.num, state.scroll))
+  while (retries-- && !keyboard_set_leds(state.caps, state.num, state.scroll, yield))
     ;
 }
 
@@ -346,7 +346,6 @@ int main(int argc, char* argv[]) {
   LATBCLR = (1 << 5); // turn on the power LED
   uSec(1000);         // settling time
 
-  USBDeviceInit();
   keyboard_init();
   screen_24_rows.buffer = screen_30_rows.buffer =
       init_vga(terminal_config.format_rows);
@@ -374,6 +373,7 @@ int main(int argc, char* argv[]) {
 
   initTimer();
   initSerial();
+  USBDeviceInit();
 
   INTEnableInterrupts();
 
@@ -385,7 +385,7 @@ int main(int argc, char* argv[]) {
 
   bool keyboard_detected = false;
   size_t retries = KEYBOARD_RETRIES;
-  while (retries-- && !(keyboard_detected = keyboard_test()))
+  while (retries-- && !(keyboard_detected = keyboard_test(yield)))
     ;
 
   if (keyboard_detected) {

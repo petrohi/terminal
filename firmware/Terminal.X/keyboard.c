@@ -172,26 +172,28 @@ timeout:
   return success;
 }
 
-bool keyboard_test() {
+bool keyboard_test(void (*yield)()) {
   bool success = send_command(0xee);
   if (!success)
     return false;
 
   GeneralTimer = 500;
   while (ps2.response == 0 && GeneralTimer != 0)
-    ;
+    yield();
+
   return (ps2.response == PS2_ECHO_ACK);
 }
 
 // set the keyboard LEDs
-bool keyboard_set_leds(bool caps, bool num, bool scroll) {
+bool keyboard_set_leds(bool caps, bool num, bool scroll, void (*yield)()) {
   bool success = send_command(0xed); // Set/Reset Status Indicators Command
   if (!success)
     return false;
 
   GeneralTimer = 500;
   while (ps2.response == 0 && GeneralTimer != 0)
-    ;
+    yield();
+
   if (ps2.response != PS2_COMMAND_ACK)
     return false;
 
