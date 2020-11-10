@@ -146,6 +146,9 @@ struct terminal {
 
   uint8_t shift_state : 1;
   uint8_t alt_state : 1;
+#ifdef HAS_ALT_GR_KEY
+  uint8_t alt_gr_state : 1;
+#endif
   uint8_t ctrl_state : 1;
   uint8_t gui_state : 1;
   uint8_t menu_state : 1;
@@ -242,9 +245,15 @@ void terminal_init(struct terminal *terminal,
                    uint8_t *tab_stops, size_t tab_stops_size,
                    const struct terminal_config *config,
                    character_t *transmit_buffer, size_t transmit_buffer_size);
+#ifdef HAS_ALT_GR_KEY
+void terminal_keyboard_handle_key(struct terminal *terminal, bool shift,
+                                  bool alt, bool altgr, bool ctrl, bool gui, bool menu,
+                                  uint8_t key_code);
+#else
 void terminal_keyboard_handle_key(struct terminal *terminal, bool shift,
                                   bool alt, bool ctrl, bool gui, bool menu,
                                   uint8_t key);
+#endif
 
 void terminal_keyboard_update_leds(struct terminal *terminal);
 

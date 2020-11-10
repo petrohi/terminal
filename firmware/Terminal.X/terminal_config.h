@@ -61,7 +61,11 @@ enum keyboard_compatibility {
 
 enum keyboard_layout {
   KEYBOARD_LAYOUT_US = 0,
+#ifdef USE_KEYBOARD_LAYOUT_DE
+  KEYBOARD_LAYOUT_DE = 1,
+#else
   KEYBOARD_LAYOUT_UK = 1,
+#endif
 };
 
 enum start_up {

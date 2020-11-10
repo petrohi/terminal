@@ -67,6 +67,7 @@ static const uint8_t decoder[0x100] = {
     [0x0d] = KEY_TAB,
     [0x29] = KEY_SPACEBAR,
     [0x4e] = KEY_MINUS_UNDERSCORE,
+    [0x61] = KEY_INT_1,
     [0x55] = KEY_EQUAL_PLUS,
     [0x54] = KEY_OBRACKET_AND_OBRACE,
     [0x5b] = KEY_CBRACKET_AND_CBRACE,

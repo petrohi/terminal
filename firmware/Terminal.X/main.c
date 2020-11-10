@@ -201,7 +201,11 @@ __attribute__((aligned(1024), space(prog),
 
     .charset = CHARSET_UTF8,
     .keyboard_compatibility = KEYBOARD_COMPATIBILITY_PC,
+#ifdef USE_KEYBOARD_LAYOUT_DE
+    .keyboard_layout = KEYBOARD_LAYOUT_DE,
+#else
     .keyboard_layout = KEYBOARD_LAYOUT_US,
+#endif
     .receive_c1_mode = C1_MODE_8BIT,
     .transmit_c1_mode = C1_MODE_7BIT,
 
@@ -228,7 +232,12 @@ static void yield() {
   if (global_ps2 && global_terminal) {
     terminal_keyboard_handle_key(global_terminal,
                                  global_ps2->lshift || global_ps2->rshift,
+#ifdef HAS_ALT_GR_KEY
+                                 global_ps2->lalt, 
+                                 global_ps2->ralt,
+#else
                                  global_ps2->lalt || global_ps2->ralt,
+#endif
                                  global_ps2->lctrl || global_ps2->rctrl,
                                  global_ps2->lgui || global_ps2->rgui,
                                  global_ps2->menu, global_ps2->keys[0]);

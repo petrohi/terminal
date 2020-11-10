@@ -283,7 +283,11 @@ static const struct terminal_ui_menu menus[] = {
          {"Keyboard layout", current_keyboard_layout, change_keyboard_layout,
           &(const struct terminal_ui_choice[]){
               {"US"},
+#ifdef USE_KEYBOARD_LAYOUT_DE
+              {"DE"},
+#else
               {"UK"},
+#endif
               {NULL},
           }},
          {NULL}}},
