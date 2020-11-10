@@ -381,8 +381,8 @@ static const struct keys_entry *de_entries = (struct keys_entry[]){
     [KEY_E] =
         KEY_ROUTER(
             get_alt_gr,
-            KEY_ROUTER(get_ctrl, KEY_ROUTER(get_case, KEY_CHR('e'), KEY_CHR('E')),
-                   KEY_CHR('\x05')),
+            KEY_ROUTER(get_ctrl, KEY_ROUTER(get_case, KEY_CHR('e'), 
+                   KEY_CHR('E')), KEY_CHR('\x05')),
             KEY_STR("â‚¬")),
     [KEY_F] =
         KEY_ROUTER(get_ctrl, KEY_ROUTER(get_case, KEY_CHR('f'), KEY_CHR('F')),
@@ -408,8 +408,8 @@ static const struct keys_entry *de_entries = (struct keys_entry[]){
     [KEY_M] =
         KEY_ROUTER(
             get_alt_gr,
-            KEY_ROUTER(get_ctrl, KEY_ROUTER(get_case, KEY_CHR('m'), KEY_CHR('M')),
-                   KEY_CHR('\x0d')),
+            KEY_ROUTER(get_ctrl, KEY_ROUTER(get_case, KEY_CHR('m'), 
+                   KEY_CHR('M')), KEY_CHR('\x0d')),
             KEY_CHR('µ')), // 0xb5 = µ
     [KEY_N] =
         KEY_ROUTER(get_ctrl, KEY_ROUTER(get_case, KEY_CHR('n'), KEY_CHR('N')),
@@ -423,8 +423,8 @@ static const struct keys_entry *de_entries = (struct keys_entry[]){
     [KEY_Q] =
         KEY_ROUTER(
             get_alt_gr,
-            KEY_ROUTER(get_ctrl, KEY_ROUTER(get_shift, KEY_CHR('q'), KEY_CHR('Q')),
-                   KEY_HANDLER(handle_ctrl_q)),
+            KEY_ROUTER(get_ctrl, KEY_ROUTER(get_shift, KEY_CHR('q'), 
+                   KEY_CHR('Q')), KEY_HANDLER(handle_ctrl_q)),
             KEY_CHR('@')),
     [KEY_R] =
         KEY_ROUTER(get_ctrl, KEY_ROUTER(get_case, KEY_CHR('r'), KEY_CHR('R')),
@@ -458,13 +458,14 @@ static const struct keys_entry *de_entries = (struct keys_entry[]){
     [KEY_2_AT] =
         KEY_ROUTER(
             get_alt_gr,
-            KEY_ROUTER(get_ctrl, KEY_ROUTER(get_shift, KEY_CHR('2'), KEY_CHR('"')),
-                   KEY_CHR('\0')),
+            KEY_ROUTER(get_ctrl, KEY_ROUTER(get_shift, KEY_CHR('2'), 
+                   KEY_CHR('"')), KEY_CHR('\0')),
             KEY_CHR('²')),
     [KEY_3_NUMBER_SIGN] =
         KEY_ROUTER(
             get_alt_gr,
-            KEY_ROUTER(get_ctrl, KEY_ROUTER(get_shift, KEY_CHR('3'), KEY_CHR('\xa7')), // 0xa7 = §
+            KEY_ROUTER(get_ctrl, KEY_ROUTER(get_shift, KEY_CHR('3'), 
+                   KEY_CHR('\xa7')), // 0xa7 = §
                    KEY_CHR('\x1b')),
             KEY_CHR('³')),
     [KEY_4_DOLLAR] =
@@ -479,14 +480,14 @@ static const struct keys_entry *de_entries = (struct keys_entry[]){
     [KEY_7_AMPERSAND] =
         KEY_ROUTER(
             get_alt_gr,
-            KEY_ROUTER(get_ctrl, KEY_ROUTER(get_shift, KEY_CHR('7'), KEY_CHR('/')),
-                   KEY_CHR('\x1f')),
+            KEY_ROUTER(get_ctrl, KEY_ROUTER(get_shift, KEY_CHR('7'), 
+                   KEY_CHR('/')), KEY_CHR('\x1f')),
             KEY_CHR('{')),
     [KEY_8_ASTERISK] =
         KEY_ROUTER(
             get_alt_gr,
-            KEY_ROUTER(get_ctrl, KEY_ROUTER(get_shift, KEY_CHR('8'), KEY_CHR('(')),
-                   KEY_CHR('\x7f')),
+            KEY_ROUTER(get_ctrl, KEY_ROUTER(get_shift, KEY_CHR('8'), 
+                   KEY_CHR('(')), KEY_CHR('\x7f')),
             KEY_CHR('[')),
     [KEY_9_OPARENTHESIS] = 
         KEY_ROUTER(
@@ -511,35 +512,39 @@ static const struct keys_entry *de_entries = (struct keys_entry[]){
         KEY_ROUTER(
             get_alt_gr,
             KEY_ROUTER(get_shift, KEY_CHR('ß'), KEY_CHR('?')), // 0xdf = ß
-            KEY_CHR('\\')),
-    [KEY_EQUAL_PLUS] = KEY_ROUTER(get_shift, KEY_CHR('´'), KEY_CHR('`')), // 0xd0 = ´, 0x60 = `
+                KEY_CHR('\\')),
+    [KEY_EQUAL_PLUS] = KEY_ROUTER(get_shift, KEY_CHR('´'), 
+            KEY_CHR('`')), // 0xd0 = ´, 0x60 = `
     [KEY_OBRACKET_AND_OBRACE] =
-        KEY_ROUTER(get_ctrl, KEY_ROUTER(get_shift, KEY_CHR('ü'), KEY_CHR('Ü')), // 0xfc = ü, 0xdc = Ü
+        KEY_ROUTER(get_ctrl, KEY_ROUTER(get_shift, KEY_CHR('ü'), 
+                   KEY_CHR('Ü')), // 0xfc = ü, 0xdc = Ü
                    KEY_CHR('\x1b')),
     [KEY_CBRACKET_AND_CBRACE] =
         KEY_ROUTER(
             get_alt_gr,
-            KEY_ROUTER(get_ctrl, KEY_ROUTER(get_shift, KEY_CHR('+'), KEY_CHR('*')),
-                   KEY_CHR('\x78')),
+            KEY_ROUTER(get_ctrl, KEY_ROUTER(get_shift, KEY_CHR('+'), 
+                   KEY_CHR('*')), KEY_CHR('\x78')),
             KEY_STR("~")),
     [KEY_BACKSLASH_VERTICAL_BAR] = 
         KEY_ROUTER(
             get_alt_gr,
             // get_ctrl_menu,
-            KEY_ROUTER(get_ctrl, KEY_ROUTER(get_shift, KEY_CHR('#'), KEY_CHR('\'')),
-                   KEY_CHR('\x1c')),
+            KEY_ROUTER(get_ctrl, KEY_ROUTER(get_shift, KEY_CHR('#'), 
+                   KEY_CHR('\'')), KEY_CHR('\x1c')),
             KEY_ROUTER(get_shift, KEY_CHR('|'), KEY_CHR('<'))),
     [KEY_INT_1] =
         KEY_ROUTER(
             get_alt_gr,
-            KEY_ROUTER(get_ctrl, KEY_ROUTER(get_shift, KEY_CHR('<'), KEY_CHR('>')),
-                   KEY_CHR('\x1c')),
+            KEY_ROUTER(get_ctrl, KEY_ROUTER(get_shift, KEY_CHR('<'), 
+                   KEY_CHR('>')), KEY_CHR('\x1c')),
             KEY_CHR('|')),
-    [KEY_SEMICOLON_COLON] = KEY_ROUTER(get_shift, KEY_CHR('ö'), KEY_CHR('Ö')), // 0xf6 = ö, 0xd6 = Ö
+    [KEY_SEMICOLON_COLON] = KEY_ROUTER(get_shift, KEY_CHR('ö'), 
+            KEY_CHR('Ö')), // 0xf6 = ö, 0xd6 = Ö
     [KEY_SINGLE_AND_DOUBLE_QUOTE] =
         KEY_ROUTER(get_shift, KEY_CHR('ä'), KEY_CHR('Ä')), // 0xe4 = ä, 0xc4 = Ä
     [KEY_GRAVE_ACCENT_AND_TILDE] =
-        KEY_ROUTER(get_ctrl, KEY_ROUTER(get_shift, KEY_CHR('^'), KEY_CHR('°')), // 0x5e = ^, 0xb0 = °
+        KEY_ROUTER(get_ctrl, KEY_ROUTER(get_shift, KEY_CHR('^'), 
+                   KEY_CHR('°')), // 0x5e = ^, 0xb0 = °
                    KEY_CHR('\x1e')),
     [KEY_COMMA_AND_LESS] = KEY_ROUTER(get_shift, KEY_CHR(','), KEY_CHR(';')),
     [KEY_DOT_GREATER] = KEY_ROUTER(get_shift, KEY_CHR('.'), KEY_CHR(':')),
