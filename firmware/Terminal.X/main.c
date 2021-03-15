@@ -87,7 +87,7 @@ void CheckUSB(void);
 void initTimer(void);
 
 void BlinkLED(void);
-#define SERIAL_RX_BUF_SIZE 5120
+#define SERIAL_RX_BUF_SIZE 4096
 char SerialRxBuf[SERIAL_RX_BUF_SIZE];
 volatile int SerialRxBufHead = 0;
 volatile int SerialRxBufTail = 0;
@@ -226,12 +226,10 @@ static void yield() {
   CheckUSB();
 
   if (global_ps2 && global_terminal) {
-    terminal_keyboard_handle_key(global_terminal,
-                                 global_ps2->lshift || global_ps2->rshift,
-                                 global_ps2->lalt || global_ps2->ralt,
-                                 global_ps2->lctrl || global_ps2->rctrl,
-                                 global_ps2->lgui || global_ps2->rgui,
-                                 global_ps2->menu, global_ps2->keys[0]);
+    terminal_keyboard_handle_key(
+        global_terminal, global_ps2->lshift || global_ps2->rshift,
+        global_ps2->lalt, global_ps2->ralt,
+        global_ps2->lctrl || global_ps2->rctrl, global_ps2->keys[0]);
   }
 
   if (global_ps2->keys[0] != KEY_NONE)

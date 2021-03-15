@@ -145,12 +145,12 @@ struct terminal {
   struct lock_state lock_state;
 
   uint8_t shift_state : 1;
-  uint8_t alt_state : 1;
+  uint8_t lalt_state : 1;
+  uint8_t ralt_state : 1;
   uint8_t ctrl_state : 1;
-  uint8_t gui_state : 1;
-  uint8_t menu_state : 1;
 
   const struct keys_entry *keys_entries;
+  bool alt_gr;
 
   enum charset charset;
   enum keyboard_compatibility keyboard_compatibility;
@@ -243,8 +243,7 @@ void terminal_init(struct terminal *terminal,
                    const struct terminal_config *config,
                    character_t *transmit_buffer, size_t transmit_buffer_size);
 void terminal_keyboard_handle_key(struct terminal *terminal, bool shift,
-                                  bool alt, bool ctrl, bool gui, bool menu,
-                                  uint8_t key);
+                                  bool lalt, bool ralt, bool ctrl, uint8_t key);
 
 void terminal_keyboard_update_leds(struct terminal *terminal);
 

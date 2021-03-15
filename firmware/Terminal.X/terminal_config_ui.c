@@ -284,6 +284,7 @@ static const struct terminal_ui_menu menus[] = {
           &(const struct terminal_ui_choice[]){
               {"US"},
               {"UK"},
+              {"DE"},
               {NULL},
           }},
          {NULL}}},
