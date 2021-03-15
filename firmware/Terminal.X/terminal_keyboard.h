@@ -80,5 +80,7 @@ struct keys_entry {
     }                                                                          \
   }
 
-void terminal_keyboard_set_keys_entries(
-    struct terminal *terminal, const struct keys_entry *keys_entries);
+void terminal_keyboard_set_keys_entries(struct terminal *terminal,
+                                        const struct keys_entry *keys_entries);
+
+bool terminal_keyboard_get_alt_state(struct terminal *terminal);

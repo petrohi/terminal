@@ -106,6 +106,7 @@ static const uint8_t decoder[0x100] = {
     [0x7d] = KEY_KEYPAD_9_PAGEUP,
     [0x70] = KEY_KEYPAD_0_INSERT,
     [0x71] = KEY_KEYPAD_DECIMAL_SEPARATOR_DELETE,
+    [0x61] = KEY_NONUS_BACK_SLASH_VERTICAL_BAR,
 };
 
 static const uint8_t e0_decoder[0x100] = {

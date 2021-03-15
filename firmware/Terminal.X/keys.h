@@ -100,3 +100,4 @@
 #define KEY_KEYPAD_9_PAGEUP                    0x61
 #define KEY_KEYPAD_0_INSERT                    0x62
 #define KEY_KEYPAD_DECIMAL_SEPARATOR_DELETE    0x63
+#define KEY_NONUS_BACK_SLASH_VERTICAL_BAR      0x64
