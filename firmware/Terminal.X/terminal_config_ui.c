@@ -445,14 +445,14 @@ static void move_cursor(struct terminal_config_ui *terminal_config_ui,
   screen_printf(terminal_config_ui, "\x1b[%d;%dH", row, col);
 }
 
-static const char *choice_help[] = {
+static const char *const choice_help[] = {
     "↑↓ - Change value",
     "<Enter> - OK",
     "<Esc> - Cancel",
     NULL,
 };
 
-static const char *default_help[] = {
+static const char *const default_help[] = {
     "←→ Select menu",           "↑↓ - Select option",
     "<Enter> - Edit option",    "<Esc> - Discard and restart",
     "<F12> - Save and restart", NULL,
@@ -475,7 +475,7 @@ static const char *default_help[] = {
 #define RIGHT_COL UI_COLS
 
 static void clear_help(struct terminal_config_ui *terminal_config_ui) {
-  const char **help =
+  const char *const *help =
       terminal_config_ui->current_choice ? &choice_help[0] : &default_help[0];
 
   size_t i = 0;
@@ -490,7 +490,7 @@ static void clear_help(struct terminal_config_ui *terminal_config_ui) {
 }
 
 static void render_help(struct terminal_config_ui *terminal_config_ui) {
-  const char **help =
+  const char *const *help =
       terminal_config_ui->current_choice ? &choice_help[0] : &default_help[0];
 
   size_t i = 0;
@@ -762,18 +762,18 @@ static void handle_f12(struct terminal *terminal) {
   apply(global_terminal_config_ui);
 }
 
-static const struct keys_entry *config_entries =
-    (struct keys_entry[]){
-        [KEY_ENTER] = KEY_HANDLER(handle_enter),
-        [KEY_ESCAPE] = KEY_HANDLER(handle_esc),
-        [KEY_UPARROW] = KEY_HANDLER(handle_up),
-        [KEY_DOWNARROW] = KEY_HANDLER(handle_down),
-        [KEY_LEFTARROW] = KEY_HANDLER(handle_left),
-        [KEY_RIGHTARROW] = KEY_HANDLER(handle_right),
-        [KEY_F12] = KEY_HANDLER(handle_f12),
-    };
+static const struct keys_entry config_entries[] = {
+    [KEY_ENTER] = KEY_HANDLER(handle_enter),
+    [KEY_ESCAPE] = KEY_HANDLER(handle_esc),
+    [KEY_UPARROW] = KEY_HANDLER(handle_up),
+    [KEY_DOWNARROW] = KEY_HANDLER(handle_down),
+    [KEY_LEFTARROW] = KEY_HANDLER(handle_left),
+    [KEY_RIGHTARROW] = KEY_HANDLER(handle_right),
+    [KEY_F12] = KEY_HANDLER(handle_f12),
+};
 
-void terminal_config_ui_activate(struct terminal_config_ui *terminal_config_ui) {
+void terminal_config_ui_activate(
+    struct terminal_config_ui *terminal_config_ui) {
   if (!terminal_config_ui->activated) {
     terminal_config_ui->activated = true;
     memcpy(&terminal_config_ui->terminal_config_copy,
@@ -781,7 +781,7 @@ void terminal_config_ui_activate(struct terminal_config_ui *terminal_config_ui) 
 
     terminal_uart_xon_off(terminal_config_ui->terminal, XOFF);
     terminal_keyboard_set_keys_entries(terminal_config_ui->terminal,
-                                       config_entries);
+                                       config_entries, false);
 
     screen_printf(terminal_config_ui, "\x1b<"
                                       "\x1b F"
@@ -800,7 +800,7 @@ void terminal_config_ui_activate(struct terminal_config_ui *terminal_config_ui) 
 #ifdef TERMINAL_8BIT_COLOR
                                       "\x1b[97;48;5;54m"
 #endif
-                                      );
+    );
 
     clear_screen(terminal_config_ui);
     render_screen(terminal_config_ui);
