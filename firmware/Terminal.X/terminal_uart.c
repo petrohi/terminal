@@ -348,7 +348,7 @@ static const codepoint_transformation_table_t ibm_pc_table = {
 };
 
 static const codepoint_transformation_table_t
-    *scs_charset_table[CHARACTER_DECODER_TABLE_LENGTH] = {
+    *const scs_charset_table[CHARACTER_DECODER_TABLE_LENGTH] = {
         ['0'] = &dec_special_graphics_table};
 
 static void receive_scs(struct terminal *terminal, character_t character) {
@@ -1276,19 +1276,19 @@ struct utf8_codec_entry {
   size_t bits_stored;
 };
 
-static const struct utf8_codec_entry *utf8_codec[] = {
-    [0] = &(struct utf8_codec_entry){0b00111111, 0b10000000, 6},
-    [1] = &(struct utf8_codec_entry){0b01111111, 0b00000000, 7},
-    [2] = &(struct utf8_codec_entry){0b00011111, 0b11000000, 5},
-    [3] = &(struct utf8_codec_entry){0b00001111, 0b11100000, 4},
-    [4] = &(struct utf8_codec_entry){0b00000111, 0b11110000, 3},
-    &(struct utf8_codec_entry){0},
+static const struct utf8_codec_entry *const utf8_codec[] = {
+    [0] = &(const struct utf8_codec_entry){0b00111111, 0b10000000, 6},
+    [1] = &(const struct utf8_codec_entry){0b01111111, 0b00000000, 7},
+    [2] = &(const struct utf8_codec_entry){0b00011111, 0b11000000, 5},
+    [3] = &(const struct utf8_codec_entry){0b00001111, 0b11100000, 4},
+    [4] = &(const struct utf8_codec_entry){0b00000111, 0b11110000, 3},
+    &(const struct utf8_codec_entry){0},
 };
 
 static size_t get_utf8_codepoint_length(character_t character) {
   int length = 0;
 
-  for (const struct utf8_codec_entry **e = utf8_codec; *e; ++e) {
+  for (const struct utf8_codec_entry *const *e = utf8_codec; *e; ++e) {
     if ((character & ~(*e)->mask) == (*e)->lead) {
       break;
     }
