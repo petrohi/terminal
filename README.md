@@ -4,7 +4,7 @@ DIY kit including parts and PCB is available on [Tindie](https://www.tindie.com/
 
 ## Use PICKit4 to flash the PIC32
 
-![PICKit4](/firmware/doc/PICKit4.jpg)
+![PICKit4](/firmware/doc/PICKit4.jpeg)
 
 ## Use a Raspberry Pi to flash the PIC32
 
