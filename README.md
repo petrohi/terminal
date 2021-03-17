@@ -4,11 +4,11 @@ DIY kit including parts and PCB is available on [Tindie](https://www.tindie.com/
 
 ## Use PICKit4 to flash the PIC32
 
-![PICKit4](/firmware/doc/PICKit4.jpeg)
+![PICKit4](/doc/PICKit4.jpeg)
 
 ## Use a Raspberry Pi to flash the PIC32
 
-![RasberryPi Programmer](/firmware/doc/RasberryPi_programmer.jpg)
+![RasberryPi Programmer](/doc/RasberryPi_programmer.jpg)
 
 ### How to program a PIC Microcontroller using a Raspberry Pi or Orange Pi
 
