@@ -2,4 +2,6 @@ dist
 build
 debug
 nbproject/private
+nbproject/Makefile-*
+nbproject/Package-default.bash
 .generated_files
