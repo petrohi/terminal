@@ -204,7 +204,7 @@ bool keyboard_set_leds(bool caps, bool num, bool scroll, void (*yield)()) {
 /***************************************************************************************************
 change notification interrupt service routine
 ****************************************************************************************************/
-void __ISR(_EXTERNAL_3_VECTOR, ipl2) INT3Interrupt(void) {
+void __ISR(_EXTERNAL_3_VECTOR, IPL2AUTO) INT3Interrupt(void) {
   int d;
 
   // PS2 KBD state machine and buffer
