@@ -1132,12 +1132,11 @@ static const struct keys_entry se_entries[] = {
         KEY_ROUTER(get_alt_gr,
                    KEY_ROUTER(get_shift, KEY_CHR('+'), KEY_CHR('?')),
                    KEY_CHR('\\')),
-    [KEY_EQUAL_PLUS] = // TODO! Should be a compose key
+    [KEY_EQUAL_PLUS] = // TODO! Should be a dead key (https://en.wikipedia.org/wiki/Dead_key)
         KEY_ROUTER(get_shift, KEY_STR("´"), KEY_CHR('`')),
-/*VERIFIED UNTIL*/
     [KEY_OBRACKET_AND_OBRACE] =
         KEY_ROUTER(get_shift, KEY_STR("å"), KEY_STR("Å")),
-    [KEY_CBRACKET_AND_CBRACE] = // TODO! Should be a compose key
+    [KEY_CBRACKET_AND_CBRACE] = // TODO! Should be a dead key (https://en.wikipedia.org/wiki/Dead_key))
         KEY_ROUTER(get_alt_gr,
                    KEY_ROUTER(get_shift, KEY_STR("¨"), KEY_CHR('^')),
                    KEY_CHR('~')),
