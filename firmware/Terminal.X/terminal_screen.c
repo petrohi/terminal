@@ -714,7 +714,8 @@ void terminal_screen_init(struct terminal *terminal) {
   terminal->margin_top = 0;
   terminal->margin_bottom = ROWS;
 
-  memset(terminal->tab_stops, 0x80, terminal->tab_stops_size);
+  memset(terminal->tab_stops, 0x01, terminal->tab_stops_size);
+  terminal->tab_stops[0] = 0x00;
 
   terminal->cursor_counter = CURSOR_ON_COUNTER;
   terminal->cursor_on = true;
