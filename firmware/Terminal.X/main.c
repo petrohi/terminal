@@ -61,6 +61,7 @@
 #include "bold.h"
 #include "ps2.h"
 #include "keys.h"
+#include "buzzer.h"
 
 //** USB INCLUDES ***********************************************************
 #include "./USB/Microchip/Include/USB/usb.h"
@@ -369,6 +370,7 @@ int main(int argc, char* argv[]) {
 
   INTEnableSystemMultiVectoredInt();
 
+  initBuzzer();
   initTimer();
   initSerial();
   USBDeviceInit();
@@ -650,6 +652,8 @@ void __ISR( _TIMER_4_VECTOR, IPL1AUTO) T4Interrupt(void) {
 
     if(LEDTimer)
         if(--LEDTimer < 25) LATBCLR = (1<<5);
+
+    StopBuzzerWhenTimeout();
 
     if(GeneralTimer) GeneralTimer--;
     
