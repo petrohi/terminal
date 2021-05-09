@@ -12,6 +12,7 @@
   "Copyright (C) 2019-2021 Peter Hizalev\r\n"                                  \
   "Copyright (C) 2014 Geoff Graham\r\n"                                        \
   "Copyright (C) 2020 Birko Bergt (DL8BB)\r\n"                                 \
+  "Copyright (C) 2021 Stefan \"Blixten\" Karlsson\r\n"                         \
   "https://github.com/petrohi/terminal\r\n"
 #endif
 #define PRODUCT_HELP "\r\nPress CTRL+ALT+DEL to enter SETUP\r\n"
