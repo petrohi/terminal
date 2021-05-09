@@ -39,6 +39,8 @@
       <itemPath>ps2.c</itemPath>
       <itemPath>vga.c</itemPath>
       <itemPath>luminance.c</itemPath>
+      <itemPath>buzzer.c</itemPath>
+      <itemPath>buzzer.h</itemPath>
     </logicalFolder>
     <logicalFolder name="USB" displayName="USB" projectFiles="true">
       <logicalFolder name="Microchip" displayName="Microchip" projectFiles="true">
@@ -88,7 +90,7 @@
         <platformTool>pk4hybrid</platformTool>
         <languageToolchain>XC32</languageToolchain>
         <languageToolchainVersion>2.50</languageToolchainVersion>
-        <platform>2</platform>
+        <platform>3</platform>
       </toolsSet>
       <packs>
         <pack name="PIC32MX_DFP" vendor="Microchip" version="1.3.231"/>
