@@ -20,7 +20,7 @@ If you only need the PCB you can buy it [here](https://www.tindie.com/products/p
 - Scroll-lock and XON/XOFF flow control;
 - PS/2 keyboard detection at startup;
 - Monochrome color is selectable with jumpers instead of solder bridges;
-- Only US, UK and DE keyboard layouts are supported (new layouts are easy to add--just let me know);
+- Only US, UK, DE and SE keyboard layouts are supported (new layouts are easy to add--just let me know);
 - Composite PAL/NTSC output is not supported;
 - Serial communication speed is not configurable with jumpers, the only available configuration is with SETUP utility;
 - Streamlined 4″x1.5″ board with VGA, PS/2 and USB ports on one side;

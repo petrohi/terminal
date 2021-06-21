@@ -504,7 +504,7 @@ void initSerial(void) {
 }
 
 // UART 2 interrupt handler
-void __ISR(_UART2_VECTOR, ipl3) IntUart2Handler(void) {
+void __ISR(_UART2_VECTOR, IPL3AUTO) IntUart2Handler(void) {
 
     if(INTGetFlag(INT_SOURCE_UART_RX(UART2))) {                     // Is this an RX interrupt?
         while(UARTReceivedDataIsAvailable(UART2)) {                 // while there is data to read
@@ -648,7 +648,7 @@ Timer 4 interrupt processor
 This fires every mSec and is responsible for tracking the time and the counts of various timing variables
 *****************************************************************************************************************/
 
-void __ISR( _TIMER_4_VECTOR, ipl1) T4Interrupt(void) {
+void __ISR( _TIMER_4_VECTOR, IPL1AUTO) T4Interrupt(void) {
 
     if(LEDTimer)
         if(--LEDTimer < 25) LATBCLR = (1<<5);
