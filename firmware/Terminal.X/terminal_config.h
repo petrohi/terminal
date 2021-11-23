@@ -64,6 +64,8 @@ enum keyboard_layout {
   KEYBOARD_LAYOUT_UK = 1,
   KEYBOARD_LAYOUT_DE = 2,
   KEYBOARD_LAYOUT_SE = 3,
+  KEYBOARD_LAYOUT_FR = 4,
+  KEYBOARD_LAYOUT_BE = 5,
 };
 
 enum start_up {
