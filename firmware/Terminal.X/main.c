@@ -190,8 +190,8 @@ struct screen *get_screen(struct format format) {
 struct terminal *global_terminal = NULL;
 struct terminal_config_ui *global_terminal_config_ui = NULL;
 
-__attribute__((aligned(1024), space(prog),
-               section(".nvm"))) struct terminal_config terminal_config = {
+__attribute__((aligned(1024), section(".nvm")))
+const volatile struct terminal_config terminal_config = {
     .format_rows = FORMAT_24_ROWS,
     .monochrome_transform = MONOCHROME_TRANSFORM_LUMINANCE,
 
@@ -309,8 +309,8 @@ static void activate_config() {
   terminal_config_ui_activate(global_terminal_config_ui);
 }
 
-static void write_config(struct terminal_config *terminal_config_copy) {
-  NVMErasePage(&terminal_config);
+static void write_config(const volatile struct terminal_config *terminal_config_copy) {
+  NVMErasePage((void *)&terminal_config);
 
   for (size_t i = 0; i < sizeof(struct terminal_config) / 4; ++i)
     NVMWriteWord(((uint32_t *)&terminal_config) + i,

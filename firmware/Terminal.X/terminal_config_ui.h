@@ -22,7 +22,7 @@ struct terminal_ui_menu {
 
 struct terminal_config_ui {
   struct terminal *terminal;
-  struct terminal_config *terminal_config;
+  const volatile struct terminal_config *terminal_config;
   struct terminal_config terminal_config_copy;
   bool activated;
 
@@ -31,7 +31,7 @@ struct terminal_config_ui {
   const struct terminal_ui_choice *current_choice;
 };
 
-void terminal_config_ui_init(struct terminal_config_ui *terminal_config_ui,
-                             struct terminal *terminal,
-                             struct terminal_config *terminal_config);
+void terminal_config_ui_init(
+    struct terminal_config_ui *terminal_config_ui, struct terminal *terminal,
+    const volatile struct terminal_config *terminal_config);
 void terminal_config_ui_activate(struct terminal_config_ui *terminal_config_ui);

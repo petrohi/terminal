@@ -10,7 +10,7 @@ const static uint32_t baud_rates[] = {
     [BAUD_RATE_460800] = 460800, [BAUD_RATE_921600] = 921600,
 };
 
-uint32_t
-terminal_config_get_baud_rate(struct terminal_config *terminal_config) {
+uint32_t terminal_config_get_baud_rate(
+    const volatile struct terminal_config *terminal_config) {
   return baud_rates[terminal_config->baud_rate];
 }
