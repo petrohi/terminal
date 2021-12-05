@@ -1,0 +1,8 @@
+-I
+/opt/microchip/xc32/v3.01/pic32mx/include/
+-D
+__PIC32MX270F256B__
+-D
+TERMINAL_SERIAL_INVERTED
+-D
+_SUPPRESS_PLIB_WARNING
