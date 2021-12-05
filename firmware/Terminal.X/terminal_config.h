@@ -124,4 +124,5 @@ struct terminal_config {
   enum start_up start_up;
 };
 
-uint32_t terminal_config_get_baud_rate(struct terminal_config *terminal_config);
+uint32_t terminal_config_get_baud_rate(
+    const volatile struct terminal_config *terminal_config);

@@ -30,7 +30,7 @@ void terminal_init(struct terminal *terminal,
                    struct visual_cell *alt_cells,
 #endif
                    uint8_t *tab_stops, size_t tab_stops_size,
-                   const struct terminal_config *config,
+                   const volatile struct terminal_config *config,
                    character_t *transmit_buffer, size_t transmit_buffer_size) {
   terminal->callbacks = callbacks;
   terminal->default_cells = default_cells;

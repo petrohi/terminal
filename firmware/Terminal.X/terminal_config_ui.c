@@ -425,9 +425,9 @@ void screen_printf(struct terminal_config_ui *terminal_config_ui,
   va_end(args);
 }
 
-void terminal_config_ui_init(struct terminal_config_ui *terminal_config_ui,
-                             struct terminal *terminal,
-                             struct terminal_config *terminal_config) {
+void terminal_config_ui_init(
+    struct terminal_config_ui *terminal_config_ui, struct terminal *terminal,
+    const volatile struct terminal_config *terminal_config) {
   terminal_config_ui->terminal = terminal;
   terminal_config_ui->terminal_config = terminal_config;
 
@@ -779,8 +779,9 @@ void terminal_config_ui_activate(
     struct terminal_config_ui *terminal_config_ui) {
   if (!terminal_config_ui->activated) {
     terminal_config_ui->activated = true;
-    memcpy(&terminal_config_ui->terminal_config_copy,
-           terminal_config_ui->terminal_config, sizeof(struct terminal_config));
+    memcpy((void *)&terminal_config_ui->terminal_config_copy,
+           (const void *)terminal_config_ui->terminal_config,
+           sizeof(struct terminal_config));
 
     terminal_uart_xon_off(terminal_config_ui->terminal, XOFF);
     terminal_keyboard_set_keys_entries(terminal_config_ui->terminal,
