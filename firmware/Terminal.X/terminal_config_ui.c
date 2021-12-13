@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "terminal_config.h"
 #include "terminal_internal.h"
 #include "terminal_keyboard.h"
 
@@ -309,6 +310,7 @@ static const struct terminal_ui_menu menus[] = {
               [BAUD_RATE_230400] = {"230400"},
               [BAUD_RATE_460800] = {"460800"},
               [BAUD_RATE_921600] = {"921600"},
+              [BAUD_RATE_1500000] = {"1500000"},
               {NULL},
           }},
 #ifdef TERMINAL_SERIAL_WORD_LENGTH
