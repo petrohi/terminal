@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "terminal_config.h"
 #include "terminal_internal.h"
 #include "terminal_keyboard.h"
 
