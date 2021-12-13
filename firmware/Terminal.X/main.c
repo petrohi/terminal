@@ -82,28 +82,26 @@ extern bool keyboard_test(void (*yield)());
 
 extern struct ps2 *global_ps2;
 
-void initSerial(void);
+void init_uart(void);
 
 void CheckUSB(void);
 
 void initTimer(void);
 
 void BlinkLED(void);
-#define SERIAL_RX_BUF_SIZE 8192
-char SerialRxBuf[SERIAL_RX_BUF_SIZE];
-volatile int SerialRxBufHead = 0;
-volatile int SerialRxBufTail = 0;
 
-#define SERIAL_TX_BUF_SIZE 64
-char SerialTxBuf[SERIAL_TX_BUF_SIZE];
-int SerialTxBufHead = 0;
-int SerialTxBufTail = 0;
+#define SERIAL_RX_BUFFER_SIZE 8192
+char uart_rx_buffer[SERIAL_RX_BUFFER_SIZE];
+volatile size_t uart_rx_head = 0;
+
+#define SERIAL_TX_BUFFER_SIZE 64
+char uart_tx_buffer[SERIAL_TX_BUFFER_SIZE];
+volatile size_t uart_tx_head = 0;
+volatile size_t uart_tx_tail = 0;
 
 #define LOCAL_BUFFER_SIZE 64
-static character_t local_buffer[LOCAL_BUFFER_SIZE];
-
-static size_t local_head = 0;
-static size_t local_tail = 0;
+static character_t local_loop_buffer[LOCAL_BUFFER_SIZE];
+static size_t local_loop_head = 0;
 
 // declare the USB buffers
 // these buffers are used by the USB I/O hardware
@@ -112,9 +110,9 @@ static size_t local_tail = 0;
 char UsbDeviceRxBuf[USB_DEVICE_RX_BUFFER_SIZE];
 char UsbDeviceTxBuf[USB_DEVICE_TX_BUFFER_SIZE];
 
-// Because the USB copies data direct to the serial Tx buf and sends data direct from the serial Rx queue
+// Because the USB copies data direct to the uart Tx buf and sends data direct from the uart Rx queue
 // it does not need its own I/O buffers (except for the hardware device buffers declared above).
-// The only pointer that we need is this one which keep track of where we are while reading the serial Rx buffer
+// The only pointer that we need is this one which keep track of where we are while reading the uart Rx buffer
 int USBSerialRxBufTail = 0;
 
 volatile int LEDTimer = 0;
@@ -208,16 +206,16 @@ static void yield() {
 static void uart_transmit(character_t *characters, size_t size, size_t head) {
   if (!global_terminal->send_receive_mode) {
     while (size--) {
-      local_buffer[local_head] = *characters;
-      local_head++;
+      local_loop_buffer[local_loop_head] = *characters;
+      local_loop_head++;
       characters++;
 
-      if (local_head == LOCAL_BUFFER_SIZE)
-        local_head = 0;
+      if (local_loop_head == LOCAL_BUFFER_SIZE)
+        local_loop_head = 0;
     }
   }
 
-  SerialTxBufHead = head;
+  uart_tx_head = head;
   INTEnable(INT_SOURCE_UART_TX(UART2), INT_ENABLED);
 }
 
@@ -333,14 +331,14 @@ int main(int argc, char* argv[]) {
       .activate_config = activate_config,
       .write_config = write_config};
   terminal_init(&terminal, &callbacks, visual_cells, tab_stops, TAB_STOPS_SIZE,
-                &terminal_config, SerialTxBuf, SERIAL_TX_BUF_SIZE);
+                &terminal_config, uart_tx_buffer, SERIAL_TX_BUFFER_SIZE);
   global_terminal = &terminal;
 
   INTEnableSystemMultiVectoredInt();
 
   initBuzzer();
   initTimer();
-  initSerial();
+  init_uart();
   USBDeviceInit();
 
   INTEnableInterrupts();
@@ -363,6 +361,9 @@ int main(int argc, char* argv[]) {
                                  "PS/2 keyboard is not detected!\r\n");
   }
 
+  size_t local_loop_tail = 0;
+  size_t uart_rx_tail = 0;
+
   while (1) {
     yield();
     terminal_screen_update(&terminal);
@@ -371,61 +372,62 @@ int main(int argc, char* argv[]) {
     if (terminal_config_ui.activated)
       continue;
 
-    if (local_tail != local_head) {
-      size_t size = 0;
-      if (local_tail < local_head)
-        size = local_head - local_tail;
-      else
-        size = local_head + (LOCAL_BUFFER_SIZE - local_tail);
+    {
+      size_t head = local_loop_head;
 
-      while (size--) {
-        character_t character = local_buffer[local_tail];
-        terminal_uart_receive_character(&terminal, character);
-        local_tail++;
+      if (local_loop_tail != head) {
+        size_t size = 0;
+        if (local_loop_tail < head)
+          size = head - local_loop_tail;
+        else
+          size = head + (LOCAL_BUFFER_SIZE - local_loop_tail);
 
-        if (local_tail == LOCAL_BUFFER_SIZE)
-          local_tail = 0;
+        while (size--) {
+          character_t character = local_loop_buffer[local_loop_tail];
+          terminal_uart_receive_character(&terminal, character);
+          local_loop_tail++;
+
+          if (local_loop_tail == LOCAL_BUFFER_SIZE)
+            local_loop_tail = 0;
+        }
       }
     }
 
-    if (SerialRxBufHead != SerialRxBufTail) {
-      int size = 0;
-      if (SerialRxBufTail < SerialRxBufHead)
-        size = SerialRxBufHead - SerialRxBufTail;
-      else
-        size = SerialRxBufHead + (SERIAL_RX_BUF_SIZE - SerialRxBufTail);
+    {
+      size_t head = uart_rx_head;
 
-      terminal_uart_flow_control(&terminal, size);
-
-      while (size--) {
-        yield();
-
-        if (terminal_config_ui.activated)
-          break;
+      if (head != uart_rx_tail) {
+        int size = 0;
+        if (uart_rx_tail < head)
+          size = head - uart_rx_tail;
+        else
+          size = head + (SERIAL_RX_BUFFER_SIZE - uart_rx_tail);
 
         terminal_uart_flow_control(&terminal, size);
 
-        character_t character = SerialRxBuf[SerialRxBufTail];
-        SerialRxBufTail++;
+        while (size--) {
+          yield();
 
-        terminal_uart_receive_character(&terminal, character);
-        if (SerialRxBufTail == SERIAL_RX_BUF_SIZE)
-          SerialRxBufTail = 0;
+          if (terminal_config_ui.activated)
+            break;
+
+          terminal_uart_flow_control(&terminal, size);
+
+          character_t character = uart_rx_buffer[uart_rx_tail];
+          uart_rx_tail++;
+
+          terminal_uart_receive_character(&terminal, character);
+          if (uart_rx_tail == SERIAL_RX_BUFFER_SIZE)
+            uart_rx_tail = 0;
+        }
+      } else {
+        terminal_uart_flow_control(&terminal, 0);
       }
-    } else {
-      terminal_uart_flow_control(&terminal, 0);
     }
   }
 }
 
-
-
-/*********************************************************************************************
-* Serial I/O functions
-**********************************************************************************************/
-
-// initialize the UART2 serial port
-void initSerial(void) {
+void init_uart(void) {
   PPSInput(2, U2RX, RPB1);
   PPSOutput(4, RPB0, U2TX);
 
@@ -465,41 +467,49 @@ void initSerial(void) {
   UARTSetDataRate(UART2, BUSFREQ, baud);
   UARTEnable(UART2, UART_ENABLE_FLAGS(UART_PERIPHERAL | UART_RX | UART_TX));
 
-  // Configure UART2 RX Interrupt (the Tx Interrupt is enabled in putSerial())
   INTSetVectorPriority(INT_VECTOR_UART(UART2), INT_PRIORITY_LEVEL_3);
   INTSetVectorSubPriority(INT_VECTOR_UART(UART2), INT_SUB_PRIORITY_LEVEL_0);
   INTEnable(INT_SOURCE_UART_RX(UART2), INT_ENABLED);
 }
 
-// UART 2 interrupt handler
-void __ISR(_UART2_VECTOR, IPL3AUTO) IntUart2Handler(void) {
+void __ISR(_UART2_VECTOR, IPL3AUTO) uart_handler(void) {
 
-    if(INTGetFlag(INT_SOURCE_UART_RX(UART2))) {                     // Is this an RX interrupt?
-        while(UARTReceivedDataIsAvailable(UART2)) {                 // while there is data to read
-            if(UARTGetLineStatus(UART2) & 0b1110) {                 // first check for errors
-                UARTGetDataByte(UART2);                             // and if there was an error throw away the char
-                U2STACLR = 0b1110;                                  // clear the error on the UART
-                continue;                                           // and try the next char
-            }
-            SerialRxBuf[SerialRxBufHead++]  = UARTGetDataByte(UART2); // store the byte in the ring buffer
-            if(SerialRxBufHead >= SERIAL_RX_BUF_SIZE) SerialRxBufHead = 0;
-            //SerialRxBufHead = SerialRxBufHead % SERIAL_RX_BUF_SIZE;
-        }
-        BlinkLED();
-        INTClearFlag(INT_SOURCE_UART_RX(UART2));                      // Clear the RX interrupt Flag
+  if (INTGetFlag(INT_SOURCE_UART_RX(UART2))) {
+    while (UARTReceivedDataIsAvailable(UART2)) {
+      if (UARTGetLineStatus(UART2) & 0b1110) {
+        UARTGetDataByte(UART2);
+        U2STACLR = 0b1110;
+        continue;
+      }
+
+      uart_rx_buffer[uart_rx_head++] = UARTGetDataByte(UART2);
+
+      if (uart_rx_head >= SERIAL_RX_BUFFER_SIZE)
+        uart_rx_head = 0;
     }
 
-   if(INTGetFlag(INT_SOURCE_UART_TX(UART2))) {                      // Is this an Tx interrupt?
-        while(UARTTransmitterIsReady(UART2) && SerialTxBufTail != SerialTxBufHead) { // while Tx is free and there is data to send
-            INTDisableInterrupts();                                 // see Errata #10
-            UARTSendDataByte(UART2, SerialTxBuf[SerialTxBufTail++]);// send the byte
-            INTEnableInterrupts();
-            SerialTxBufTail = SerialTxBufTail % SERIAL_TX_BUF_SIZE; // advance the tail of the queue
-        }
-        if(SerialTxBufTail == SerialTxBufHead)                      // if there is nothing left to send
-            INTEnable(INT_SOURCE_UART_TX(UART2), INT_DISABLED);     // disable the interrupt
-        INTClearFlag(INT_SOURCE_UART_TX(UART2));                    // Clear the Tx interrupt Flag
+    BlinkLED();
+    INTClearFlag(INT_SOURCE_UART_RX(UART2));
+  }
+
+  if (INTGetFlag(INT_SOURCE_UART_TX(UART2))) {
+    while (UARTTransmitterIsReady(UART2) && uart_tx_tail != uart_tx_head) {
+
+      INTDisableInterrupts();
+
+      UARTSendDataByte(UART2, uart_tx_buffer[uart_tx_tail++]);
+
+      INTEnableInterrupts();
+
+      if (uart_tx_tail >= SERIAL_TX_BUFFER_SIZE)
+        uart_tx_tail = 0;
     }
+
+    if (uart_tx_tail == uart_tx_head)
+      INTEnable(INT_SOURCE_UART_TX(UART2), INT_DISABLED);
+
+    INTClearFlag(INT_SOURCE_UART_TX(UART2));
+  }
 }
 
 /*********************************************************************************************
@@ -521,22 +531,21 @@ void CheckUSB(void) {
         if(USBGetDeviceState() == CONFIGURED_STATE) {
 
             // get data from the USB interface
-            // figure out how much space is left in the serial TX buf and if it is less that the USB buffer try and get the USB data
-            if(((SerialTxBufTail - SerialTxBufHead + SERIAL_TX_BUF_SIZE) % SERIAL_TX_BUF_SIZE) <= USB_DEVICE_RX_BUFFER_SIZE) {
+            // figure out how much space is left in the uart TX buf and if it is less that the USB buffer try and get the USB data
+            if(((uart_tx_tail - uart_tx_head + SERIAL_TX_BUFFER_SIZE) % SERIAL_TX_BUFFER_SIZE) <= USB_DEVICE_RX_BUFFER_SIZE) {
                 numBytesRead = getsUSBUSART(UsbDeviceRxBuf,USB_DEVICE_RX_BUFFER_SIZE);// check for data to be read
                 if(numBytesRead > 0) {                                             // if we have some data,
                     for(i = 0; i < numBytesRead; i++)
-                        terminal_uart_transmit_character(global_terminal, UsbDeviceRxBuf[i]); // copy it into the serial output queue
+                        terminal_uart_transmit_character(global_terminal, UsbDeviceRxBuf[i]); // copy it into the uart output queue
                     BlinkLED();
                 }
             }
 
             // send any data waiting to go
-			if((SerialRxBufHead != USBSerialRxBufTail) && mUSBUSARTIsTxTrfReady()) {		  // next, check for data to be sent
-                for(i = 0; SerialRxBufHead != USBSerialRxBufTail && i < USB_DEVICE_TX_BUFFER_SIZE; i++) {
-                    UsbDeviceTxBuf[i] = SerialRxBuf[USBSerialRxBufTail++];                 // copy the char to the device buffer
-                    if(USBSerialRxBufTail >= SERIAL_RX_BUF_SIZE) USBSerialRxBufTail = 0;
-                    //SerialRxBufTail = SerialRxBufTail % SERIAL_RX_BUF_SIZE;
+			if((uart_rx_head != USBSerialRxBufTail) && mUSBUSARTIsTxTrfReady()) {		  // next, check for data to be sent
+                for(i = 0; uart_rx_head != USBSerialRxBufTail && i < USB_DEVICE_TX_BUFFER_SIZE; i++) {
+                    UsbDeviceTxBuf[i] = uart_rx_buffer[USBSerialRxBufTail++];                 // copy the char to the device buffer
+                    if(USBSerialRxBufTail >= SERIAL_RX_BUFFER_SIZE) USBSerialRxBufTail = 0;
                 }
 				putUSBUSART(UsbDeviceTxBuf,i);	                                  // and send it
 			}
