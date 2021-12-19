@@ -16,11 +16,11 @@ If you only need the PCB you can buy it [here](https://www.tindie.com/products/p
 - Support for historic DEC graphic characters;
 - VGA output follows strict 25MHz pixel clock to get standard 640x480 resolution at 60Hz refresh rate;
 - 8x16 characters and 24 or 30 lines screen buffers configurable in SETUP utility;
-- Full range of baud rates from 110 up to 921,600;
+- Full range of baud rates from 110 up to 1,500,000;
 - Scroll-lock and XON/XOFF flow control;
 - PS/2 keyboard detection at startup;
 - Monochrome color is selectable with jumpers instead of solder bridges;
-- Only US, UK, DE and SE keyboard layouts are supported (new layouts are easy to add--just let me know);
+- Only US, UK, DE, SE, FR and BE keyboard layouts are supported (new layouts are easy to add--just let me know);
 - Composite PAL/NTSC output is not supported;
 - Serial communication speed is not configurable with jumpers, the only available configuration is with SETUP utility;
 - Streamlined 4″x1.5″ board with VGA, PS/2 and USB ports on one side;
