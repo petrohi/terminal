@@ -101,7 +101,7 @@ void keyboard_init(void) {
   P_PS2DAT_TRIS = 1; // make sure out inputs are in fact inputs
 
   PPSInput(2, INT3, RPB8);
-  ConfigINT3(EXT_INT_PRI_2 | FALLING_EDGE_INT | EXT_INT_ENABLE);
+  ConfigINT3(EXT_INT_PRI_7 | FALLING_EDGE_INT | EXT_INT_ENABLE);
 
   ps2_init(&ps2);
   global_ps2 = &ps2;
@@ -204,7 +204,7 @@ bool keyboard_set_leds(bool caps, bool num, bool scroll, void (*yield)()) {
 /***************************************************************************************************
 change notification interrupt service routine
 ****************************************************************************************************/
-void __ISR(_EXTERNAL_3_VECTOR, IPL2AUTO) INT3Interrupt(void) {
+void __ISR(_EXTERNAL_3_VECTOR, IPL7AUTO) INT3Interrupt(void) {
   int d;
 
   // PS2 KBD state machine and buffer
