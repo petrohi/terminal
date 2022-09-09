@@ -7,9 +7,9 @@
  * VSS (pin 8) on the PIC32MX270F256B-I_SP.
  */
 
-// PWM signal (800 Hz, 2% high, 98% low)
-#define PWM_FREQ 800 // in Hz
-#define PWM_HIGH 2   // in %
+// PWM signal for Sobertone GT-0603A-2 (3 KHz, 50% duty cycle)
+#define PWM_FREQ 3000 // in Hz
+#define PWM_HIGH 50   // in %
 
 void initBuzzer(void)
 {
