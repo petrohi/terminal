@@ -10,8 +10,7 @@ struct terminal_config_ui;
 
 struct terminal_ui_option {
   const char *title;
-  size_t (*current)(struct terminal_config_ui *terminal_config_ui);
-  void (*change)(struct terminal_config_ui *terminal_config_ui, size_t index);
+  void *(*getptr)(struct terminal_config_ui *terminal_config_ui);
   const struct terminal_ui_choice (*choices)[];
 };
 

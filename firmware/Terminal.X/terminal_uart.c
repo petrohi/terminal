@@ -1,5 +1,5 @@
-#include "terminal_internal.h"
 #include "buzzer.h"
+#include "terminal_internal.h"
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -153,6 +153,7 @@ static void receive_cbt(struct terminal *terminal, character_t character) {
 }
 
 static void receive_bell(struct terminal *terminal, character_t character) {
+  if (terminal->bell_buzzer)
     StartBuzzer();
 }
 

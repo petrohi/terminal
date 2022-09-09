@@ -9,248 +9,137 @@
 
 #define PRINTF_BUFFER_SIZE 256
 
-static size_t
-current_format_rows(struct terminal_config_ui *terminal_config_ui) {
-  return terminal_config_ui->terminal_config_copy.format_rows;
-}
-
-static void change_format_rows(struct terminal_config_ui *terminal_config_ui,
-                               size_t format_rows) {
-  terminal_config_ui->terminal_config_copy.format_rows = format_rows;
+static void *
+get_format_rows_ptr(struct terminal_config_ui *terminal_config_ui) {
+  return &terminal_config_ui->terminal_config_copy.format_rows;
 }
 
 #ifndef TERMINAL_8BIT_COLOR
-static size_t
-current_monochrome_transform(struct terminal_config_ui *terminal_config_ui) {
-  return terminal_config_ui->terminal_config_copy.monochrome_transform;
-}
-
-static void
-change_monochrome_transform(struct terminal_config_ui *terminal_config_ui,
-                            size_t monochrome_transform) {
-  terminal_config_ui->terminal_config_copy.monochrome_transform =
-      monochrome_transform;
+static void *
+get_monochrome_transform_ptr(struct terminal_config_ui *terminal_config_ui) {
+  return &terminal_config_ui->terminal_config_copy.monochrome_transform;
 }
 #endif
 
-static size_t current_baud_rate(struct terminal_config_ui *terminal_config_ui) {
-  return terminal_config_ui->terminal_config_copy.baud_rate;
-}
-
-static void change_baud_rate(struct terminal_config_ui *terminal_config_ui,
-                             size_t baud_rate) {
-  terminal_config_ui->terminal_config_copy.baud_rate = baud_rate;
+static void *get_baud_rate_ptr(struct terminal_config_ui *terminal_config_ui) {
+  return &terminal_config_ui->terminal_config_copy.baud_rate;
 }
 
 #ifdef TERMINAL_SERIAL_WORD_LENGTH
-static size_t
-current_word_length(struct terminal_config_ui *terminal_config_ui) {
-  return terminal_config_ui->terminal_config_copy.word_length;
-}
-
-static void change_word_length(struct terminal_config_ui *terminal_config_ui,
-                               size_t word_length) {
-  terminal_config_ui->terminal_config_copy.word_length = word_length;
+static void *
+get_word_length_ptr(struct terminal_config_ui *terminal_config_ui) {
+  return &terminal_config_ui->terminal_config_copy.word_length;
 }
 #endif
 
 #ifdef TERMINAL_SERIAL_INVERTED
-static size_t
-current_serial_inverted(struct terminal_config_ui *terminal_config_ui) {
-  return terminal_config_ui->terminal_config_copy.serial_inverted;
-}
-
-static void
-change_serial_inverted(struct terminal_config_ui *terminal_config_ui,
-                       size_t serial_inverted) {
-  terminal_config_ui->terminal_config_copy.serial_inverted = serial_inverted;
+static void *
+get_serial_inverted_ptr(struct terminal_config_ui *terminal_config_ui) {
+  return &terminal_config_ui->terminal_config_copy.serial_inverted;
 }
 #endif
 
-static size_t current_stop_bits(struct terminal_config_ui *terminal_config_ui) {
-  return terminal_config_ui->terminal_config_copy.stop_bits;
+static void *get_stop_bits_ptr(struct terminal_config_ui *terminal_config_ui) {
+  return &terminal_config_ui->terminal_config_copy.stop_bits;
 }
 
-static void change_stop_bits(struct terminal_config_ui *terminal_config_ui,
-                             size_t stop_bits) {
-  terminal_config_ui->terminal_config_copy.stop_bits = stop_bits;
+static void *get_parity_ptr(struct terminal_config_ui *terminal_config_ui) {
+  return &terminal_config_ui->terminal_config_copy.parity;
 }
 
-static size_t current_parity(struct terminal_config_ui *terminal_config_ui) {
-  return terminal_config_ui->terminal_config_copy.parity;
+static void *get_start_up_ptr(struct terminal_config_ui *terminal_config_ui) {
+  return &terminal_config_ui->terminal_config_copy.start_up;
 }
 
-static void change_parity(struct terminal_config_ui *terminal_config_ui,
-                          size_t parity) {
-  terminal_config_ui->terminal_config_copy.parity = parity;
+static void *get_charset_ptr(struct terminal_config_ui *terminal_config_ui) {
+  return &terminal_config_ui->terminal_config_copy.charset;
 }
 
-static size_t current_start_up(struct terminal_config_ui *terminal_config_ui) {
-  return terminal_config_ui->terminal_config_copy.start_up;
+static void *
+get_keyboard_compatibility_ptr(struct terminal_config_ui *terminal_config_ui) {
+  return &terminal_config_ui->terminal_config_copy.keyboard_compatibility;
 }
 
-static void change_start_up(struct terminal_config_ui *terminal_config_ui,
-                            size_t start_up) {
-  terminal_config_ui->terminal_config_copy.start_up = start_up;
+static void *
+get_keyboard_layout_ptr(struct terminal_config_ui *terminal_config_ui) {
+  return &terminal_config_ui->terminal_config_copy.keyboard_layout;
 }
 
-static size_t current_charset(struct terminal_config_ui *terminal_config_ui) {
-  return terminal_config_ui->terminal_config_copy.charset;
+static void *
+get_flow_control_ptr(struct terminal_config_ui *terminal_config_ui) {
+  return &terminal_config_ui->terminal_config_copy.flow_control;
 }
 
-static void change_charset(struct terminal_config_ui *terminal_config_ui,
-                           size_t charset) {
-  terminal_config_ui->terminal_config_copy.charset = charset;
-}
-
-static size_t
-current_keyboard_compatibility(struct terminal_config_ui *terminal_config_ui) {
-  return terminal_config_ui->terminal_config_copy.keyboard_compatibility;
-}
-
-static void
-change_keyboard_compatibility(struct terminal_config_ui *terminal_config_ui,
-                              size_t keyboard_compatibility) {
-  terminal_config_ui->terminal_config_copy.keyboard_compatibility =
-      keyboard_compatibility;
-}
-
-static size_t
-current_keyboard_layout(struct terminal_config_ui *terminal_config_ui) {
-  return terminal_config_ui->terminal_config_copy.keyboard_layout;
-}
-
-static void
-change_keyboard_layout(struct terminal_config_ui *terminal_config_ui,
-                       size_t keyboard_layout) {
-  terminal_config_ui->terminal_config_copy.keyboard_layout = keyboard_layout;
-}
-
-static size_t
-current_flow_control(struct terminal_config_ui *terminal_config_ui) {
-  return terminal_config_ui->terminal_config_copy.flow_control;
-}
-
-static void change_flow_control(struct terminal_config_ui *terminal_config_ui,
-                                size_t flow_control) {
-  terminal_config_ui->terminal_config_copy.flow_control = flow_control;
-}
-
-static size_t
+static void *
 current_receive_c1_mode(struct terminal_config_ui *terminal_config_ui) {
-  return terminal_config_ui->terminal_config_copy.receive_c1_mode;
+  return &terminal_config_ui->terminal_config_copy.receive_c1_mode;
 }
 
-static void
-change_receive_c1_mode(struct terminal_config_ui *terminal_config_ui,
-                       size_t c1_mode) {
-  terminal_config_ui->terminal_config_copy.receive_c1_mode = c1_mode;
-}
-
-static size_t
+static void *
 current_transmit_c1_mode(struct terminal_config_ui *terminal_config_ui) {
-  return terminal_config_ui->terminal_config_copy.transmit_c1_mode;
+  return &terminal_config_ui->terminal_config_copy.transmit_c1_mode;
 }
 
-static void
-change_transmit_c1_mode(struct terminal_config_ui *terminal_config_ui,
-                        size_t c1_mode) {
-  terminal_config_ui->terminal_config_copy.transmit_c1_mode = c1_mode;
+static void *
+get_auto_wrap_mode_ptr(struct terminal_config_ui *terminal_config_ui) {
+  return &terminal_config_ui->terminal_config_copy.auto_wrap_mode;
 }
 
-static size_t
-current_auto_wrap_mode(struct terminal_config_ui *terminal_config_ui) {
-  return terminal_config_ui->terminal_config_copy.auto_wrap_mode;
+static void *
+get_screen_mode_ptr(struct terminal_config_ui *terminal_config_ui) {
+  return &terminal_config_ui->terminal_config_copy.screen_mode;
 }
 
-static void change_auto_wrap_mode(struct terminal_config_ui *terminal_config_ui,
-                                  size_t auto_wrap_mode) {
-  terminal_config_ui->terminal_config_copy.auto_wrap_mode = auto_wrap_mode;
+static void *
+get_send_receive_mode_ptr(struct terminal_config_ui *terminal_config_ui) {
+  return &terminal_config_ui->terminal_config_copy.send_receive_mode;
 }
 
-static size_t
-current_screen_mode(struct terminal_config_ui *terminal_config_ui) {
-  return terminal_config_ui->terminal_config_copy.screen_mode;
+static void *
+get_new_line_mode_ptr(struct terminal_config_ui *terminal_config_ui) {
+  return &terminal_config_ui->terminal_config_copy.new_line_mode;
 }
 
-static void change_screen_mode(struct terminal_config_ui *terminal_config_ui,
-                               size_t screen_mode) {
-  terminal_config_ui->terminal_config_copy.screen_mode = screen_mode;
+static void *
+get_cursor_key_mode_ptr(struct terminal_config_ui *terminal_config_ui) {
+  return &terminal_config_ui->terminal_config_copy.cursor_key_mode;
 }
 
-static size_t
-current_send_receive_mode(struct terminal_config_ui *terminal_config_ui) {
-  return terminal_config_ui->terminal_config_copy.send_receive_mode;
+static void *
+get_auto_repeat_mode_ptr(struct terminal_config_ui *terminal_config_ui) {
+  return &terminal_config_ui->terminal_config_copy.auto_repeat_mode;
 }
 
-static void
-change_send_receive_mode(struct terminal_config_ui *terminal_config_ui,
-                         size_t send_receive_mode) {
-  terminal_config_ui->terminal_config_copy.send_receive_mode =
-      send_receive_mode;
+static void *get_ansi_mode_ptr(struct terminal_config_ui *terminal_config_ui) {
+  return &terminal_config_ui->terminal_config_copy.ansi_mode;
 }
 
-static size_t
-current_new_line_mode(struct terminal_config_ui *terminal_config_ui) {
-  return terminal_config_ui->terminal_config_copy.new_line_mode;
+static void *
+get_backspace_mode_ptr(struct terminal_config_ui *terminal_config_ui) {
+  return &terminal_config_ui->terminal_config_copy.backspace_mode;
 }
 
-static void change_new_line_mode(struct terminal_config_ui *terminal_config_ui,
-                                 size_t new_line_mode) {
-  terminal_config_ui->terminal_config_copy.new_line_mode = new_line_mode;
+static void *
+get_application_keypad_mode_ptr(struct terminal_config_ui *terminal_config_ui) {
+  return &terminal_config_ui->terminal_config_copy.application_keypad_mode;
 }
 
-static size_t
-current_cursor_key_mode(struct terminal_config_ui *terminal_config_ui) {
-  return terminal_config_ui->terminal_config_copy.cursor_key_mode;
+static void *
+get_bell_buzzer_ptr(struct terminal_config_ui *terminal_config_ui) {
+  return &terminal_config_ui->terminal_config_copy.bell_buzzer;
 }
 
-static void
-change_cursor_key_mode(struct terminal_config_ui *terminal_config_ui,
-                       size_t cursor_key_mode) {
-  terminal_config_ui->terminal_config_copy.cursor_key_mode = cursor_key_mode;
+static char get_option_value(struct terminal_config_ui *terminal_config_ui,
+                             const struct terminal_ui_option *option) {
+  char *ptr = (char *)option->getptr(terminal_config_ui);
+  return *ptr;
 }
 
-static size_t
-current_auto_repeat_mode(struct terminal_config_ui *terminal_config_ui) {
-  return terminal_config_ui->terminal_config_copy.auto_repeat_mode;
-}
-
-static void
-change_auto_repeat_mode(struct terminal_config_ui *terminal_config_ui,
-                        size_t auto_repeat_mode) {
-  terminal_config_ui->terminal_config_copy.auto_repeat_mode = auto_repeat_mode;
-}
-
-static size_t current_ansi_mode(struct terminal_config_ui *terminal_config_ui) {
-  return terminal_config_ui->terminal_config_copy.ansi_mode;
-}
-
-static void change_ansi_mode(struct terminal_config_ui *terminal_config_ui,
-                             size_t ansi_mode) {
-  terminal_config_ui->terminal_config_copy.ansi_mode = ansi_mode;
-}
-
-static size_t
-current_backspace_mode(struct terminal_config_ui *terminal_config_ui) {
-  return terminal_config_ui->terminal_config_copy.backspace_mode;
-}
-
-static void change_backspace_mode(struct terminal_config_ui *terminal_config_ui,
-                                  size_t backspace_mode) {
-  terminal_config_ui->terminal_config_copy.backspace_mode = backspace_mode;
-}
-
-static size_t
-current_application_keypad_mode(struct terminal_config_ui *terminal_config_ui) {
-  return terminal_config_ui->terminal_config_copy.application_keypad_mode;
-}
-
-static void
-change_application_keypad_mode(struct terminal_config_ui *terminal_config_ui,
-                               size_t application_keypad_mode) {
-  terminal_config_ui->terminal_config_copy.application_keypad_mode =
-      application_keypad_mode;
+static void set_option_value(struct terminal_config_ui *terminal_config_ui,
+                             const struct terminal_ui_option *option,
+                             char value) {
+  char *ptr = (char *)option->getptr(terminal_config_ui);
+  *ptr = value;
 }
 
 static const struct terminal_ui_choice off_on_choices[] = {
@@ -267,33 +156,33 @@ static const struct terminal_ui_choice c1_mode_choices[] = {
 
 static const struct terminal_ui_menu menus[] = {
     {"General",
-     &(const struct terminal_ui_option[]){
-         {"Start up", current_start_up, change_start_up,
-          &(const struct terminal_ui_choice[]){
-              {"none"},
-              {"message"},
-              {"font test1"},
-              {"font test2"},
+     &(const struct terminal_ui_option[]){{"Start up", get_start_up_ptr,
+                                           &(const struct terminal_ui_choice[]){
+                                               {"none"},
+                                               {"message"},
+                                               {"font test1"},
+                                               {"font test2"},
 #ifdef TERMINAL_8BIT_COLOR
-              {"color test1"},
-              {"color test2"},
+                                               {"color test1"},
+                                               {"color test2"},
 #endif
-              {NULL},
-          }},
-         {"Keyboard layout", current_keyboard_layout, change_keyboard_layout,
-          &(const struct terminal_ui_choice[]){
-              {"US"},
-              {"UK"},
-              {"DE"},
-              {"SE"},
-              {"FR"},
-              {"BE"},
-              {NULL},
-          }},
-         {NULL}}},
+                                               {NULL},
+                                           }},
+                                          {"Keyboard layout",
+                                           get_keyboard_layout_ptr,
+                                           &(const struct terminal_ui_choice[]){
+                                               {"US"},
+                                               {"UK"},
+                                               {"DE"},
+                                               {"SE"},
+                                               {"FR"},
+                                               {"BE"},
+                                               {NULL},
+                                           }},
+                                          {NULL}}},
     {"Serial",
      &(const struct terminal_ui_option[]){
-         {"Baud rate", current_baud_rate, change_baud_rate,
+         {"Baud rate", get_baud_rate_ptr,
           &(const struct terminal_ui_choice[]){
               [BAUD_RATE_110] = {"110"},
               [BAUD_RATE_150] = {"150"},
@@ -313,23 +202,23 @@ static const struct terminal_ui_menu menus[] = {
               {NULL},
           }},
 #ifdef TERMINAL_SERIAL_WORD_LENGTH
-         {"Word length", current_word_length, change_word_length,
+         {"Word length", get_word_length_ptr,
           &(const struct terminal_ui_choice[]){[WORD_LENGTH_8B] = {"8 bits"},
                                                [WORD_LENGTH_9B] = {"9 bits"},
                                                {NULL}}},
 #endif
 #ifdef TERMINAL_SERIAL_INVERTED
-         {"Signal levels", current_serial_inverted, change_serial_inverted,
+         {"Signal levels", get_serial_inverted_ptr,
           &(const struct terminal_ui_choice[]){
               {"TTL"},
               {"RS232"},
               {NULL},
           }},
 #endif
-         {"Stop bits", current_stop_bits, change_stop_bits,
+         {"Stop bits", get_stop_bits_ptr,
           &(const struct terminal_ui_choice[]){
               [STOP_BITS_1] = {"1 bit"}, [STOP_BITS_2] = {"2 bits"}, {NULL}}},
-         {"Parity", current_parity, change_parity,
+         {"Parity", get_parity_ptr,
           &(const struct terminal_ui_choice[]){[PARITY_NONE] = {"none"},
                                                [PARITY_EVEN] = {"even"},
                                                [PARITY_ODD] = {"odd"},
@@ -337,74 +226,66 @@ static const struct terminal_ui_menu menus[] = {
          {NULL}}},
     {"Terminal",
      &(const struct terminal_ui_option[]){
-         {"Character set", current_charset, change_charset,
+         {"Character set", get_charset_ptr,
           &(const struct terminal_ui_choice[]){
               {"UTF8"},
               {"ISO 8859-1"},
               {"IBM PC 437"},
               {NULL},
           }},
-         {"Keyboard compatibility", current_keyboard_compatibility,
-          change_keyboard_compatibility,
+         {"Keyboard compatibility", get_keyboard_compatibility_ptr,
           &(const struct terminal_ui_choice[]){
               {"PC/Sun"},
               {"VT220"},
               {NULL},
           }},
-         {"XOFF/XON flow control", current_flow_control, change_flow_control,
-          &off_on_choices},
-         {"Receive controls", current_receive_c1_mode, change_receive_c1_mode,
-          &c1_mode_choices},
-         {"Transmit controls", current_transmit_c1_mode,
-          change_transmit_c1_mode, &c1_mode_choices},
-         {"Send/receive mode (SRM)", current_send_receive_mode,
-          change_send_receive_mode,
+         {"XOFF/XON flow control", get_flow_control_ptr, &off_on_choices},
+         {"Receive controls", current_receive_c1_mode, &c1_mode_choices},
+         {"Transmit controls", current_transmit_c1_mode, &c1_mode_choices},
+         {"Send/receive mode (SRM)", get_send_receive_mode_ptr,
           &(const struct terminal_ui_choice[]){
               {"echo"},
               {"normal"},
               {NULL},
           }},
-         {"New line mode (LNM)", current_new_line_mode, change_new_line_mode,
-          &off_on_choices},
-         {"Cursor key mode (DECCKM)", current_cursor_key_mode,
-          change_cursor_key_mode,
+         {"New line mode (LNM)", get_new_line_mode_ptr, &off_on_choices},
+         {"Cursor key mode (DECCKM)", get_cursor_key_mode_ptr,
           &(const struct terminal_ui_choice[]){
               {"normal"},
               {"application"},
               {NULL},
           }},
-         {"Keypad mode (DECNKM)", current_application_keypad_mode,
-          change_application_keypad_mode, &off_on_choices},
-         {"ANSI mode (DECANM)", current_ansi_mode, change_ansi_mode,
+         {"Keypad mode (DECNKM)", get_application_keypad_mode_ptr,
+          &off_on_choices},
+         {"ANSI mode (DECANM)", get_ansi_mode_ptr,
           &(const struct terminal_ui_choice[]){
               {"VT52"},
               {"ANSI"},
               {NULL},
           }},
-         {"Auto-wraparound mode (DECAWM)", current_auto_wrap_mode,
-          change_auto_wrap_mode, &off_on_choices},
-         {"Auto-repeat keys mode (DECARM)", current_auto_repeat_mode,
-          change_auto_repeat_mode, &off_on_choices},
-         {"Screen mode (DECSCNM)", current_screen_mode, change_screen_mode,
+         {"Auto-wraparound mode (DECAWM)", get_auto_wrap_mode_ptr,
+          &off_on_choices},
+         {"Auto-repeat keys mode (DECARM)", get_auto_repeat_mode_ptr,
+          &off_on_choices},
+         {"Screen mode (DECSCNM)", get_screen_mode_ptr,
           &(const struct terminal_ui_choice[]){
               {"normal"},
               {"inverse"},
               {NULL},
           }},
-         {"Backspace mode (DECBKM)", current_backspace_mode,
-          change_backspace_mode, &off_on_choices},
+         {"Backspace mode (DECBKM)", get_backspace_mode_ptr, &off_on_choices},
+         {"Bell buzzer", get_bell_buzzer_ptr, &off_on_choices},
          {NULL}}},
     {"Video",
      &(const struct terminal_ui_option[]){
-         {"Number of lines", current_format_rows, change_format_rows,
+         {"Number of lines", get_format_rows_ptr,
           &(const struct terminal_ui_choice[]){
               {"24"},
               {"30"},
               {NULL},
           }},
 #ifndef TERMINAL_8BIT_COLOR
-         {"Monochrome transformation", current_monochrome_transform,
-          change_monochrome_transform,
+         {"Monochrome transformation", get_monochrome_transform_ptr,
           &(const struct terminal_ui_choice[]){
               {"Simple"},
               {"Luminance"},
@@ -583,10 +464,11 @@ static void render_options(struct terminal_config_ui *terminal_config_ui) {
                   option->title);
 
     move_cursor(terminal_config_ui, i + MAIN_ROW, CHOICES_COL);
+
     const struct terminal_ui_choice *choice =
         terminal_config_ui->current_choice && current_option
             ? terminal_config_ui->current_choice
-            : &(*option->choices)[option->current(terminal_config_ui)];
+            : &(*option->choices)[get_option_value(terminal_config_ui, option)];
 
     screen_printf(terminal_config_ui, "\x1b[%dm[%11s]\x1b[27m",
                   terminal_config_ui->current_choice && current_option ? 7 : 27,
@@ -690,17 +572,19 @@ static void next_menu(struct terminal_config_ui *terminal_config_ui) {
 static void enter(struct terminal_config_ui *terminal_config_ui) {
   clear_help(terminal_config_ui);
 
+  char *ptr =
+      (char *)terminal_config_ui->current_option->getptr(terminal_config_ui);
+
   if (terminal_config_ui->current_choice) {
-    terminal_config_ui->current_option->change(
-        terminal_config_ui,
-        terminal_config_ui->current_choice -
-            &(*terminal_config_ui->current_option->choices)[0]);
+    set_option_value(terminal_config_ui, terminal_config_ui->current_option,
+                     terminal_config_ui->current_choice -
+                         &(*terminal_config_ui->current_option->choices)[0]);
+
     terminal_config_ui->current_choice = NULL;
   } else
     terminal_config_ui->current_choice =
-        &(*terminal_config_ui->current_option
-               ->choices)[terminal_config_ui->current_option->current(
-            terminal_config_ui)];
+        &(*terminal_config_ui->current_option->choices)[get_option_value(
+            terminal_config_ui, terminal_config_ui->current_option)];
 
   render_options(terminal_config_ui);
   render_help(terminal_config_ui);

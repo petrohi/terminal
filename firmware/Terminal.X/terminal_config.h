@@ -100,6 +100,8 @@ struct terminal_config {
   enum stop_bits stop_bits;
   enum parity parity;
   bool flow_control;
+  bool bell_buzzer;
+
 #ifdef TERMINAL_SERIAL_INVERTED
   bool serial_inverted;
 #endif

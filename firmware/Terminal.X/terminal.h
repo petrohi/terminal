@@ -225,6 +225,7 @@ struct terminal {
   enum xon_off xon_off;
 
   bool flow_control;
+  bool bell_buzzer;
 
 #ifdef DEBUG
 #define DEBUG_BUFFER_LENGTH 128

@@ -146,6 +146,7 @@ volatile const struct terminal_config terminal_config = {
     .application_keypad_mode = false,
 
     .flow_control = true,
+    .bell_buzzer = true,
 
     .start_up = START_UP_MESSAGE,
 };
