@@ -79,6 +79,7 @@ void terminal_init(struct terminal *terminal,
   terminal->backspace_mode = config->backspace_mode;
 
   terminal->flow_control = config->flow_control;
+  terminal->bell_buzzer = config->bell_buzzer;
 
   terminal->lock_state.caps = 0;
   terminal->lock_state.scroll = 0;
