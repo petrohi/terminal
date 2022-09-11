@@ -381,8 +381,6 @@
         "name": "1",
         "nets": [
           "+5V",
-          "Net-(C6-Pad1)",
-          "Net-(C7-Pad1)",
           "USB_VBUS"
         ],
         "pcb_color": "rgba(0, 0, 0, 0.000)",
