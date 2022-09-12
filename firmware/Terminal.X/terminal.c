@@ -114,4 +114,6 @@ void terminal_init(struct terminal *terminal,
     terminal->callbacks->screen_test(terminal->format, SCREEN_TEST_FONT2);
     break;
   }
+
+  terminal_uart_receive_string(terminal, "\x07");
 }
