@@ -46,7 +46,7 @@
     (solder_mask_min_width 0.25)
     (grid_origin 25.4 25.4)
     (pcbplotparams
-      (layerselection 0x00010fc_7ffffffe)
+      (layerselection 0x00010fc_ffffffff)
       (disableapertmacros false)
       (usegerberextensions false)
       (usegerberattributes false)
@@ -72,7 +72,7 @@
       (plotinvisibletext false)
       (sketchpadsonfab false)
       (subtractmaskfromsilk false)
-      (outputformat 4)
+      (outputformat 1)
       (mirror false)
       (drillshape 0)
       (scaleselection 1)
