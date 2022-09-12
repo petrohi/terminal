@@ -344,6 +344,7 @@ int main(int argc, char* argv[]) {
   LATBCLR = (1 << 5); // turn on the power LED
   uSec(1000);         // settling time
 
+  initBuzzer();
   keyboard_init();
   screen_24_rows.buffer = screen_30_rows.buffer =
       init_vga(terminal_config.format_rows);
@@ -369,7 +370,6 @@ int main(int argc, char* argv[]) {
 
   INTEnableSystemMultiVectoredInt();
 
-  initBuzzer();
   initTimer();
   init_uart();
   USBDeviceInit();
