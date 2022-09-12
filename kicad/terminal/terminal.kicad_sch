@@ -2497,7 +2497,7 @@
     (property "Value" "0.1uF" (id 1) (at 80.391 92.583 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm" (id 2) (at 78.4352 95.25 0)
+    (property "Footprint" "Capacitor_THT:C_Disc_D3.0mm_W1.6mm_P2.50mm" (id 2) (at 78.4352 95.25 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Datasheet" "~" (id 3) (at 77.47 91.44 0)
@@ -2516,7 +2516,7 @@
     (property "Value" "0.1uF" (id 1) (at 91.821 92.583 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm" (id 2) (at 89.8652 95.25 0)
+    (property "Footprint" "Capacitor_THT:C_Disc_D3.0mm_W1.6mm_P2.50mm" (id 2) (at 89.8652 95.25 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Datasheet" "~" (id 3) (at 88.9 91.44 0)
@@ -3051,7 +3051,7 @@
     (property "Value" "27pF" (id 1) (at 27.051 62.103 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm" (id 2) (at 25.0952 64.77 0)
+    (property "Footprint" "Capacitor_THT:C_Disc_D3.0mm_W1.6mm_P2.50mm" (id 2) (at 25.0952 64.77 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Datasheet" "~" (id 3) (at 24.13 60.96 0)
@@ -3070,7 +3070,7 @@
     (property "Value" "27pF" (id 1) (at 42.291 62.103 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm" (id 2) (at 40.3352 64.77 0)
+    (property "Footprint" "Capacitor_THT:C_Disc_D3.0mm_W1.6mm_P2.50mm" (id 2) (at 40.3352 64.77 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Datasheet" "~" (id 3) (at 39.37 60.96 0)
@@ -3388,10 +3388,10 @@
       (reference "C1") (unit 1) (value "10uF") (footprint "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm")
     )
     (path "/00000000-0000-0000-0000-00005d887805"
-      (reference "C2") (unit 1) (value "27pF") (footprint "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm")
+      (reference "C2") (unit 1) (value "27pF") (footprint "Capacitor_THT:C_Disc_D3.0mm_W1.6mm_P2.50mm")
     )
     (path "/00000000-0000-0000-0000-00005d887c4b"
-      (reference "C3") (unit 1) (value "27pF") (footprint "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm")
+      (reference "C3") (unit 1) (value "27pF") (footprint "Capacitor_THT:C_Disc_D3.0mm_W1.6mm_P2.50mm")
     )
     (path "/00000000-0000-0000-0000-00005d61d25d"
       (reference "C4") (unit 1) (value "10uF") (footprint "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm")
@@ -3400,10 +3400,10 @@
       (reference "C5") (unit 1) (value "10uF") (footprint "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm")
     )
     (path "/00000000-0000-0000-0000-00005d62d67f"
-      (reference "C6") (unit 1) (value "0.1uF") (footprint "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm")
+      (reference "C6") (unit 1) (value "0.1uF") (footprint "Capacitor_THT:C_Disc_D3.0mm_W1.6mm_P2.50mm")
     )
     (path "/00000000-0000-0000-0000-00005d634874"
-      (reference "C7") (unit 1) (value "0.1uF") (footprint "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm")
+      (reference "C7") (unit 1) (value "0.1uF") (footprint "Capacitor_THT:C_Disc_D3.0mm_W1.6mm_P2.50mm")
     )
     (path "/00000000-0000-0000-0000-00005d6c1b25"
       (reference "D1") (unit 1) (value "Status") (footprint "LED_THT:LED_D5.0mm")
