@@ -58,12 +58,8 @@
           <itemPath>USB/Microchip/Include/Compiler.h</itemPath>
         </logicalFolder>
         <logicalFolder name="USB" displayName="USB" projectFiles="true">
-          <logicalFolder name="CDC Device Driver"
-                         displayName="CDC Device Driver"
-                         projectFiles="true">
-            <itemPath>USB/Microchip/USB/CDC Device Driver/usb_function_cdc.c</itemPath>
-          </logicalFolder>
           <itemPath>USB/Microchip/USB/usb_device.c</itemPath>
+          <itemPath>USB/Microchip/USB/usb_function_cdc.c</itemPath>
         </logicalFolder>
       </logicalFolder>
       <itemPath>USB/usb_descriptors.c</itemPath>
